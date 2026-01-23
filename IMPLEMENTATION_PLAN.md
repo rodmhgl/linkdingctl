@@ -71,7 +71,7 @@ internal/export            78.4%     70%      PASS
   - Acceptance: `go build -ldflags "-X main.version=1.2.3" -o /dev/null ./cmd/linkdingctl` compiles without error; confirms the `version` variable is accessible to the linker
   - Files: (verification only)
 
-- [ ] **P2** | Verify `make check` passes | ~small
+- [x] **P2** | Verify `make check` passes | ~small
   - Acceptance: `make check` (fmt + vet + test) passes with no failures; no regressions from the `main.go` change
   - Files: (verification only)
 
