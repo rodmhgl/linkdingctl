@@ -88,8 +88,8 @@ func TestFetchAllBookmarks(t *testing.T) {
 		case "", "0":
 			// First page
 			response = models.BookmarkList{
-				Count: 250,
-				Next:  &nextURL,
+				Count:   250,
+				Next:    &nextURL,
 				Results: make([]models.Bookmark, 100),
 			}
 			for i := 0; i < 100; i++ {
@@ -99,8 +99,8 @@ func TestFetchAllBookmarks(t *testing.T) {
 			// Second page
 			nextURL2 := "/api/bookmarks/?offset=200&limit=100"
 			response = models.BookmarkList{
-				Count: 250,
-				Next:  &nextURL2,
+				Count:   250,
+				Next:    &nextURL2,
 				Results: make([]models.Bookmark, 100),
 			}
 			for i := 0; i < 100; i++ {
@@ -109,8 +109,8 @@ func TestFetchAllBookmarks(t *testing.T) {
 		case "200":
 			// Third page (partial)
 			response = models.BookmarkList{
-				Count: 250,
-				Next:  nil,
+				Count:   250,
+				Next:    nil,
 				Results: make([]models.Bookmark, 50),
 			}
 			for i := 0; i < 50; i++ {
@@ -267,8 +267,8 @@ func TestFetchAllTags(t *testing.T) {
 		case "", "0":
 			// First page
 			response = models.TagList{
-				Count: 150,
-				Next:  &nextURL,
+				Count:   150,
+				Next:    &nextURL,
 				Results: make([]models.Tag, 100),
 			}
 			for i := 0; i < 100; i++ {
@@ -277,8 +277,8 @@ func TestFetchAllTags(t *testing.T) {
 		case "100":
 			// Second page (partial)
 			response = models.TagList{
-				Count: 150,
-				Next:  nil,
+				Count:   150,
+				Next:    nil,
 				Results: make([]models.Tag, 50),
 			}
 			for i := 0; i < 50; i++ {

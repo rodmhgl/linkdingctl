@@ -1214,7 +1214,7 @@ func TestBackupJSONOutput(t *testing.T) {
 	}
 }
 
-// TestUpdateUnarchive tests update with unarchive flag  
+// TestUpdateUnarchive tests update with unarchive flag
 func TestUpdateUnarchive(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") {

@@ -72,12 +72,12 @@ func runTags(cmd *cobra.Command, args []string) error {
 
 	// Build tag counts by iterating through bookmarks
 	tagCounts := make(map[string]int)
-	
+
 	// Initialize all tags with 0 count
 	for _, tag := range allTagsList {
 		tagCounts[tag.Name] = 0
 	}
-	
+
 	// Count tags from bookmarks
 	for _, bookmark := range allBookmarks {
 		for _, tag := range bookmark.TagNames {
