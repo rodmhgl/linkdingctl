@@ -42,7 +42,7 @@
   - Acceptance: `ld update <id>` with all flags, partial updates
   - Files: cmd/ld/update.go
 
-- [ ] **P1** | Delete bookmark command | ~small
+- [x] **P1** | Delete bookmark command | ~small
   - Acceptance: `ld delete <id>` with confirmation, --force
   - Files: cmd/ld/delete.go
 
