@@ -1,7 +1,7 @@
 # Specification: Tags Show Pagination
 
 ## Jobs to Be Done
-- `ld tags show <tag-name>` displays ALL bookmarks with that tag, not just the first 1000
+- `linkdingctl tags show <tag-name>` displays ALL bookmarks with that tag, not just the first 1000
 - Tags show output is consistent with the pagination behavior of `tags rename` and `tags delete`
 
 ## Problem
@@ -28,10 +28,10 @@ bookmarkList := &models.BookmarkList{
 ```
 
 Affected files:
-- `cmd/ld/tags.go` — `runTagsShow()` function
+- `cmd/linkdingctl/tags.go` — `runTagsShow()` function
 
 ## Success Criteria
-- [ ] `ld tags show <tag>` returns all matching bookmarks regardless of count
-- [ ] `ld tags show <tag>` uses `FetchAllBookmarks` (not `GetBookmarks` with a fixed limit)
+- [ ] `linkdingctl tags show <tag>` returns all matching bookmarks regardless of count
+- [ ] `linkdingctl tags show <tag>` uses `FetchAllBookmarks` (not `GetBookmarks` with a fixed limit)
 - [ ] Output count reflects the true total, not capped at 1000
 - [ ] `--json` output includes all bookmarks

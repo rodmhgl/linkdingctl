@@ -11,50 +11,50 @@
   - Details: Change `os.MkdirAll(dir, 0755)` to `0700`; add `os.Chmod(configPath, 0600)` after `v.WriteConfig()`
 
 - [x] **P1** | Token input masking in config init | ~small
-  - Acceptance: `ld config init` does not echo token; works when stdin is piped (non-TTY fallback)
-  - Files: cmd/ld/config.go, go.mod (add `golang.org/x/term`)
+  - Acceptance: `linkdingctl config init` does not echo token; works when stdin is piped (non-TTY fallback)
+  - Files: cmd/linkdingctl/config.go, go.mod (add `golang.org/x/term`)
   - Details: Use `term.ReadPassword(int(os.Stdin.Fd()))` for token prompt; detect non-TTY with `term.IsTerminal()` and fall back to `bufio.Reader`
 
 - [x] **P1** | Safe JSON output in backup command | ~small
-  - Acceptance: `ld backup --json` produces valid JSON regardless of output path characters (quotes, backslashes)
-  - Files: cmd/ld/backup.go
+  - Acceptance: `linkdingctl backup --json` produces valid JSON regardless of output path characters (quotes, backslashes)
+  - Files: cmd/linkdingctl/backup.go
   - Details: Replace `fmt.Printf("{\"file\": \"%s\"}\n", fullPath)` with `json.NewEncoder(os.Stdout).Encode(map[string]string{"file": fullPath})`
 
 ## Phase 6: Tags Performance & Pagination (spec 06)
 
 - [x] **P0** | Extract fetchAllBookmarks to shared location | ~small
-  - Acceptance: `fetchAllBookmarks` is accessible from both `internal/export` and `cmd/ld` packages
+  - Acceptance: `fetchAllBookmarks` is accessible from both `internal/export` and `cmd/linkdingctl` packages
   - Files: internal/api/client.go (add `FetchAllBookmarks` method), internal/export/json.go (update to call new method)
   - Details: Move pagination logic to `Client.FetchAllBookmarks(tags []string, includeArchived bool) ([]models.Bookmark, error)` as exported method on Client; update `internal/export/json.go` to delegate to it
 
-- [x] **P1** | Fix N+1 query in `ld tags` | ~medium
-  - Acceptance: `ld tags` makes at most O(N/page_size) API calls, not O(tags) calls; tag counts are correct
-  - Files: cmd/ld/tags.go
+- [x] **P1** | Fix N+1 query in `linkdingctl tags` | ~medium
+  - Acceptance: `linkdingctl tags` makes at most O(N/page_size) API calls, not O(tags) calls; tag counts are correct
+  - Files: cmd/linkdingctl/tags.go
   - Details: Replace per-tag `GetBookmarks` loop with single `FetchAllBookmarks(nil, true)` call, then count tags client-side in a `map[string]int`
   - Depends on: Extract fetchAllBookmarks
 
 - [x] **P1** | Paginate tag rename operations | ~small
-  - Acceptance: `ld tags rename` processes all matching bookmarks regardless of count (not just first 1000)
-  - Files: cmd/ld/tags.go (runTagsRename around line 177)
+  - Acceptance: `linkdingctl tags rename` processes all matching bookmarks regardless of count (not just first 1000)
+  - Files: cmd/linkdingctl/tags.go (runTagsRename around line 177)
   - Details: Replace `client.GetBookmarks("", []string{oldTag}, nil, nil, 1000, 0)` with `client.FetchAllBookmarks([]string{oldTag}, true)`; update progress display to use `len(allBookmarks)` instead of `bookmarkList.Count`
   - Depends on: Extract fetchAllBookmarks
 
 - [x] **P1** | Paginate tag delete operations | ~small
-  - Acceptance: `ld tags delete --force` processes all matching bookmarks regardless of count
-  - Files: cmd/ld/tags.go (runTagsDelete around line 271)
+  - Acceptance: `linkdingctl tags delete --force` processes all matching bookmarks regardless of count
+  - Files: cmd/linkdingctl/tags.go (runTagsDelete around line 271)
   - Details: Same pattern as rename — replace fixed-limit fetch with `FetchAllBookmarks`
   - Depends on: Extract fetchAllBookmarks
 
 - [x] **P1** | Paginate tags list | ~small
-  - Acceptance: `ld tags` displays all tags even if count exceeds 1000
-  - Files: cmd/ld/tags.go (runTags around line 60), internal/api/client.go
+  - Acceptance: `linkdingctl tags` displays all tags even if count exceeds 1000
+  - Files: cmd/linkdingctl/tags.go (runTags around line 60), internal/api/client.go
   - Details: Add `Client.FetchAllTags() ([]models.Tag, error)` that loops with pagination until `Next == nil`; replace `client.GetTags(1000, 0)` with `client.FetchAllTags()`
 
 ## Phase 7: Missing Commands (spec 03)
 
 - [x] **P2** | Tags show subcommand | ~small
-  - Acceptance: `ld tags show <tag-name>` lists all bookmarks with that tag (delegates to list --tags behavior)
-  - Files: cmd/ld/tags.go
+  - Acceptance: `linkdingctl tags show <tag-name>` lists all bookmarks with that tag (delegates to list --tags behavior)
+  - Files: cmd/linkdingctl/tags.go
   - Details: Add `tagsShowCmd` that calls `runList` equivalent with the specified tag filter; respects `--json` flag
 
 ## Phase 8: Test Coverage (spec 07)
@@ -75,13 +75,13 @@
   - Details: Test `importJSON`, `importHTML`, `importCSV` with fixture data; test `DetectFormat` for all extensions and unknown; test skip-duplicates vs update behavior
 
 - [x] **P2** | Command-level tests | ~large
-  - Acceptance: Core commands tested via cobra's `Execute()` with `httptest.NewServer`; `go test ./...` covers `cmd/ld`
-  - Files: cmd/ld/commands_test.go (new)
+  - Acceptance: Core commands tested via cobra's `Execute()` with `httptest.NewServer`; `go test ./...` covers `cmd/linkdingctl`
+  - Files: cmd/linkdingctl/commands_test.go (new)
   - Details: Pattern from spec: `executeCommand(args ...string)` helper; test `add`, `list`, `list --json`, `get`, `update --add-tags`, `delete --force`, `export -f csv`, `backup`, `tags`, `config show`
 
 - [x] **P2** | Integration test for stdin interaction | ~small
   - Acceptance: Delete confirmation and config init can be tested with piped stdin
-  - Files: cmd/ld/commands_test.go (extend)
+  - Files: cmd/linkdingctl/commands_test.go (extend)
   - Details: Use `os.Pipe()` pattern from spec to provide "y\n" via stdin
 
 - [x] **P3** | Coverage target validation | ~small
@@ -97,7 +97,7 @@
 ```
 Phase 6 (Performance):
   Extract fetchAllBookmarks (P0)
-    -> Fix N+1 in ld tags (P1)
+    -> Fix N+1 in linkdingctl tags (P1)
     -> Paginate tag rename (P1)
     -> Paginate tag delete (P1)
     -> Paginate tags list (P1)

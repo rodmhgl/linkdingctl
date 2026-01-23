@@ -154,7 +154,7 @@ internal/export            78.4%     70%      PASS
   - Acceptance: README.md, CLAUDE.md, AGENTS.md all reference `linkdingctl` binary name and config path; command examples updated
   - Files: `README.md`, `CLAUDE.md`, `AGENTS.md`
 
-- [ ] **P3** | Update specification files | ~medium
+- [x] **P3** | Update specification files | ~medium
   - Acceptance: All spec files in `specs/` reference `linkdingctl` in examples and file paths
   - Files: `specs/01-core-cli.md` through `specs/16-rename-to-linkdingctl.md`
 

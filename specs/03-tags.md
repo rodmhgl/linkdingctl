@@ -8,7 +8,7 @@
 
 ## List Tags
 ```
-ld tags [flags]
+linkdingctl tags [flags]
 
 Flags:
   -s, --sort string    Sort by: name, count (default: name)
@@ -31,14 +31,14 @@ Output (JSON):
 
 ## Tag Details
 ```
-ld tags show <tag-name>
+linkdingctl tags show <tag-name>
 ```
 
-Lists all bookmarks with that tag (delegates to `ld list --tags <tag>`).
+Lists all bookmarks with that tag (delegates to `linkdingctl list --tags <tag>`).
 
 ## Rename Tag
 ```
-ld tags rename <old-name> <new-name> [flags]
+linkdingctl tags rename <old-name> <new-name> [flags]
 
 Flags:
   -f, --force    Skip confirmation
@@ -51,7 +51,7 @@ Note: LinkDing API may not support direct tag rename. Implementation should:
 
 ## Delete Tag
 ```
-ld tags delete <tag-name> [flags]
+linkdingctl tags delete <tag-name> [flags]
 
 Flags:
   -f, --force    Skip confirmation
@@ -63,11 +63,11 @@ Only works if tag has 0 bookmarks. Otherwise error:
 With `--force`: removes tag from all bookmarks, then deletes tag.
 
 ## Success Criteria
-- [ ] `ld tags` lists all tags with counts
-- [ ] `ld tags --sort count` sorts by bookmark count descending
-- [ ] `ld tags --unused` shows only zero-count tags
-- [ ] `ld tags show <tag>` lists bookmarks with that tag
-- [ ] `ld tags rename` updates all affected bookmarks
-- [ ] `ld tags delete` fails safely if tag is in use
-- [ ] `ld tags delete --force` removes tag from all bookmarks
+- [ ] `linkdingctl tags` lists all tags with counts
+- [ ] `linkdingctl tags --sort count` sorts by bookmark count descending
+- [ ] `linkdingctl tags --unused` shows only zero-count tags
+- [ ] `linkdingctl tags show <tag>` lists bookmarks with that tag
+- [ ] `linkdingctl tags rename` updates all affected bookmarks
+- [ ] `linkdingctl tags delete` fails safely if tag is in use
+- [ ] `linkdingctl tags delete --force` removes tag from all bookmarks
 - [ ] All commands respect `--json` flag

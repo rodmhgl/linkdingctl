@@ -7,22 +7,22 @@
 
 ## Commands Structure
 ```
-ld user profile [flags]
+linkdingctl user profile [flags]
 ```
 
 The `user` command group provides account-related subcommands. The initial subcommand is `profile`.
 
 ## User Profile
 ```
-ld user profile
+linkdingctl user profile
 ```
 
 Retrieves the authenticated user's profile from the LinkDing API (`GET /api/user/profile/`).
 
 Examples:
 ```bash
-ld user profile
-ld user profile --json
+linkdingctl user profile
+linkdingctl user profile --json
 ```
 
 Output (human):
@@ -57,13 +57,13 @@ Response fields (per LinkDing API):
 
 - Add `UserProfile` struct to `internal/models/`
 - Add `GetUserProfile()` method to `internal/api/client.go`
-- Create `cmd/ld/user.go` with `user` parent command and `profile` subcommand
+- Create `cmd/linkdingctl/user.go` with `user` parent command and `profile` subcommand
 - The `user` command itself should display help (no default action)
 
 ## Success Criteria
-- [ ] `ld user profile` displays authenticated user information
-- [ ] `ld user profile --json` outputs valid JSON with all profile fields
+- [ ] `linkdingctl user profile` displays authenticated user information
+- [ ] `linkdingctl user profile --json` outputs valid JSON with all profile fields
 - [ ] HTTP 401 produces clear error: "Authentication failed. Check your API token."
 - [ ] HTTP 403 produces clear error: "Insufficient permissions for this operation."
 - [ ] Missing config produces standard config error
-- [ ] `ld user --help` lists available subcommands
+- [ ] `linkdingctl user --help` lists available subcommands

@@ -32,7 +32,7 @@ Affected files:
 
 ## Problem 2: Incomplete Flag Reset in Command Tests
 
-`cmd/ld/commands_test.go` — the `executeCommand` helper resets global flags between test runs, but misses several flags:
+`cmd/linkdingctl/commands_test.go` — the `executeCommand` helper resets global flags between test runs, but misses several flags:
 
 ```go
 // Currently reset:
@@ -73,7 +73,7 @@ tagsDeleteForce = false
 Additionally, consider extracting the reset logic into a dedicated `resetGlobalFlags()` function to make it easier to audit completeness when new flags are added.
 
 Affected files:
-- `cmd/ld/commands_test.go` — `executeCommand` function
+- `cmd/linkdingctl/commands_test.go` — `executeCommand` function
 
 ## Success Criteria
 - [ ] `TestLoad_NonYAMLFile` uses `strings.Contains` or `strings.HasPrefix` (no direct slice)

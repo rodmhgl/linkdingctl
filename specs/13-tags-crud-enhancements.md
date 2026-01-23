@@ -7,16 +7,16 @@
 
 ## Create Tag
 ```
-ld tags create <tag-name>
+linkdingctl tags create <tag-name>
 ```
 
 Creates a new tag in LinkDing via `POST /api/tags/`.
 
 Examples:
 ```bash
-ld tags create "kubernetes"
-ld tags create "home-automation"
-ld tags create "kubernetes"  # already exists → error
+linkdingctl tags create "kubernetes"
+linkdingctl tags create "home-automation"
+linkdingctl tags create "kubernetes"  # already exists → error
 ```
 
 Output (human):
@@ -53,15 +53,15 @@ Response (400 Bad Request / conflict): Tag already exists.
 
 ## Get Tag
 ```
-ld tags get <tag-id>
+linkdingctl tags get <tag-id>
 ```
 
 Retrieves a specific tag by its numeric ID via `GET /api/tags/{id}/`.
 
 Examples:
 ```bash
-ld tags get 42
-ld tags get 42 --json
+linkdingctl tags get 42
+linkdingctl tags get 42 --json
 ```
 
 Output (human):
@@ -97,14 +97,14 @@ Response (404 Not Found): Tag does not exist.
 - Add `CreateTag(name string)` method to `internal/api/client.go`
 - Add `GetTag(id int)` method to `internal/api/client.go`
 - Add `TagCreate` struct to `internal/models/` (request body for POST)
-- Add `create` and `get` subcommands to the existing `tags` command in `cmd/ld/tags.go`
+- Add `create` and `get` subcommands to the existing `tags` command in `cmd/linkdingctl/tags.go`
 - The existing `Tag` model already has the required fields (ID, Name, DateAdded)
 
 ## Success Criteria
-- [ ] `ld tags create <name>` creates a tag and returns its ID
-- [ ] `ld tags create` with duplicate name reports a clear error
-- [ ] `ld tags create` with empty name reports a validation error
-- [ ] `ld tags get <id>` displays full tag details
-- [ ] `ld tags get` with non-existent ID reports "not found" error
+- [ ] `linkdingctl tags create <name>` creates a tag and returns its ID
+- [ ] `linkdingctl tags create` with duplicate name reports a clear error
+- [ ] `linkdingctl tags create` with empty name reports a validation error
+- [ ] `linkdingctl tags get <id>` displays full tag details
+- [ ] `linkdingctl tags get` with non-existent ID reports "not found" error
 - [ ] Both commands respect `--json` flag
 - [ ] Both commands respect global config and auth handling

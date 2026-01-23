@@ -14,7 +14,7 @@
 | `internal/config` | Good — load, save, env override tested |
 | `internal/export` | Partial — JSON/CSV structure tests only, no HTML tests |
 | `internal/models` | No tests needed (pure data structs) |
-| `cmd/ld` | **None** — all command logic untested |
+| `cmd/linkdingctl` | **None** — all command logic untested |
 
 ## API Client Tests Needed
 
@@ -50,7 +50,7 @@ File: `internal/export/import_test.go` (new)
 
 ## Command Tests Needed
 
-File: `cmd/ld/commands_test.go` (new)
+File: `cmd/linkdingctl/commands_test.go` (new)
 
 Pattern: Use `httptest.NewServer` to mock the API, set config via env vars, execute commands via cobra's `Execute()`.
 
@@ -96,7 +96,7 @@ func TestDeleteWithConfirmation(t *testing.T) {
 ```
 
 ## Success Criteria
-- [ ] `go test ./...` covers all packages (no `[no test files]` for cmd/ld)
+- [ ] `go test ./...` covers all packages (no `[no test files]` for cmd/linkdingctl)
 - [ ] HTML export/import has dedicated tests
 - [ ] Round-trip tests verify export-then-import fidelity
 - [ ] Pagination logic tested with multi-page mock responses

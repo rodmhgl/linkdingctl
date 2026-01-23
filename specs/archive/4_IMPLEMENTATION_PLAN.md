@@ -13,7 +13,7 @@
 | 04 - Import/Export | Complete | JSON/HTML/CSV export+import, backup, restore with --wipe |
 | 05 - Security | Complete | 0700/0600 perms, token masking, safe JSON backup output |
 | 06 - Tags Performance | Complete | FetchAllBookmarks on Client, client-side counting, paginated rename/delete |
-| 07 - Test Coverage | **Partial** | cmd/ld=55.5% (target 70%), other packages meet threshold |
+| 07 - Test Coverage | **Partial** | cmd/linkdingctl=55.5% (target 70%), other packages meet threshold |
 | 08 - Tags Show Pagination | Complete | Uses FetchAllBookmarks for all bookmarks |
 | 09 - Makefile Portability | **Open** | `bc` dependency remains in `cover` target |
 | 10 - Config Token Trim | **Open** | Redundant `strings.TrimSpace(token)` on line 56 of config.go |
@@ -23,7 +23,7 @@
 
 ```
 Package              Current   Target   Status
-cmd/ld               78.1%     70%      PASS (+8.1%)
+cmd/linkdingctl               78.1%     70%      PASS (+8.1%)
 internal/api         80.1%     70%      PASS
 internal/config      70.3%     70%      PASS
 internal/export      78.4%     70%      PASS
@@ -44,7 +44,7 @@ internal/export      78.4%     70%      PASS
 
 - [x] **P1** | Remove redundant `strings.TrimSpace(token)` | ~small
   - Acceptance: Token trimmed exactly once per code path; no redundant `TrimSpace` call; TTY and non-TTY input still work; existing tests pass
-  - Files: `cmd/ld/config.go` (line 56)
+  - Files: `cmd/linkdingctl/config.go` (line 56)
   - Details: The final `token = strings.TrimSpace(token)` on line 56 is redundant — the TTY branch (`term.ReadPassword`) never includes a trailing newline, and the non-TTY branch already calls `TrimSpace` on line 54. Remove line 56 and add `strings.TrimSpace()` around `string(tokenBytes)` on line 46 for defensive clarity in the TTY branch.
 
 ### Phase 3: Test Robustness (spec 11)
@@ -56,7 +56,7 @@ internal/export      78.4%     70%      PASS
 
 - [x] **P1** | Add missing flag resets to `executeCommand` helper | ~small
   - Acceptance: `executeCommand` resets `backupOutput`, `backupPrefix`, `tagsRenameForce`, `tagsDeleteForce`; no test pollution between runs; all existing tests pass
-  - Files: `cmd/ld/commands_test.go` (after line 83)
+  - Files: `cmd/linkdingctl/commands_test.go` (after line 83)
   - Details: Add the following resets to the `executeCommand` function after the existing flag resets:
     ```go
     backupOutput = "."
@@ -66,11 +66,11 @@ internal/export      78.4%     70%      PASS
     ```
     Note: `backupOutput` default is `"."` and `backupPrefix` default is `"linkding-backup"` (from flag definitions in `backup.go` init())
 
-### Phase 4: cmd/ld Test Coverage to 70% (spec 07)
+### Phase 4: cmd/linkdingctl Test Coverage to 70% (spec 07)
 
-- [x] **P2** | Increase `cmd/ld` coverage from 55.5% to 70%+ | ~large
-  - Acceptance: `go test -cover ./cmd/ld/` reports >= 70%; `make cover` passes the 70% gate for all packages
-  - Files: `cmd/ld/commands_test.go`
+- [x] **P2** | Increase `cmd/linkdingctl` coverage from 55.5% to 70%+ | ~large
+  - Acceptance: `go test -cover ./cmd/linkdingctl/` reports >= 70%; `make cover` passes the 70% gate for all packages
+  - Files: `cmd/linkdingctl/commands_test.go`
   - Result: Coverage increased to 78.1% (8.1% above target). All packages pass `make cover` validation.
   - Tests added:
     - `import` command: JSON/HTML/CSV format tests, `--dry-run`, `--skip-duplicates`, `--add-tags`, JSON output
@@ -96,7 +96,7 @@ Phase 3 (Test robustness):
   Flag reset fix — standalone
 
 Phase 4 (Coverage):
-  cmd/ld 70%+ — depends on Phase 3 (flag reset fix prevents test pollution)
+  cmd/linkdingctl 70%+ — depends on Phase 3 (flag reset fix prevents test pollution)
                   depends on Phase 2 (token trim change may alter test behavior)
 ```
 
@@ -105,7 +105,7 @@ Phase 4 (Coverage):
 1. **Phase 1** (P1): Makefile `bc` → `awk` (standalone, immediate portability win)
 2. **Phase 2** (P1): Config token trim cleanup (standalone, simple code clarity fix)
 3. **Phase 3** (P1): Test robustness fixes (blocks Phase 4 — must fix flag resets before adding more tests)
-4. **Phase 4** (P2): cmd/ld coverage to 70% (depends on Phases 2+3 being complete)
+4. **Phase 4** (P2): cmd/linkdingctl coverage to 70% (depends on Phases 2+3 being complete)
 
 ---
 

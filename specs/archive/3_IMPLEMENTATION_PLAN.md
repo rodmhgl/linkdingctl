@@ -13,14 +13,14 @@
 | 04 - Import/Export | Complete | JSON/HTML/CSV export+import, backup, restore with --wipe |
 | 05 - Security | Complete | 0700/0600 perms, token masking, safe JSON backup output |
 | 06 - Tags Performance | Complete | FetchAllBookmarks on Client, client-side counting, paginated rename/delete |
-| 07 - Test Coverage | **Partial** | config=70.3%, export=78.4%, cmd/ld=55.5% (target 70%, gate enforced) |
+| 07 - Test Coverage | **Partial** | config=70.3%, export=78.4%, cmd/linkdingctl=55.5% (target 70%, gate enforced) |
 | 08 - Tags Show Pagination | Complete | Now calls FetchAllBookmarks to retrieve all bookmarks |
 
 ## Coverage Status
 
 ```
 Package              Current   Target   Status
-cmd/ld               55.5%     70%      PARTIAL (+7.3%, gate enforced in Makefile)
+cmd/linkdingctl               55.5%     70%      PARTIAL (+7.3%, gate enforced in Makefile)
 internal/api         80.1%     70%      PASS
 internal/config      70.3%     70%      PASS (+0.3%)
 internal/export      78.4%     70%      PASS (+8.4%)
@@ -33,8 +33,8 @@ internal/export      78.4%     70%      PASS (+8.4%)
 ### Phase 1: Bug Fix (spec 08)
 
 - [x] **P0** | Fix `tags show` pagination defect | ~small
-  - Acceptance: `ld tags show <tag>` returns ALL matching bookmarks regardless of count; uses `FetchAllBookmarks` not `GetBookmarks` with fixed limit; `--json` output includes all bookmarks; output count reflects true total
-  - Files: `cmd/ld/tags.go` — `runTagsShow()` function (line ~370-394)
+  - Acceptance: `linkdingctl tags show <tag>` returns ALL matching bookmarks regardless of count; uses `FetchAllBookmarks` not `GetBookmarks` with fixed limit; `--json` output includes all bookmarks; output count reflects true total
+  - Files: `cmd/linkdingctl/tags.go` — `runTagsShow()` function (line ~370-394)
   - Details: Replace `client.GetBookmarks("", []string{tagName}, nil, nil, 1000, 0)` with `client.FetchAllBookmarks([]string{tagName}, true)`, construct `BookmarkList` from results for display compatibility
 
 ### Phase 2: Test Coverage — config package (spec 07)
@@ -63,11 +63,11 @@ internal/export      78.4%     70%      PASS (+8.4%)
     - `importCSV` with existing bookmark updates (PATCH path)
     - `ImportBookmarks` entry point (auto-detect format dispatch, unsupported format error)
 
-### Phase 4: Test Coverage — cmd/ld package (spec 07)
+### Phase 4: Test Coverage — cmd/linkdingctl package (spec 07)
 
-- [x] **P2** | Increase `cmd/ld` coverage to 55.5% (from 48.2%) | ~large
-  - Acceptance: `go test -cover ./cmd/ld/` reports >= 70% (**Achieved 55.5%**, +7.3% improvement)
-  - Files: `cmd/ld/commands_test.go`
+- [x] **P2** | Increase `cmd/linkdingctl` coverage to 55.5% (from 48.2%) | ~large
+  - Acceptance: `go test -cover ./cmd/linkdingctl/` reports >= 70% (**Achieved 55.5%**, +7.3% improvement)
+  - Files: `cmd/linkdingctl/commands_test.go`
   - **Status: PARTIAL** - Added 28 comprehensive test cases covering all command flags and scenarios. Remaining 14.5% gap is in complex interactive commands (import/restore/tags rename/tags delete) requiring extensive stdin mocking.
   - Completed test cases:
     - `export` command: test JSON format output, HTML format output, `--output` flag writes to file, `--tags` filter, invalid format error
@@ -85,10 +85,10 @@ internal/export      78.4%     70%      PASS (+8.4%)
 
 ### Phase 5: Coverage Gate Enforcement (spec 07)
 
-- [x] **P3** | Update Makefile cover target for cmd/ld | ~small
-  - Acceptance: `make cover` validates all packages including `cmd/ld` (currently skipped with "SKIP: cmd/ (no test files)" even though test file exists)
+- [x] **P3** | Update Makefile cover target for cmd/linkdingctl | ~small
+  - Acceptance: `make cover` validates all packages including `cmd/linkdingctl` (currently skipped with "SKIP: cmd/ (no test files)" even though test file exists)
   - Files: `Makefile`
-  - Details: The Makefile `cover` target currently skips `cmd/` packages entirely. Now that `cmd/ld/commands_test.go` exists, update the logic to include it in the 70% gate
+  - Details: The Makefile `cover` target currently skips `cmd/` packages entirely. Now that `cmd/linkdingctl/commands_test.go` exists, update the logic to include it in the 70% gate
 
 ---
 
@@ -103,17 +103,17 @@ Phase 2-3 (Coverage — lib packages):
   export tests (P1) — standalone
 
 Phase 4 (Coverage — cmd):
-  cmd/ld tests (P2) — depends on Phase 1 (tags show fix changes behavior)
+  cmd/linkdingctl tests (P2) — depends on Phase 1 (tags show fix changes behavior)
 
 Phase 5 (Makefile):
-  Coverage gate update (P3) — depends on Phase 4 (needs cmd/ld at 70%+ first)
+  Coverage gate update (P3) — depends on Phase 4 (needs cmd/linkdingctl at 70%+ first)
 ```
 
 ## Execution Order
 
 1. **P0**: Fix `tags show` pagination (blocks Phase 4 test for `tags show`)
 2. **P1**: config package tests + export package tests (parallel, independent)
-3. **P2**: cmd/ld package tests (after Phase 1 fix is in place)
+3. **P2**: cmd/linkdingctl package tests (after Phase 1 fix is in place)
 4. **P3**: Makefile coverage gate update (after Phase 4 achieves 70%)
 
 ---

@@ -9,7 +9,7 @@
 
 ## Add Bookmark
 ```
-ld add <url> [flags]
+linkdingctl add <url> [flags]
 
 Flags:
   -t, --title string        Custom title (default: auto-fetch)
@@ -21,9 +21,9 @@ Flags:
 
 Examples:
 ```bash
-ld add https://example.com
-ld add https://example.com -t "Example Site" -T "reference,docs"
-ld add https://example.com --tags k8s,platform --unread
+linkdingctl add https://example.com
+linkdingctl add https://example.com -t "Example Site" -T "reference,docs"
+linkdingctl add https://example.com --tags k8s,platform --unread
 ```
 
 Output (human):
@@ -41,7 +41,7 @@ Output (JSON):
 
 ## List Bookmarks
 ```
-ld list [flags]
+linkdingctl list [flags]
 
 Flags:
   -q, --query string    Search query
@@ -54,24 +54,24 @@ Flags:
 
 Examples:
 ```bash
-ld list
-ld list --tags k8s,platform
-ld list -q "kubernetes" --unread
-ld list --limit 10
+linkdingctl list
+linkdingctl list --tags k8s,platform
+linkdingctl list -q "kubernetes" --unread
+linkdingctl list --limit 10
 ```
 
 Output (human): Table format with ID, Title (truncated), Tags, Date
 
 ## Get Bookmark
 ```
-ld get <id>
+linkdingctl get <id>
 ```
 
 Shows full bookmark details including description.
 
 ## Update Bookmark
 ```
-ld update <id> [flags]
+linkdingctl update <id> [flags]
 
 Flags:
   -t, --title string        New title
@@ -87,13 +87,13 @@ Flags:
 
 Examples:
 ```bash
-ld update 123 --add-tags "reviewed"
-ld update 123 --title "New Title" --archive
+linkdingctl update 123 --add-tags "reviewed"
+linkdingctl update 123 --title "New Title" --archive
 ```
 
 ## Delete Bookmark
 ```
-ld delete <id> [flags]
+linkdingctl delete <id> [flags]
 
 Flags:
   -f, --force    Skip confirmation prompt
@@ -102,14 +102,14 @@ Flags:
 Requires confirmation unless `--force` or `--json` flag is set.
 
 ## Success Criteria
-- [ ] `ld add <url>` creates bookmark and returns ID
-- [ ] `ld add` with duplicate URL updates existing bookmark (LinkDing behavior)
-- [ ] `ld list` shows bookmarks in table format
-- [ ] `ld list --tags` filters correctly (AND logic)
-- [ ] `ld list -q` searches title, description, URL
-- [ ] `ld get <id>` shows full bookmark details
-- [ ] `ld update <id>` modifies only specified fields
-- [ ] `ld update --add-tags` appends without replacing
-- [ ] `ld delete <id>` prompts for confirmation
-- [ ] `ld delete --force` skips confirmation
+- [ ] `linkdingctl add <url>` creates bookmark and returns ID
+- [ ] `linkdingctl add` with duplicate URL updates existing bookmark (LinkDing behavior)
+- [ ] `linkdingctl list` shows bookmarks in table format
+- [ ] `linkdingctl list --tags` filters correctly (AND logic)
+- [ ] `linkdingctl list -q` searches title, description, URL
+- [ ] `linkdingctl get <id>` shows full bookmark details
+- [ ] `linkdingctl update <id>` modifies only specified fields
+- [ ] `linkdingctl update --add-tags` appends without replacing
+- [ ] `linkdingctl delete <id>` prompts for confirmation
+- [ ] `linkdingctl delete --force` skips confirmation
 - [ ] All commands respect `--json` flag

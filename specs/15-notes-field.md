@@ -12,11 +12,11 @@ The LinkDing API distinguishes between two text fields on bookmarks:
 - **`description`**: A short plain-text description/summary
 - **`notes`**: A longer Markdown-formatted field for personal annotations
 
-Currently, `ld` only exposes `--description` (`-d`) on `add` and `update` commands. The `notes` field in the data model exists but is not settable via CLI flags. This creates a gap where users cannot use the Markdown-capable notes functionality that LinkDing provides.
+Currently, `linkdingctl` only exposes `--description` (`-d`) on `add` and `update` commands. The `notes` field in the data model exists but is not settable via CLI flags. This creates a gap where users cannot use the Markdown-capable notes functionality that LinkDing provides.
 
 ## Add Bookmark (Updated)
 ```
-ld add <url> [flags]
+linkdingctl add <url> [flags]
 
 New Flag:
   -n, --notes string   Markdown notes for the bookmark
@@ -24,13 +24,13 @@ New Flag:
 
 Examples:
 ```bash
-ld add https://example.com -d "Quick reference" -n "## Setup\n- Step 1\n- Step 2"
-ld add https://example.com --notes "Important: check section 3 for config"
+linkdingctl add https://example.com -d "Quick reference" -n "## Setup\n- Step 1\n- Step 2"
+linkdingctl add https://example.com --notes "Important: check section 3 for config"
 ```
 
 ## Update Bookmark (Updated)
 ```
-ld update <id> [flags]
+linkdingctl update <id> [flags]
 
 New Flag:
   -n, --notes string   Update notes (Markdown supported)
@@ -38,14 +38,14 @@ New Flag:
 
 Examples:
 ```bash
-ld update 123 --notes "Updated: now requires v2.0+"
-ld update 123 -d "New description" -n "New notes"
-ld update 123 --notes ""  # Clear notes
+linkdingctl update 123 --notes "Updated: now requires v2.0+"
+linkdingctl update 123 -d "New description" -n "New notes"
+linkdingctl update 123 --notes ""  # Clear notes
 ```
 
 ## Get Bookmark (Updated)
 
-`ld get <id>` already displays the notes field. No changes needed to output, but ensure notes are displayed distinctly from description.
+`linkdingctl get <id>` already displays the notes field. No changes needed to output, but ensure notes are displayed distinctly from description.
 
 Output (human):
 ```
@@ -71,18 +71,18 @@ The existing export/import functionality already handles the notes field through
 
 ## Implementation Notes
 
-- Add `--notes` (`-n`) string flag to `add` command in `cmd/ld/add.go`
-- Add `--notes` (`-n`) string flag to `update` command in `cmd/ld/update.go`
+- Add `--notes` (`-n`) string flag to `add` command in `cmd/linkdingctl/add.go`
+- Add `--notes` (`-n`) string flag to `update` command in `cmd/linkdingctl/update.go`
 - Map the flag value to `Notes` field on `BookmarkCreate` (add) and `BookmarkUpdate` (update)
 - The `BookmarkCreate` and `BookmarkUpdate` models already include the `Notes` field
 - Update the `--description` flag help text from "Description/notes" to "Description" to avoid confusion
 - An empty string for `--notes` on update should clear the field (set to `""`)
 
 ## Success Criteria
-- [ ] `ld add --notes` sets the notes field on bookmark creation
-- [ ] `ld update --notes` updates the notes field
-- [ ] `ld update --notes ""` clears the notes field
-- [ ] `ld get` displays notes separately from description
+- [ ] `linkdingctl add --notes` sets the notes field on bookmark creation
+- [ ] `linkdingctl update --notes` updates the notes field
+- [ ] `linkdingctl update --notes ""` clears the notes field
+- [ ] `linkdingctl get` displays notes separately from description
 - [ ] Notes and description can be set independently
 - [ ] Notes and description can be set together in one command
 - [ ] `-n` shorthand works for `--notes` (no conflict with existing flags)

@@ -8,7 +8,7 @@
 
 ## Global Flags
 ```
-ld [command] [flags]
+linkdingctl [command] [flags]
 
 New Global Flags:
   --url string     LinkDing instance URL (overrides config and env)
@@ -21,23 +21,23 @@ These flags override both the config file and environment variables, establishin
 
 1. CLI flags (`--url`, `--token`)
 2. Environment variables (`LINKDING_URL`, `LINKDING_TOKEN`)
-3. Config file (`~/.config/ld/config.yaml`)
+3. Config file (`~/.config/linkdingctl/config.yaml`)
 
 ## Examples
 
 ```bash
 # One-off command against a different instance
-ld list --url https://other-linkding.example.com --token abc123
+linkdingctl list --url https://other-linkding.example.com --token abc123
 
 # Use a different token for testing
-ld user profile --token new-token-to-test
+linkdingctl user profile --token new-token-to-test
 
 # Script across multiple instances
-ld export --url https://instance-a.example.com --token tokenA > a.json
-ld export --url https://instance-b.example.com --token tokenB > b.json
+linkdingctl export --url https://instance-a.example.com --token tokenA > a.json
+linkdingctl export --url https://instance-b.example.com --token tokenB > b.json
 
 # CI/CD usage without config file
-ld backup --url "$STAGING_URL" --token "$STAGING_TOKEN" -o /tmp/
+linkdingctl backup --url "$STAGING_URL" --token "$STAGING_TOKEN" -o /tmp/
 ```
 
 ## Partial Override Behavior
@@ -49,12 +49,12 @@ Either flag can be used independently:
 
 ## Implementation Notes
 
-- Add `--url` and `--token` as persistent flags on the root command in `cmd/ld/root.go`
+- Add `--url` and `--token` as persistent flags on the root command in `cmd/linkdingctl/root.go`
 - Modify `loadConfig()` to apply CLI flag overrides after loading config file and env vars
 - The `--token` value must not be logged even when `--debug` is enabled (redact in debug output)
-- If neither config file, env vars, nor CLI flags provide URL/token, the existing "Run 'ld config init'" error applies
-- `ld config show` should indicate when overrides are active (e.g., "URL: https://... (--url flag)")
-- `ld config test` should test the effective configuration (including any overrides)
+- If neither config file, env vars, nor CLI flags provide URL/token, the existing "Run 'linkdingctl config init'" error applies
+- `linkdingctl config show` should indicate when overrides are active (e.g., "URL: https://... (--url flag)")
+- `linkdingctl config test` should test the effective configuration (including any overrides)
 
 ## Success Criteria
 - [ ] `--url` flag overrides config file and environment variable URL
@@ -62,7 +62,7 @@ Either flag can be used independently:
 - [ ] Partial overrides work (only `--url` or only `--token`)
 - [ ] Commands function with only CLI flags and no config file present
 - [ ] `--token` value is never printed in debug output
-- [ ] `ld config show` reflects active overrides
-- [ ] `ld config test` tests effective configuration including overrides
+- [ ] `linkdingctl config show` reflects active overrides
+- [ ] `linkdingctl config test` tests effective configuration including overrides
 - [ ] Existing config file and env var behavior is unchanged when flags are not provided
 - [ ] All commands respect the override flags
