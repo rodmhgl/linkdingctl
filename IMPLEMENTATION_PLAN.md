@@ -52,7 +52,7 @@
   - Acceptance: `ld tags` lists with counts, sorting
   - Files: cmd/ld/tags.go, internal/api/tags.go
 
-- [ ] **P2** | Tag rename command | ~medium
+- [x] **P2** | Tag rename command | ~medium
   - Acceptance: `ld tags rename` updates all affected bookmarks
   - Files: cmd/ld/tags.go (extend)
 
