@@ -62,7 +62,7 @@
 
 ## Phase 3: Import/Export
 
-- [ ] **P2** | Export JSON | ~medium
+- [x] **P2** | Export JSON | ~medium
   - Acceptance: `ld export` outputs valid JSON with metadata
   - Files: cmd/ld/export.go, internal/export/json.go
 
