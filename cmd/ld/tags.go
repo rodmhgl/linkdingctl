@@ -184,19 +184,19 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 	// Create API client
 	client := api.NewClient(cfg.URL, cfg.Token)
 
-	// Get all bookmarks with the old tag
-	bookmarkList, err := client.GetBookmarks("", []string{oldTag}, nil, nil, 1000, 0)
+	// Get all bookmarks with the old tag (including archived)
+	allBookmarks, err := client.FetchAllBookmarks([]string{oldTag}, true)
 	if err != nil {
 		return fmt.Errorf("failed to fetch bookmarks with tag '%s': %w", oldTag, err)
 	}
 
-	if bookmarkList.Count == 0 {
+	if len(allBookmarks) == 0 {
 		return fmt.Errorf("no bookmarks found with tag '%s'", oldTag)
 	}
 
 	// Ask for confirmation unless --force is used
 	if !tagsRenameForce {
-		fmt.Printf("This will rename tag '%s' to '%s' on %d bookmark(s).\n", oldTag, newTag, bookmarkList.Count)
+		fmt.Printf("This will rename tag '%s' to '%s' on %d bookmark(s).\n", oldTag, newTag, len(allBookmarks))
 		fmt.Print("Continue? (y/N): ")
 
 		var response string
@@ -211,9 +211,9 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 	successCount := 0
 	errorCount := 0
 
-	for i, bookmark := range bookmarkList.Results {
+	for i, bookmark := range allBookmarks {
 		// Show progress
-		fmt.Printf("Updating bookmark %d/%d (ID: %d)...\n", i+1, bookmarkList.Count, bookmark.ID)
+		fmt.Printf("Updating bookmark %d/%d (ID: %d)...\n", i+1, len(allBookmarks), bookmark.ID)
 
 		// Build new tag list: replace old tag with new tag
 		newTags := make([]string, 0, len(bookmark.TagNames))

@@ -33,7 +33,7 @@
   - Details: Replace per-tag `GetBookmarks` loop with single `FetchAllBookmarks(nil, true)` call, then count tags client-side in a `map[string]int`
   - Depends on: Extract fetchAllBookmarks
 
-- [ ] **P1** | Paginate tag rename operations | ~small
+- [x] **P1** | Paginate tag rename operations | ~small
   - Acceptance: `ld tags rename` processes all matching bookmarks regardless of count (not just first 1000)
   - Files: cmd/ld/tags.go (runTagsRename around line 177)
   - Details: Replace `client.GetBookmarks("", []string{oldTag}, nil, nil, 1000, 0)` with `client.FetchAllBookmarks([]string{oldTag}, true)`; update progress display to use `len(allBookmarks)` instead of `bookmarkList.Count`
