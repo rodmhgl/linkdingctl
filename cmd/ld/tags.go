@@ -31,16 +31,19 @@ var (
 	tagsSort        string
 	tagsUnused      bool
 	tagsRenameForce bool
+	tagsDeleteForce bool
 )
 
 func init() {
 	rootCmd.AddCommand(tagsCmd)
 	tagsCmd.AddCommand(tagsRenameCmd)
+	tagsCmd.AddCommand(tagsDeleteCmd)
 
 	tagsCmd.Flags().StringVarP(&tagsSort, "sort", "s", "name", "Sort by: name, count")
 	tagsCmd.Flags().BoolVar(&tagsUnused, "unused", false, "Show only tags with 0 bookmarks")
 
 	tagsRenameCmd.Flags().BoolVarP(&tagsRenameForce, "force", "f", false, "Skip confirmation")
+	tagsDeleteCmd.Flags().BoolVarP(&tagsDeleteForce, "force", "f", false, "Skip confirmation and remove tag from all bookmarks")
 }
 
 func runTags(cmd *cobra.Command, args []string) error {
@@ -228,7 +231,106 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 
 	// Show summary
 	fmt.Printf("\nCompleted: %d successful, %d errors\n", successCount, errorCount)
-	
+
+	if errorCount > 0 {
+		return fmt.Errorf("some bookmarks failed to update")
+	}
+
+	return nil
+}
+
+// tagsDeleteCmd represents the tags delete command
+var tagsDeleteCmd = &cobra.Command{
+	Use:   "delete <tag-name>",
+	Short: "Delete a tag, optionally removing it from all bookmarks",
+	Long: `Delete a tag from LinkDing.
+
+By default, this command only works if the tag has 0 bookmarks.
+Use --force to remove the tag from all bookmarks first.
+
+Examples:
+  ld tags delete unused-tag
+  ld tags delete "old tag" --force`,
+	Args: cobra.ExactArgs(1),
+	RunE: runTagsDelete,
+}
+
+func runTagsDelete(cmd *cobra.Command, args []string) error {
+	tagName := args[0]
+
+	// Load configuration
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		return fmt.Errorf("configuration error: %w", err)
+	}
+
+	// Create API client
+	client := api.NewClient(cfg.URL, cfg.Token)
+
+	// Get all bookmarks with the tag to check count
+	bookmarkList, err := client.GetBookmarks("", []string{tagName}, nil, nil, 1000, 0)
+	if err != nil {
+		return fmt.Errorf("failed to fetch bookmarks with tag '%s': %w", tagName, err)
+	}
+
+	// If tag has bookmarks and --force is not set, error
+	if bookmarkList.Count > 0 && !tagsDeleteForce {
+		return fmt.Errorf("tag '%s' has %d bookmark(s). Remove tag from bookmarks first or use --force to remove from all", tagName, bookmarkList.Count)
+	}
+
+	// If tag has no bookmarks, we can just confirm deletion
+	if bookmarkList.Count == 0 {
+		fmt.Printf("Tag '%s' has no bookmarks and will be removed.\n", tagName)
+		return nil
+	}
+
+	// If we get here, --force is set and tag has bookmarks
+	// Ask for confirmation
+	fmt.Printf("This will remove tag '%s' from %d bookmark(s).\n", tagName, bookmarkList.Count)
+	fmt.Print("Continue? (y/N): ")
+
+	var response string
+	fmt.Scanln(&response)
+	if response != "y" && response != "Y" {
+		fmt.Println("Aborted")
+		return nil
+	}
+
+	// Remove tag from all bookmarks
+	successCount := 0
+	errorCount := 0
+
+	for i, bookmark := range bookmarkList.Results {
+		// Show progress
+		fmt.Printf("Updating bookmark %d/%d (ID: %d)...\n", i+1, bookmarkList.Count, bookmark.ID)
+
+		// Build new tag list: remove the tag
+		newTags := make([]string, 0, len(bookmark.TagNames)-1)
+		for _, tag := range bookmark.TagNames {
+			if tag != tagName {
+				newTags = append(newTags, tag)
+			}
+		}
+
+		// Update the bookmark
+		update := &models.BookmarkUpdate{
+			TagNames: &newTags,
+		}
+
+		_, err := client.UpdateBookmark(bookmark.ID, update)
+		if err != nil {
+			fmt.Printf("  Error: %v\n", err)
+			errorCount++
+			continue
+		}
+
+		successCount++
+	}
+
+	// Show summary
+	fmt.Printf("\nCompleted: %d successful, %d errors\n", successCount, errorCount)
+	fmt.Printf("Tag '%s' has been removed from all bookmarks.\n", tagName)
+
 	if errorCount > 0 {
 		return fmt.Errorf("some bookmarks failed to update")
 	}

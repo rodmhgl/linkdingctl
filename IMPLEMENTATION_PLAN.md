@@ -56,7 +56,7 @@
   - Acceptance: `ld tags rename` updates all affected bookmarks
   - Files: cmd/ld/tags.go (extend)
 
-- [ ] **P2** | Tag delete command | ~small
+- [x] **P2** | Tag delete command | ~small
   - Acceptance: `ld tags delete` with safety check and --force
   - Files: cmd/ld/tags.go (extend)
 
