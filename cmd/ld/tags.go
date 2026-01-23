@@ -56,21 +56,32 @@ func runTags(cmd *cobra.Command, args []string) error {
 	// Create API client
 	client := api.NewClient(cfg.URL, cfg.Token)
 
-	// Fetch all tags (paginated)
+	// Fetch all tags to get complete list (including unused ones)
 	tagList, err := client.GetTags(1000, 0)
 	if err != nil {
 		return err
 	}
 
-	// Build tag counts by fetching bookmarks for each tag
+	// Fetch all bookmarks (including archived) to count tags client-side
+	// This is more efficient than making N API calls (one per tag)
+	allBookmarks, err := client.FetchAllBookmarks(nil, true)
+	if err != nil {
+		return fmt.Errorf("failed to fetch bookmarks: %w", err)
+	}
+
+	// Build tag counts by iterating through bookmarks
 	tagCounts := make(map[string]int)
+	
+	// Initialize all tags with 0 count
 	for _, tag := range tagList.Results {
-		// Query bookmarks with this tag to get count
-		bookmarkList, err := client.GetBookmarks("", []string{tag.Name}, nil, nil, 1, 0)
-		if err != nil {
-			return fmt.Errorf("failed to get count for tag '%s': %w", tag.Name, err)
+		tagCounts[tag.Name] = 0
+	}
+	
+	// Count tags from bookmarks
+	for _, bookmark := range allBookmarks {
+		for _, tag := range bookmark.TagNames {
+			tagCounts[tag]++
 		}
-		tagCounts[tag.Name] = bookmarkList.Count
 	}
 
 	// Build list of TagWithCount

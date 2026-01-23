@@ -27,7 +27,7 @@
   - Files: internal/api/client.go (add `FetchAllBookmarks` method), internal/export/json.go (update to call new method)
   - Details: Move pagination logic to `Client.FetchAllBookmarks(tags []string, includeArchived bool) ([]models.Bookmark, error)` as exported method on Client; update `internal/export/json.go` to delegate to it
 
-- [ ] **P1** | Fix N+1 query in `ld tags` | ~medium
+- [x] **P1** | Fix N+1 query in `ld tags` | ~medium
   - Acceptance: `ld tags` makes at most O(N/page_size) API calls, not O(tags) calls; tag counts are correct
   - Files: cmd/ld/tags.go
   - Details: Replace per-tag `GetBookmarks` loop with single `FetchAllBookmarks(nil, true)` call, then count tags client-side in a `map[string]int`
