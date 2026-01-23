@@ -28,7 +28,7 @@ func Load(configPath string) (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user home directory: %w", err)
 		}
-		configDir := filepath.Join(homeDir, ".config", "ld")
+		configDir := filepath.Join(homeDir, ".config", "linkdingctl")
 		v.AddConfigPath(configDir)
 		v.SetConfigName("config")
 		v.SetConfigType("yaml")
@@ -57,7 +57,7 @@ func Load(configPath string) (*Config, error) {
 
 	// Validate that required fields are present
 	if cfg.URL == "" || cfg.Token == "" {
-		return nil, fmt.Errorf("no configuration found. Run 'ld config init' to set up")
+		return nil, fmt.Errorf("no configuration found. Run 'linkdingctl config init' to set up")
 	}
 
 	return cfg, nil
@@ -69,7 +69,7 @@ func DefaultConfigPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
-	return filepath.Join(homeDir, ".config", "ld", "config.yaml"), nil
+	return filepath.Join(homeDir, ".config", "linkdingctl", "config.yaml"), nil
 }
 
 // Save writes configuration to the specified path

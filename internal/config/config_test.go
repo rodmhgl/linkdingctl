@@ -77,7 +77,7 @@ func TestLoad_MissingConfig(t *testing.T) {
 	}
 
 	expectedMsg := "no configuration found"
-	if err.Error() != expectedMsg+". Run 'ld config init' to set up" {
+	if err.Error() != expectedMsg+". Run 'linkdingctl config init' to set up" {
 		t.Errorf("expected error containing '%s', got '%v'", expectedMsg, err)
 	}
 }

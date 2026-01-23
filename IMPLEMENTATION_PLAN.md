@@ -130,7 +130,7 @@ internal/export      78.4%     70%      PASS
   - Acceptance: `rootCmd.Use = "linkdingctl"`; Long description references `linkdingctl`; error messages say `"Run 'linkdingctl config init'"`
   - Files: `cmd/linkdingctl/root.go`
 
-- [ ] **P0** | Update config paths to `~/.config/linkdingctl/` | ~small
+- [x] **P0** | Update config paths to `~/.config/linkdingctl/` | ~small
   - Acceptance: `DefaultConfigPath()` returns `~/.config/linkdingctl/config.yaml`; `Load()` uses `linkdingctl` directory; error messages reference `linkdingctl`
   - Files: `internal/config/config.go`
 
