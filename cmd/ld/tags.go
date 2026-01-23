@@ -279,25 +279,27 @@ func runTagsDelete(cmd *cobra.Command, args []string) error {
 	client := api.NewClient(cfg.URL, cfg.Token)
 
 	// Get all bookmarks with the tag to check count
-	bookmarkList, err := client.GetBookmarks("", []string{tagName}, nil, nil, 1000, 0)
+	allBookmarks, err := client.FetchAllBookmarks([]string{tagName}, true)
 	if err != nil {
 		return fmt.Errorf("failed to fetch bookmarks with tag '%s': %w", tagName, err)
 	}
 
+	bookmarkCount := len(allBookmarks)
+
 	// If tag has bookmarks and --force is not set, error
-	if bookmarkList.Count > 0 && !tagsDeleteForce {
-		return fmt.Errorf("tag '%s' has %d bookmark(s). Remove tag from bookmarks first or use --force to remove from all", tagName, bookmarkList.Count)
+	if bookmarkCount > 0 && !tagsDeleteForce {
+		return fmt.Errorf("tag '%s' has %d bookmark(s). Remove tag from bookmarks first or use --force to remove from all", tagName, bookmarkCount)
 	}
 
 	// If tag has no bookmarks, we can just confirm deletion
-	if bookmarkList.Count == 0 {
+	if bookmarkCount == 0 {
 		fmt.Printf("Tag '%s' has no bookmarks and will be removed.\n", tagName)
 		return nil
 	}
 
 	// If we get here, --force is set and tag has bookmarks
 	// Ask for confirmation
-	fmt.Printf("This will remove tag '%s' from %d bookmark(s).\n", tagName, bookmarkList.Count)
+	fmt.Printf("This will remove tag '%s' from %d bookmark(s).\n", tagName, bookmarkCount)
 	fmt.Print("Continue? (y/N): ")
 
 	var response string
@@ -311,9 +313,9 @@ func runTagsDelete(cmd *cobra.Command, args []string) error {
 	successCount := 0
 	errorCount := 0
 
-	for i, bookmark := range bookmarkList.Results {
+	for i, bookmark := range allBookmarks {
 		// Show progress
-		fmt.Printf("Updating bookmark %d/%d (ID: %d)...\n", i+1, bookmarkList.Count, bookmark.ID)
+		fmt.Printf("Updating bookmark %d/%d (ID: %d)...\n", i+1, bookmarkCount, bookmark.ID)
 
 		// Build new tag list: remove the tag
 		newTags := make([]string, 0, len(bookmark.TagNames)-1)

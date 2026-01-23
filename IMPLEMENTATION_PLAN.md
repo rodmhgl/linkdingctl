@@ -39,7 +39,7 @@
   - Details: Replace `client.GetBookmarks("", []string{oldTag}, nil, nil, 1000, 0)` with `client.FetchAllBookmarks([]string{oldTag}, true)`; update progress display to use `len(allBookmarks)` instead of `bookmarkList.Count`
   - Depends on: Extract fetchAllBookmarks
 
-- [ ] **P1** | Paginate tag delete operations | ~small
+- [x] **P1** | Paginate tag delete operations | ~small
   - Acceptance: `ld tags delete --force` processes all matching bookmarks regardless of count
   - Files: cmd/ld/tags.go (runTagsDelete around line 271)
   - Details: Same pattern as rename — replace fixed-limit fetch with `FetchAllBookmarks`
