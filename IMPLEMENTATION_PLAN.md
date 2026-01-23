@@ -26,7 +26,7 @@
   - Acceptance: `ld config init`, `ld config show`, `ld config test` work
   - Files: cmd/ld/config.go
 
-- [ ] **P1** | Add bookmark command | ~medium
+- [x] **P1** | Add bookmark command | ~medium
   - Acceptance: `ld add <url>` creates bookmark with all flags
   - Files: cmd/ld/add.go, internal/api/bookmarks.go
 
