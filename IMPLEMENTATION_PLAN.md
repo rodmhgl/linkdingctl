@@ -82,7 +82,7 @@
   - Acceptance: `ld import file.html` parses Netscape format
   - Files: internal/export/import.go (extend)
 
-- [ ] **P2** | Import CSV | ~small
+- [x] **P2** | Import CSV | ~small
   - Acceptance: `ld import file.csv` with proper parsing
   - Files: internal/export/import.go (extend)
 
