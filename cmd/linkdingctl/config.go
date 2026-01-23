@@ -121,9 +121,9 @@ var configShowCmd = &cobra.Command{
 
 		if jsonOutput {
 			output := map[string]interface{}{
-				"url":         cfg.URL,
-				"url_source":  urlSource,
-				"token":       redactToken(cfg.Token),
+				"url":          cfg.URL,
+				"url_source":   urlSource,
+				"token":        redactToken(cfg.Token),
 				"token_source": tokenSource,
 			}
 			return json.NewEncoder(os.Stdout).Encode(output)

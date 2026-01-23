@@ -330,7 +330,7 @@ func (c *Client) FetchAllTags() ([]models.Tag, error) {
 // CreateTag creates a new tag
 func (c *Client) CreateTag(name string) (*models.Tag, error) {
 	body := map[string]string{"name": name}
-	
+
 	resp, err := c.doRequest("POST", "/api/tags/", body)
 	if err != nil {
 		return nil, err

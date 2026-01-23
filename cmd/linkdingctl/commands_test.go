@@ -2561,7 +2561,7 @@ func TestAddWithNotes(t *testing.T) {
 				t.Fatalf("Failed to decode request: %v", err)
 			}
 			lastReceivedNotes = create.Notes
-			
+
 			bookmark := mockBookmark(1, create.URL, create.Title, create.TagNames)
 			bookmark.Notes = create.Notes
 			w.Header().Set("Content-Type", "application/json")
@@ -2608,7 +2608,7 @@ func TestAddWithNotes(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Command failed: %v", err)
 		}
-		
+
 		var bookmark models.Bookmark
 		if err := json.Unmarshal([]byte(output), &bookmark); err != nil {
 			t.Errorf("Expected valid JSON output, got error: %v", err)
@@ -2637,9 +2637,9 @@ func TestUpdateWithNotes(t *testing.T) {
 		receivedNotes *string
 		notesWasSet   bool
 	}
-	
+
 	var lastUpdate updateRequest
-	
+
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") {
 			if r.Method == "GET" {
@@ -2659,7 +2659,7 @@ func TestUpdateWithNotes(t *testing.T) {
 					receivedNotes: update.Notes,
 					notesWasSet:   update.Notes != nil,
 				}
-				
+
 				// Return updated bookmark
 				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
 				if update.Notes != nil {
@@ -2729,7 +2729,7 @@ func TestUpdateWithNotes(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Command failed: %v", err)
 		}
-		
+
 		var bookmark models.Bookmark
 		if err := json.Unmarshal([]byte(output), &bookmark); err != nil {
 			t.Errorf("Expected valid JSON output, got error: %v", err)
@@ -2778,7 +2778,7 @@ func TestTagsCreateCommand(t *testing.T) {
 			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
 				var req map[string]string
 				json.NewDecoder(r.Body).Decode(&req)
-				
+
 				tag := models.Tag{
 					ID:        42,
 					Name:      req["name"],
@@ -2814,7 +2814,7 @@ func TestTagsCreateCommand(t *testing.T) {
 			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
 				var req map[string]string
 				json.NewDecoder(r.Body).Decode(&req)
-				
+
 				tag := models.Tag{
 					ID:        99,
 					Name:      req["name"],

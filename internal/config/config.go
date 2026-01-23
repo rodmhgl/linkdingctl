@@ -23,7 +23,7 @@ func migrateFromOldPath(newConfigPath string) (bool, error) {
 	}
 
 	oldConfigPath := filepath.Join(homeDir, ".config", "ld", "config.yaml")
-	
+
 	// Check if new config already exists - if so, skip migration
 	if _, err := os.Stat(newConfigPath); err == nil {
 		return false, nil
@@ -72,13 +72,13 @@ func Load(configPath string) (*Config, error) {
 		}
 		configDir := filepath.Join(homeDir, ".config", "linkdingctl")
 		defaultPath := filepath.Join(configDir, "config.yaml")
-		
+
 		// Attempt migration from old path if needed
 		if _, err := migrateFromOldPath(defaultPath); err != nil {
 			// Log the error but don't fail - config might exist elsewhere
 			fmt.Fprintf(os.Stderr, "Warning: config migration failed: %v\n", err)
 		}
-		
+
 		v.AddConfigPath(configDir)
 		v.SetConfigName("config")
 		v.SetConfigType("yaml")
