@@ -99,7 +99,7 @@ internal/export            78.4%     70%      PASS
 
 ### Phase 8: Per-Command Connection Overrides (spec 14)
 
-- [ ] **P1** | Add `--url` and `--token` global flags | ~medium
+- [x] **P1** | Add `--url` and `--token` global flags | ~medium
   - Acceptance: `--url` and `--token` persistent flags on rootCmd; override config and env vars (highest precedence); partial override works (only `--url` or only `--token`); commands work with only CLI flags and no config file; `--token` never printed in debug output
   - Files: `cmd/ld/root.go`, `internal/config/config.go`
   - Details: Add `flagURL string` and `flagToken string` vars; register as PersistentFlags on rootCmd; modify `loadConfig()` to accept and apply overrides after `config.Load()`; if `config.Load()` fails but CLI flags provide both URL+token, succeed without config file

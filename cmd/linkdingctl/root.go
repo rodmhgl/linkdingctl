@@ -12,6 +12,8 @@ var (
 	cfgFile    string
 	jsonOutput bool
 	debugMode  bool
+	flagURL    string
+	flagToken  string
 )
 
 // rootCmd represents the base command
@@ -39,13 +41,35 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file path (default ~/.config/linkdingctl/config.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "output as JSON instead of human-readable")
 	rootCmd.PersistentFlags().BoolVar(&debugMode, "debug", false, "enable debug logging")
+	rootCmd.PersistentFlags().StringVar(&flagURL, "url", "", "LinkDing instance URL (overrides config and env)")
+	rootCmd.PersistentFlags().StringVar(&flagToken, "token", "", "API token (overrides config and env)")
 }
 
-// loadConfig loads the configuration from file and environment variables
+// loadConfig loads the configuration from file and environment variables,
+// then applies CLI flag overrides if provided.
 func loadConfig() (*config.Config, error) {
 	cfg, err := config.Load(cfgFile)
+
+	// If config loading failed but we have both URL and token from CLI flags,
+	// we can proceed without a config file
 	if err != nil {
+		if flagURL != "" && flagToken != "" {
+			cfg = &config.Config{
+				URL:   flagURL,
+				Token: flagToken,
+			}
+			return cfg, nil
+		}
 		return nil, err
 	}
+
+	// Apply CLI flag overrides (highest precedence)
+	if flagURL != "" {
+		cfg.URL = flagURL
+	}
+	if flagToken != "" {
+		cfg.Token = flagToken
+	}
+
 	return cfg, nil
 }
