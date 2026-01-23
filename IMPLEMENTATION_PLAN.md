@@ -146,7 +146,7 @@ internal/export      78.4%     70%      PASS
   - Acceptance: `config_test.go` references `linkdingctl`; `commands_test.go` uses correct binary name; all tests pass with `go test ./...`
   - Files: `internal/config/config_test.go`, `cmd/linkdingctl/commands_test.go`
 
-- [ ] **P1** | Add config migration tests | ~small
+- [x] **P1** | Add config migration tests | ~small
   - Acceptance: Test migration from old path; test skip-if-already-migrated; test old config not deleted
   - Files: `internal/config/config_test.go`
 
