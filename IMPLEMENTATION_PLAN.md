@@ -150,7 +150,7 @@ internal/export            78.4%     70%      PASS
   - Acceptance: Test migration from old path; test skip-if-already-migrated; test old config not deleted
   - Files: `internal/config/config_test.go`
 
-- [ ] **P2** | Update documentation | ~medium
+- [x] **P2** | Update documentation | ~medium
   - Acceptance: README.md, CLAUDE.md, AGENTS.md all reference `linkdingctl` binary name and config path; command examples updated
   - Files: `README.md`, `CLAUDE.md`, `AGENTS.md`
 

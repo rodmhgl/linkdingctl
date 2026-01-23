@@ -1,4 +1,4 @@
-# LinkDing CLI (`ld`)
+# LinkDing CLI (`linkdingctl`)
 
 A fast, scriptable command-line interface for managing bookmarks in your [LinkDing](https://github.com/sissbruecker/linkding) instance.
 
@@ -18,8 +18,8 @@ A fast, scriptable command-line interface for managing bookmarks in your [LinkDi
 ```bash
 git clone https://github.com/yourusername/linkding-cli
 cd linkding-cli
-go build -o ld ./cmd/ld
-sudo mv ld /usr/local/bin/
+go build -o linkdingctl ./cmd/linkdingctl
+sudo mv linkdingctl /usr/local/bin/
 ```
 
 ### Binary Releases
@@ -32,36 +32,36 @@ Download the latest binary from the [Releases page](https://github.com/yourusern
 
 ```bash
 # Interactive setup
-ld config init
+linkdingctl config init
 
 # Or set via environment variables
 export LINKDING_URL="https://linkding.example.com"
 export LINKDING_TOKEN="your-api-token"
 
 # Test connection
-ld config test
+linkdingctl config test
 ```
 
 ### 2. Add a bookmark
 
 ```bash
-ld add https://example.com --title "Example Site" --tags "reference,tools"
+linkdingctl add https://example.com --title "Example Site" --tags "reference,tools"
 ```
 
 ### 3. List bookmarks
 
 ```bash
 # List all bookmarks
-ld list
+linkdingctl list
 
 # Filter by tags
-ld list --tags "homelab,docker"
+linkdingctl list --tags "homelab,docker"
 
 # Show only unread bookmarks
-ld list --unread
+linkdingctl list --unread
 
 # JSON output for scripting
-ld list --json
+linkdingctl list --json
 ```
 
 ## Commands
@@ -70,16 +70,16 @@ ld list --json
 
 ```bash
 # Initialize configuration interactively
-ld config init
+linkdingctl config init
 
 # Show current configuration
-ld config show
+linkdingctl config show
 
 # Test connection to LinkDing
-ld config test
+linkdingctl config test
 ```
 
-Configuration is stored in `~/.config/ld/config.yaml` or can be set via environment variables:
+Configuration is stored in `~/.config/linkdingctl/config.yaml` or can be set via environment variables:
 - `LINKDING_URL`
 - `LINKDING_TOKEN`
 
@@ -88,7 +88,7 @@ Configuration is stored in `~/.config/ld/config.yaml` or can be set via environm
 #### Add
 
 ```bash
-ld add <url> [flags]
+linkdingctl add <url> [flags]
 
 Flags:
   -t, --title string         Bookmark title
@@ -99,15 +99,15 @@ Flags:
   --archived                 Add to archive
 
 Examples:
-  ld add https://example.com
-  ld add https://example.com --title "Example" --tags "dev,tools"
-  ld add https://news.com --unread --tags "reading-list"
+  linkdingctl add https://example.com
+  linkdingctl add https://example.com --title "Example" --tags "dev,tools"
+  linkdingctl add https://news.com --unread --tags "reading-list"
 ```
 
 #### List
 
 ```bash
-ld list [flags]
+linkdingctl list [flags]
 
 Flags:
   -q, --query string    Search query
@@ -118,26 +118,26 @@ Flags:
   --limit int           Number of results (default: all)
 
 Examples:
-  ld list
-  ld list --tags "homelab"
-  ld list --query "kubernetes" --limit 10
-  ld list --unread --json
+  linkdingctl list
+  linkdingctl list --tags "homelab"
+  linkdingctl list --query "kubernetes" --limit 10
+  linkdingctl list --unread --json
 ```
 
 #### Get
 
 ```bash
-ld get <id>
+linkdingctl get <id>
 
 Examples:
-  ld get 123
-  ld get 123 --json
+  linkdingctl get 123
+  linkdingctl get 123 --json
 ```
 
 #### Update
 
 ```bash
-ld update <id> [flags]
+linkdingctl update <id> [flags]
 
 Flags:
   --url string              New URL
@@ -151,42 +151,42 @@ Flags:
   --archived bool           Set archived status
 
 Examples:
-  ld update 123 --title "New Title"
-  ld update 123 --add-tags "important"
-  ld update 123 --archived=true
+  linkdingctl update 123 --title "New Title"
+  linkdingctl update 123 --add-tags "important"
+  linkdingctl update 123 --archived=true
 ```
 
 #### Delete
 
 ```bash
-ld delete <id> [flags]
+linkdingctl delete <id> [flags]
 
 Flags:
   -f, --force   Skip confirmation prompt
 
 Examples:
-  ld delete 123
-  ld delete 123 --force
+  linkdingctl delete 123
+  linkdingctl delete 123 --force
 ```
 
 ### Tags
 
 ```bash
 # List all tags with bookmark counts
-ld tags
+linkdingctl tags
 
 # Sort by name or count
-ld tags --sort name
-ld tags --sort count
+linkdingctl tags --sort name
+linkdingctl tags --sort count
 
 # Rename a tag across all bookmarks
-ld tags rename <old> <new>
-ld tags rename "home-lab" "homelab"
+linkdingctl tags rename <old> <new>
+linkdingctl tags rename "home-lab" "homelab"
 
 # Delete a tag (shows affected bookmarks)
-ld tags delete <name>
-ld tags delete "obsolete"
-ld tags delete "obsolete" --force  # Skip confirmation
+linkdingctl tags delete <name>
+linkdingctl tags delete "obsolete"
+linkdingctl tags delete "obsolete" --force  # Skip confirmation
 ```
 
 ### Import/Export
@@ -194,7 +194,7 @@ ld tags delete "obsolete" --force  # Skip confirmation
 #### Export
 
 ```bash
-ld export [flags]
+linkdingctl export [flags]
 
 Flags:
   -f, --format string    Output format: json, html, csv (default: json)
@@ -203,9 +203,9 @@ Flags:
   --archived             Include archived bookmarks (default: true)
 
 Examples:
-  ld export > bookmarks.json
-  ld export -f html -o bookmarks.html
-  ld export --tags homelab -f csv -o homelab.csv
+  linkdingctl export > bookmarks.json
+  linkdingctl export -f html -o bookmarks.html
+  linkdingctl export --tags homelab -f csv -o homelab.csv
 ```
 
 **Export Formats:**
@@ -216,7 +216,7 @@ Examples:
 #### Import
 
 ```bash
-ld import <file> [flags]
+linkdingctl import <file> [flags]
 
 Flags:
   -f, --format string      Input format: json, html, csv (default: auto-detect)
@@ -225,9 +225,9 @@ Flags:
   -T, --add-tags strings   Add these tags to all imported bookmarks
 
 Examples:
-  ld import bookmarks.json
-  ld import bookmarks.html --add-tags "imported"
-  ld import export.csv --dry-run
+  linkdingctl import bookmarks.json
+  linkdingctl import bookmarks.html --add-tags "imported"
+  linkdingctl import export.csv --dry-run
 ```
 
 Format is auto-detected from file extension:
@@ -238,16 +238,16 @@ Format is auto-detected from file extension:
 #### Backup
 
 ```bash
-ld backup [flags]
+linkdingctl backup [flags]
 
 Flags:
   -o, --output string    Output directory (default: current directory)
   --prefix string        Filename prefix (default: "linkding-backup")
 
 Examples:
-  ld backup
-  ld backup -o ~/backups/
-  ld backup --prefix my-backup
+  linkdingctl backup
+  linkdingctl backup -o ~/backups/
+  linkdingctl backup --prefix my-backup
 
 # Creates: linkding-backup-2026-01-22T103000.json
 ```
@@ -255,16 +255,16 @@ Examples:
 #### Restore
 
 ```bash
-ld restore <backup-file> [flags]
+linkdingctl restore <backup-file> [flags]
 
 Flags:
   --dry-run   Show what would be restored
   --wipe      Delete all existing bookmarks before restore (DANGEROUS)
 
 Examples:
-  ld restore backup.json
-  ld restore backup.json --dry-run
-  ld restore backup.json --wipe  # Requires confirmation
+  linkdingctl restore backup.json
+  linkdingctl restore backup.json --dry-run
+  linkdingctl restore backup.json --wipe  # Requires confirmation
 
 # Without --wipe: Updates existing bookmarks, adds new ones
 # With --wipe: Deletes ALL bookmarks first, then imports
@@ -276,21 +276,21 @@ All commands support `--json` output for easy parsing:
 
 ```bash
 # Get bookmark count
-ld list --json | jq '.count'
+linkdingctl list --json | jq '.count'
 
 # Export URLs from a specific tag
-ld list --tags "homelab" --json | jq -r '.results[].url'
+linkdingctl list --tags "homelab" --json | jq -r '.results[].url'
 
 # Backup all bookmarks nightly
-0 2 * * * ld backup -o ~/backups/ > /dev/null 2>&1
+0 2 * * * linkdingctl backup -o ~/backups/ > /dev/null 2>&1
 
 # Find bookmarks without tags
-ld list --json | jq '.results[] | select(.tag_names | length == 0) | {id, title}'
+linkdingctl list --json | jq '.results[] | select(.tag_names | length == 0) | {id, title}'
 ```
 
 ## Configuration File
 
-Location: `~/.config/ld/config.yaml`
+Location: `~/.config/linkdingctl/config.yaml`
 
 ```yaml
 url: https://linkding.example.com
@@ -314,7 +314,7 @@ Environment variables override the config file:
 
 - Single binary, no external dependencies
 - Uses LinkDing's REST API
-- Config via `~/.config/ld/config.yaml` or environment variables
+- Config via `~/.config/linkdingctl/config.yaml` or environment variables
 - All state stored in LinkDing (no local database)
 
 ## Development
@@ -326,7 +326,7 @@ Environment variables override the config file:
 ### Building
 
 ```bash
-go build -o ld ./cmd/ld
+go build -o linkdingctl ./cmd/linkdingctl
 ```
 
 ### Testing
@@ -338,7 +338,7 @@ go test ./...
 ### Code Structure
 
 ```
-cmd/ld/           # Command implementations
+cmd/linkdingctl/           # Command implementations
 internal/
   api/            # LinkDing API client
   config/         # Configuration loading
