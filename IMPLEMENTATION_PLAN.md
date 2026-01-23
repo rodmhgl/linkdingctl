@@ -30,7 +30,7 @@
   - Acceptance: `ld add <url>` creates bookmark with all flags
   - Files: cmd/ld/add.go, internal/api/bookmarks.go
 
-- [ ] **P1** | List bookmarks command | ~medium
+- [x] **P1** | List bookmarks command | ~medium
   - Acceptance: `ld list` with filters, table output, JSON output
   - Files: cmd/ld/list.go
 
