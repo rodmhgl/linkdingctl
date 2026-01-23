@@ -1,7 +1,7 @@
 .PHONY: help build test install clean lint vet fmt cover
 
 # Variables
-BINARY_NAME=ld
+BINARY_NAME=linkdingctl
 BUILD_DIR=.
 INSTALL_DIR=/usr/local/bin
 GO=go
@@ -15,7 +15,7 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 build: ## Build the binary
-	$(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/ld
+	$(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/linkdingctl
 
 test: ## Run tests
 	$(GO) test -v ./...

@@ -122,7 +122,7 @@ internal/export      78.4%     70%      PASS
   - Acceptance: All Go source files moved to `cmd/linkdingctl/`; package still compiles; `go build ./cmd/linkdingctl` succeeds
   - Files: `cmd/ld/*.go` → `cmd/linkdingctl/*.go`
 
-- [ ] **P0** | Update Makefile for new binary name | ~small
+- [x] **P0** | Update Makefile for new binary name | ~small
   - Acceptance: `BINARY_NAME=linkdingctl`; build path `./cmd/linkdingctl`; `make build` produces `./linkdingctl`; all targets work
   - Files: `Makefile`
 
