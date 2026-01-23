@@ -66,7 +66,7 @@
   - Acceptance: `ld export` outputs valid JSON with metadata
   - Files: cmd/ld/export.go, internal/export/json.go
 
-- [ ] **P2** | Export HTML | ~medium
+- [x] **P2** | Export HTML | ~medium
   - Acceptance: `ld export -f html` produces Netscape format
   - Files: internal/export/html.go
 
