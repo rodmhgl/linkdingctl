@@ -63,16 +63,12 @@ cover: ## Run tests with coverage validation (min 70% per package)
 			pkg=$$(echo "$$line" | awk '{print $$2}'); \
 			cov=$$(echo "$$line" | grep -oP '\d+\.\d+(?=% of statements)'); \
 			if [ -n "$$cov" ]; then \
-				if echo "$$pkg" | grep -q "cmd/"; then \
-					echo "⏭️  SKIP: $$pkg (no test files)"; \
+				result=$$(echo "$$cov < 70" | bc -l); \
+				if [ "$$result" -eq 1 ]; then \
+					echo "❌ FAIL: $$pkg has $$cov% coverage (below 70%)"; \
+					failed=1; \
 				else \
-					result=$$(echo "$$cov < 70" | bc -l); \
-					if [ "$$result" -eq 1 ]; then \
-						echo "❌ FAIL: $$pkg has $$cov% coverage (below 70%)"; \
-						failed=1; \
-					else \
-						echo "✅ PASS: $$pkg has $$cov% coverage"; \
-					fi; \
+					echo "✅ PASS: $$pkg has $$cov% coverage"; \
 				fi; \
 			fi; \
 		fi; \

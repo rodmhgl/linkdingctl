@@ -85,7 +85,7 @@ internal/export      78.4%     70%      PASS (+8.4%)
 
 ### Phase 5: Coverage Gate Enforcement (spec 07)
 
-- [ ] **P3** | Update Makefile cover target for cmd/ld | ~small
+- [x] **P3** | Update Makefile cover target for cmd/ld | ~small
   - Acceptance: `make cover` validates all packages including `cmd/ld` (currently skipped with "SKIP: cmd/ (no test files)" even though test file exists)
   - Files: `Makefile`
   - Details: The Makefile `cover` target currently skips `cmd/` packages entirely. Now that `cmd/ld/commands_test.go` exists, update the logic to include it in the 70% gate
