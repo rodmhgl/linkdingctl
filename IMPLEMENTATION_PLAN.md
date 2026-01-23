@@ -4,7 +4,7 @@
 
 ## Phase 0: Foundation
 
-- [ ] **P0** | Project scaffolding | ~small
+- [x] **P0** | Project scaffolding | ~small
   - Acceptance: `go mod init`, directory structure created, main.go compiles
   - Files: go.mod, cmd/ld/main.go, internal/ directories
 
