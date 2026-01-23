@@ -399,7 +399,7 @@ func (c *Client) GetUserProfile() (*models.UserProfile, error) {
 	}
 
 	if resp.StatusCode == http.StatusForbidden {
-		return nil, fmt.Errorf("access forbidden. You don't have permission to view this profile")
+		return nil, fmt.Errorf("Insufficient permissions for this operation.")
 	}
 
 	if resp.StatusCode != http.StatusOK {

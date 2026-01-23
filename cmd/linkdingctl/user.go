@@ -40,13 +40,32 @@ var userProfileCmd = &cobra.Command{
 		}
 
 		if jsonOutput {
-			return json.NewEncoder(os.Stdout).Encode(profile)
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			return enc.Encode(profile)
 		}
 
-		fmt.Printf("Username: %s\n", profile.Username)
-		fmt.Printf("Display Name: %s\n", profile.DisplayName)
-		fmt.Printf("Theme: %s\n", profile.Theme)
-		fmt.Printf("Bookmark Count: %d\n", profile.BookmarkCount)
+		// Helper function to convert bool to enabled/disabled
+		boolToStatus := func(b bool) string {
+			if b {
+				return "enabled"
+			}
+			return "disabled"
+		}
+
+		fmt.Printf("Theme:                  %s\n", profile.Theme)
+		fmt.Printf("Bookmark Date Display:  %s\n", profile.BookmarkDateDisplay)
+		fmt.Printf("Bookmark Link Target:   %s\n", profile.BookmarkLinkTarget)
+		fmt.Printf("Web Archive:            %s\n", profile.WebArchiveIntegration)
+		fmt.Printf("Tag Search:             %s\n", profile.TagSearch)
+		fmt.Printf("Sharing:                %s\n", boolToStatus(profile.EnableSharing))
+		fmt.Printf("Public Sharing:         %s\n", boolToStatus(profile.EnablePublicSharing))
+		fmt.Printf("Favicons:               %s\n", boolToStatus(profile.EnableFavicons))
+		fmt.Printf("Display URL:            %s\n", boolToStatus(profile.DisplayURL))
+		fmt.Printf("Permanent Notes:        %s\n", boolToStatus(profile.PermanentNotes))
+		fmt.Printf("Search Sort:            %s\n", profile.SearchPreferences.Sort)
+		fmt.Printf("Search Shared:          %s\n", profile.SearchPreferences.Shared)
+		fmt.Printf("Search Unread:          %s\n", profile.SearchPreferences.Unread)
 		return nil
 	},
 }

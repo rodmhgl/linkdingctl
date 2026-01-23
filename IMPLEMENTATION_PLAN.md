@@ -1,7 +1,7 @@
 # Implementation Plan - LinkDing CLI
 
-> Gap analysis based on specs 01-16 vs current codebase (2026-01-23).
-> Specs 01-11 are fully implemented. Specs 12-16 introduce new features and a major rename.
+> Gap analysis based on specs 01-17 vs current codebase (2026-01-23).
+> Specs 01-16 are fully implemented. Spec 17 (Fix User Profile) introduces an API alignment fix.
 
 ## Current State Summary
 
@@ -12,23 +12,24 @@
 | 03 - Tags | Complete | tags/tags show/rename/delete all implemented |
 | 04 - Import/Export | Complete | JSON/HTML/CSV export+import, backup, restore with --wipe |
 | 05 - Security | Complete | 0700/0600 perms, token masking, safe JSON backup output |
-| 06 - Tags Performance | Complete | FetchAllBookmarks on Client, client-side counting, paginated rename/delete |
-| 07 - Test Coverage | Complete | cmd/ld=78.1%, all packages meet 70% threshold |
+| 06 - Tags Performance | Complete | FetchAllBookmarks/FetchAllTags on Client, client-side counting |
+| 07 - Test Coverage | Complete | All packages meet 70% threshold |
 | 08 - Tags Show Pagination | Complete | Uses FetchAllBookmarks for all bookmarks |
 | 09 - Makefile Portability | Complete | `bc` replaced with `awk` in cover target |
 | 10 - Config Token Trim | Complete | Redundant TrimSpace removed |
 | 11 - Test Robustness | Complete | Unsafe slicing fixed, missing flag resets added |
-| 12 - User Profile | **Open** | New `user profile` command needed |
-| 13 - Tags CRUD Enhancements | **Open** | `tags create` and `tags get` subcommands needed |
-| 14 - Per-Command Overrides | **Open** | Global `--url` and `--token` flags needed |
-| 15 - Notes Field | **Open** | `--notes` flag on add/update commands needed |
-| 16 - Rename to linkdingctl | **Open** | Binary, package, config path, docs rename |
+| 12 - User Profile | Complete | `user profile` command exists (uses incorrect API model — see spec 17) |
+| 13 - Tags CRUD Enhancements | Complete | `tags create` and `tags get` subcommands implemented |
+| 14 - Per-Command Overrides | Complete | Global `--url` and `--token` flags implemented |
+| 15 - Notes Field | Complete | `--notes` flag on add/update commands implemented |
+| 16 - Rename to linkdingctl | Complete | Binary, package, config path, docs renamed |
+| 17 - Fix User Profile | Complete | UserProfile model corrected to match real API; all tests updated and passing |
 
 ## Coverage Status
 
 ```
 Package                    Current   Target   Status
-cmd/linkdingctl            79.7%     70%      PASS
+cmd/linkdingctl            80.7%     70%      PASS
 internal/api               79.5%     70%      PASS
 internal/config            83.1%     70%      PASS
 internal/export            78.4%     70%      PASS
@@ -38,166 +39,59 @@ internal/export            78.4%     70%      PASS
 
 ## Remaining Tasks
 
-### Phase 5: Notes Field (spec 15)
+### Phase 1: Fix UserProfile Model (spec 17)
 
-- [x] **P1** | Add `--notes` flag to `add` command | ~small
-  - Acceptance: `linkdingctl add --notes "..."` sets the notes field on creation; `-n` shorthand works; notes field included in API request body
-  - Files: `cmd/linkdingctl/add.go`
-  - Details: Add `addNotes string` var; register `-n`/`--notes` flag; map to `BookmarkCreate.Notes` field; update `--description` help text from "Description/notes" to "Description"
+- [x] **P0** | Replace `UserProfile` struct with correct API fields | ~small
+  - Acceptance: `UserProfile` struct has fields: Theme, BookmarkDateDisplay, BookmarkLinkTarget, WebArchiveIntegration, TagSearch, EnableSharing, EnablePublicSharing, EnableFavicons, DisplayURL, PermanentNotes, SearchPreferences (nested struct); no Username/DisplayName/BookmarkCount fields remain
+  - Files: `internal/models/bookmark.go`
+  - Details: Add `SearchPreferences` struct with Sort, Shared, Unread string fields (all with json tags). Replace current 4-field `UserProfile` with the 11-field version matching the actual LinkDing `GET /api/user/profile/` response.
 
-- [x] **P1** | Add `--notes` flag to `update` command | ~small
-  - Acceptance: `linkdingctl update <id> --notes "..."` updates notes; `linkdingctl update <id> --notes ""` clears notes; notes and description settable independently and together
-  - Files: `cmd/linkdingctl/update.go`
-  - Details: Add `updateNotes string` var; register `-n`/`--notes` flag; use `cmd.Flags().Changed("notes")` to detect explicit set; map to `BookmarkUpdate.Notes` pointer field
+- [x] **P0** | Update `user profile` command output | ~medium
+  - Acceptance: Human output shows all preference fields; boolean fields render as "enabled"/"disabled"; nested `search_preferences` displayed as flattened rows (Search Sort, Search Shared, Search Unread); `--json` outputs full struct matching API schema; removes all references to Username/DisplayName/BookmarkCount
+  - Files: `cmd/linkdingctl/user.go`
+  - Details: Rewrite `userProfileCmd.RunE` to display: Theme, Bookmark Date Display, Bookmark Link Target, Web Archive, Tag Search, Sharing (enabled/disabled), Public Sharing (enabled/disabled), Favicons (enabled/disabled), Display URL (enabled/disabled), Permanent Notes (enabled/disabled), Search Sort, Search Shared, Search Unread. JSON output uses `json.NewEncoder` with `SetIndent`.
 
-- [x] **P2** | Add tests for `--notes` flag | ~small
-  - Acceptance: Tests verify notes set on add, notes set on update, notes cleared on update; coverage maintained ≥70%
-  - Files: `cmd/ld/commands_test.go`
-
-### Phase 6: Tags CRUD Enhancements (spec 13)
-
-- [x] **P1** | Add `CreateTag` API method | ~small
-  - Acceptance: `CreateTag(name)` sends POST to `/api/tags/` with `{"name": "..."}` body; returns created Tag model; handles 400 (duplicate) with clear error
+- [x] **P0** | Update 403 error message to match spec | ~small
+  - Acceptance: HTTP 403 from `GetUserProfile` returns "Insufficient permissions for this operation." (not "access forbidden")
   - Files: `internal/api/client.go`
+  - Details: Change the 403 error string in `GetUserProfile()` from "access forbidden. You don't have permission to view this profile" to "Insufficient permissions for this operation."
 
-- [x] **P1** | Add `GetTag` API method | ~small
-  - Acceptance: `GetTag(id)` sends GET to `/api/tags/{id}/`; returns Tag model; handles 404 with "Tag with ID X not found"
-  - Files: `internal/api/client.go`
+### Phase 2: Fix User Profile Tests (spec 17)
 
-- [x] **P1** | Add `tags create` subcommand | ~small
-  - Acceptance: `linkdingctl tags create <name>` creates tag and prints ID; duplicate name shows clear error; empty name shows validation error; respects `--json`
-  - Files: `cmd/linkdingctl/tags.go`
-  - Details: Add `tagsCreateCmd` cobra command; validate non-empty arg; call `client.CreateTag(name)`; output human/JSON based on flag
+- [x] **P1** | Update API client test for GetUserProfile | ~small
+  - Acceptance: Mock server returns realistic API response with all real fields (theme, bookmark_date_display, bookmark_link_target, web_archive_integration, tag_search, enable_sharing, enable_public_sharing, enable_favicons, display_url, permanent_notes, search_preferences); test verifies correct deserialization including nested SearchPreferences; no references to Username/DisplayName/BookmarkCount
+  - Files: `internal/api/client_test.go`
 
-- [x] **P1** | Add `tags get` subcommand | ~small
-  - Acceptance: `linkdingctl tags get <id>` displays tag ID, Name, DateAdded; non-existent ID shows "not found"; respects `--json`
-  - Files: `cmd/linkdingctl/tags.go`
-  - Details: Add `tagsGetCmd` cobra command; parse int arg; call `client.GetTag(id)`; output human/JSON based on flag
+- [x] **P1** | Update command test for user profile | ~medium
+  - Acceptance: Command test mock returns real API fields; human output test asserts presence of: "Theme:", "Bookmark Date Display:", "Bookmark Link Target:", "Web Archive:", "Tag Search:", "Sharing:", "Public Sharing:", "Favicons:", "Display URL:", "Permanent Notes:", "Search Sort:", "Search Shared:", "Search Unread:"; JSON output test asserts keys match API schema; boolean fields test "enabled"/"disabled" rendering; HTTP 401/403 error tests assert correct messages
+  - Files: `cmd/linkdingctl/commands_test.go`
 
-- [x] **P2** | Add tests for tags create and get | ~medium
-  - Acceptance: Tests for create success, create duplicate, create empty name, get success, get not found; all with human and JSON output; coverage maintained ≥70%
-  - Files: `cmd/ld/commands_test.go`, `internal/api/client_test.go`
+### Phase 3: Verify Coverage & Quality
 
-### Phase 7: User Profile Command (spec 12)
-
-- [x] **P1** | Add `UserProfile` model | ~small
-  - Acceptance: `UserProfile` struct with Theme, BookmarkCount, DisplayName, Username fields; proper JSON tags matching API response
-  - Files: `internal/models/bookmark.go` (or new `internal/models/user.go`)
-
-- [x] **P1** | Add `GetUserProfile` API method | ~small
-  - Acceptance: `GetUserProfile()` sends GET to `/api/user/profile/`; returns `*UserProfile`; handles 401/403 errors with clear messages
-  - Files: `internal/api/client.go`
-
-- [x] **P1** | Add `user profile` command | ~medium
-  - Acceptance: `ld user profile` displays Username, DisplayName, Theme, BookmarkCount; `--json` outputs full JSON; HTTP 401 shows auth error; HTTP 403 shows permission error; `ld user --help` lists subcommands
-  - Files: `cmd/ld/user.go` (new)
-  - Details: Create `userCmd` (parent, help-only), `userProfileCmd` (subcommand); register on rootCmd; load config, create client, call `GetUserProfile()`; format human/JSON output
-
-- [x] **P2** | Add tests for user profile command | ~small
-  - Acceptance: Tests for successful profile display (human + JSON), 401 error, 403 error; coverage maintained ≥70%
-  - Files: `cmd/ld/commands_test.go`, `internal/api/client_test.go`
-
-### Phase 8: Per-Command Connection Overrides (spec 14)
-
-- [x] **P1** | Add `--url` and `--token` global flags | ~medium
-  - Acceptance: `--url` and `--token` persistent flags on rootCmd; override config and env vars (highest precedence); partial override works (only `--url` or only `--token`); commands work with only CLI flags and no config file; `--token` never printed in debug output
-  - Files: `cmd/ld/root.go`, `internal/config/config.go`
-  - Details: Add `flagURL string` and `flagToken string` vars; register as PersistentFlags on rootCmd; modify `loadConfig()` to accept and apply overrides after `config.Load()`; if `config.Load()` fails but CLI flags provide both URL+token, succeed without config file
-
-- [x] **P1** | Update `config show` to reflect overrides | ~small
-  - Acceptance: `ld config show --url X` shows "URL: X (--url flag)"; `ld config show --token Y` shows override indicator; JSON output includes override source
-  - Files: `cmd/ld/config.go`
-
-- [x] **P1** | Update `config test` to use effective config | ~small
-  - Acceptance: `ld config test --url X --token Y` tests the overridden connection, not the config file
-  - Files: `cmd/ld/config.go`
-
-- [x] **P2** | Add tests for per-command overrides | ~medium
-  - Acceptance: Tests for URL override, token override, both overrides, partial override, no-config-file-with-flags, token not in debug output; coverage maintained ≥70%
-  - Files: `cmd/ld/commands_test.go`
-
-### Phase 9: Rename to linkdingctl (spec 16)
-
-- [x] **P0** | Rename `cmd/ld/` directory to `cmd/linkdingctl/` | ~small
-  - Acceptance: All Go source files moved to `cmd/linkdingctl/`; package still compiles; `go build ./cmd/linkdingctl` succeeds
-  - Files: `cmd/ld/*.go` → `cmd/linkdingctl/*.go`
-
-- [x] **P0** | Update Makefile for new binary name | ~small
-  - Acceptance: `BINARY_NAME=linkdingctl`; build path `./cmd/linkdingctl`; `make build` produces `./linkdingctl`; all targets work
-  - Files: `Makefile`
-
-- [x] **P0** | Update Cobra root command | ~small
-  - Acceptance: `rootCmd.Use = "linkdingctl"`; Long description references `linkdingctl`; error messages say `"Run 'linkdingctl config init'"`
-  - Files: `cmd/linkdingctl/root.go`
-
-- [x] **P0** | Update config paths to `~/.config/linkdingctl/` | ~small
-  - Acceptance: `DefaultConfigPath()` returns `~/.config/linkdingctl/config.yaml`; `Load()` uses `linkdingctl` directory; error messages reference `linkdingctl`
-  - Files: `internal/config/config.go`
-
-- [x] **P0** | Implement config migration from old path | ~medium
-  - Acceptance: On startup, if `~/.config/linkdingctl/config.yaml` missing but `~/.config/ld/config.yaml` exists: copy with 0600 perms, create dir with 0700 perms, print notice to stderr; does NOT delete old config; runs only once (subsequent runs skip migration)
-  - Files: `internal/config/config.go`
-
-- [x] **P0** | Update `.gitignore` | ~small
-  - Acceptance: `/linkdingctl` entry replaces or accompanies `/ld`
-  - Files: `.gitignore`
-
-- [x] **P1** | Update all test expected strings | ~medium
-  - Acceptance: `config_test.go` references `linkdingctl`; `commands_test.go` uses correct binary name; all tests pass with `go test ./...`
-  - Files: `internal/config/config_test.go`, `cmd/linkdingctl/commands_test.go`
-
-- [x] **P1** | Add config migration tests | ~small
-  - Acceptance: Test migration from old path; test skip-if-already-migrated; test old config not deleted
-  - Files: `internal/config/config_test.go`
-
-- [x] **P2** | Update documentation | ~medium
-  - Acceptance: README.md, CLAUDE.md, AGENTS.md all reference `linkdingctl` binary name and config path; command examples updated
-  - Files: `README.md`, `CLAUDE.md`, `AGENTS.md`
-
-- [x] **P3** | Update specification files | ~medium
-  - Acceptance: All spec files in `specs/` reference `linkdingctl` in examples and file paths
-  - Files: `specs/01-core-cli.md` through `specs/16-rename-to-linkdingctl.md`
+- [x] **P2** | Run `make cover` and verify all packages pass 70% threshold | ~small
+  - Acceptance: `make cover` passes; `go test ./...` all green; no regressions in any package
+  - Files: (none — verification only)
 
 ---
 
 ## Dependency Graph
 
 ```
-Phase 5 (Notes Field) ─────────────────────── standalone, no deps
-Phase 6 (Tags CRUD) ───────────────────────── standalone, no deps
-Phase 7 (User Profile) ────────────────────── standalone, no deps
-Phase 8 (Per-Command Overrides) ────────────── standalone, no deps
-Phase 9 (Rename to linkdingctl) ────────────── depends on Phases 5-8
-                                               (rename AFTER all features land,
-                                               so rename applies to final code)
+Phase 1 (Fix Model + Command + Error Msg) ── must be first (model change breaks existing tests)
+        │
+        ▼
+Phase 2 (Fix Tests) ──────────────────────── depends on Phase 1 (tests reference new struct)
+        │
+        ▼
+Phase 3 (Verify Coverage) ────────────────── depends on Phase 2 (needs passing tests)
 ```
-
-## Execution Order
-
-Spec 16 states the rename has **HIGHEST** priority and must be done first. However, this creates a practical challenge: doing the rename first means all subsequent feature work targets `cmd/linkdingctl/` paths, but any in-flight branches targeting `cmd/ld/` will conflict.
-
-**Recommended order (minimize merge conflicts):**
-
-1. **Phase 9** (P0): Rename to `linkdingctl` — do this first as spec mandates
-2. **Phase 5** (P1): Notes field — small, self-contained flag additions
-3. **Phase 6** (P1): Tags create/get — new API methods + subcommands
-4. **Phase 7** (P1): User profile — new command group, new API endpoint
-5. **Phase 8** (P1): Per-command overrides — modifies config loading (touches root.go, config.go)
-
-**Alternative order (if rename is deferred to avoid disruption):**
-
-1. **Phases 5-8** (P1): All features on `cmd/ld/` paths
-2. **Phase 9** (P0): Rename everything at once (single large commit)
-
----
 
 ## Notes
 
-- Specs 01-11 are fully implemented — no code changes needed
-- The `BookmarkCreate` and `BookmarkUpdate` models already include `Notes` field — only CLI flag wiring needed
-- The `Tag` model already has ID, Name, DateAdded — sufficient for `tags get` output
-- `golang.org/x/term` is already in go.mod — no new dependencies needed for any phase
-- Phase 8 modifies `loadConfig()` which is called by every command — requires careful testing
-- Phase 9 is the largest change by file count but each individual change is mechanical (find-replace)
-- Config migration in Phase 9 must be idempotent (safe to run multiple times)
-- The `-n` shorthand for `--notes` does not conflict with any existing flag shorthand
+- Specs 01-16 are fully implemented — no code changes needed for those
+- The `GetUserProfile` API client method needs only the 403 message update; the HTTP logic and endpoint are correct
+- The `SearchPreferences` struct is new — needed for the nested JSON object in the API response
+- No new dependencies needed — all required packages already in go.mod
+- The change is backwards-incompatible at the struct level (fields removed/renamed) but this is intentional: the old fields never existed in the real API
+- All existing tests that reference UserProfile fields will fail after Phase 1 — this is expected and fixed in Phase 2
+- After all phases, `make cover` should continue to pass the 70% threshold

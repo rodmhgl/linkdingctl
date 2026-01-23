@@ -72,10 +72,24 @@ type TagWithCount struct {
 	Count int    `json:"count"`
 }
 
-// UserProfile represents a LinkDing user profile
+// SearchPreferences represents the user's search preference settings
+type SearchPreferences struct {
+	Sort   string `json:"sort"`
+	Shared string `json:"shared"`
+	Unread string `json:"unread"`
+}
+
+// UserProfile represents a LinkDing user profile preferences
 type UserProfile struct {
-	Theme         string `json:"theme"`
-	BookmarkCount int    `json:"bookmark_count"`
-	DisplayName   string `json:"display_name"`
-	Username      string `json:"username"`
+	Theme                 string            `json:"theme"`
+	BookmarkDateDisplay   string            `json:"bookmark_date_display"`
+	BookmarkLinkTarget    string            `json:"bookmark_link_target"`
+	WebArchiveIntegration string            `json:"web_archive_integration"`
+	TagSearch             string            `json:"tag_search"`
+	EnableSharing         bool              `json:"enable_sharing"`
+	EnablePublicSharing   bool              `json:"enable_public_sharing"`
+	EnableFavicons        bool              `json:"enable_favicons"`
+	DisplayURL            bool              `json:"display_url"`
+	PermanentNotes        bool              `json:"permanent_notes"`
+	SearchPreferences     SearchPreferences `json:"search_preferences"`
 }
