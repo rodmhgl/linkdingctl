@@ -45,7 +45,7 @@
   - Details: Same pattern as rename — replace fixed-limit fetch with `FetchAllBookmarks`
   - Depends on: Extract fetchAllBookmarks
 
-- [ ] **P1** | Paginate tags list | ~small
+- [x] **P1** | Paginate tags list | ~small
   - Acceptance: `ld tags` displays all tags even if count exceeds 1000
   - Files: cmd/ld/tags.go (runTags around line 60), internal/api/client.go
   - Details: Add `Client.FetchAllTags() ([]models.Tag, error)` that loops with pagination until `Next == nil`; replace `client.GetTags(1000, 0)` with `client.FetchAllTags()`

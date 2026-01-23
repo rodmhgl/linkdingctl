@@ -299,3 +299,30 @@ func (c *Client) GetTags(limit, offset int) (*models.TagList, error) {
 
 	return &tagList, nil
 }
+
+// FetchAllTags retrieves all tags from the API, handling pagination automatically.
+func (c *Client) FetchAllTags() ([]models.Tag, error) {
+	var allTags []models.Tag
+	limit := 100
+	offset := 0
+
+	for {
+		// Fetch a page of tags
+		tagList, err := c.GetTags(limit, offset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch tags: %w", err)
+		}
+
+		// Add to results
+		allTags = append(allTags, tagList.Results...)
+
+		// Check if there are more pages
+		if tagList.Next == nil || len(tagList.Results) == 0 {
+			break
+		}
+
+		offset += limit
+	}
+
+	return allTags, nil
+}

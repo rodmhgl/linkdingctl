@@ -57,7 +57,7 @@ func runTags(cmd *cobra.Command, args []string) error {
 	client := api.NewClient(cfg.URL, cfg.Token)
 
 	// Fetch all tags to get complete list (including unused ones)
-	tagList, err := client.GetTags(1000, 0)
+	allTagsList, err := client.FetchAllTags()
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func runTags(cmd *cobra.Command, args []string) error {
 	tagCounts := make(map[string]int)
 	
 	// Initialize all tags with 0 count
-	for _, tag := range tagList.Results {
+	for _, tag := range allTagsList {
 		tagCounts[tag.Name] = 0
 	}
 	
