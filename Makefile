@@ -63,7 +63,7 @@ cover: ## Run tests with coverage validation (min 70% per package)
 			pkg=$$(echo "$$line" | awk '{print $$2}'); \
 			cov=$$(echo "$$line" | grep -oP '\d+\.\d+(?=% of statements)'); \
 			if [ -n "$$cov" ]; then \
-				result=$$(echo "$$cov < 70" | bc -l); \
+				result=$$(echo "$$cov 70" | awk '{print ($$1 < $$2)}'); \
 				if [ "$$result" -eq 1 ]; then \
 					echo "❌ FAIL: $$pkg has $$cov% coverage (below 70%)"; \
 					failed=1; \

@@ -1,7 +1,7 @@
 # Implementation Plan - LinkDing CLI
 
-> Gap analysis based on specs 01-08 vs current codebase (2026-01-23).
-> Previous phases (0-8 original items) were marked complete but re-analysis reveals remaining defects and coverage gaps.
+> Gap analysis based on specs 01-11 vs current codebase (2026-01-23).
+> Specs 01-08 are fully implemented. Specs 09-11 introduce new defects and cleanup tasks.
 
 ## Current State Summary
 
@@ -9,121 +9,110 @@
 |------|--------|-------|
 | 01 - Core CLI | Complete | Config init/show/test, env overrides, --json, --debug all work |
 | 02 - Bookmark CRUD | Complete | add/list/get/update/delete all implemented with --json |
-| 03 - Tags | Complete | `tags show` now uses FetchAllBookmarks (spec 08 fixed) |
+| 03 - Tags | Complete | tags/tags show/rename/delete all implemented |
 | 04 - Import/Export | Complete | JSON/HTML/CSV export+import, backup, restore with --wipe |
 | 05 - Security | Complete | 0700/0600 perms, token masking, safe JSON backup output |
 | 06 - Tags Performance | Complete | FetchAllBookmarks on Client, client-side counting, paginated rename/delete |
-| 07 - Test Coverage | **Partial** | config=70.3%, export=78.4%, cmd/ld=55.5% (target 70%, gate enforced) |
-| 08 - Tags Show Pagination | Complete | Now calls FetchAllBookmarks to retrieve all bookmarks |
+| 07 - Test Coverage | **Partial** | cmd/ld=55.5% (target 70%), other packages meet threshold |
+| 08 - Tags Show Pagination | Complete | Uses FetchAllBookmarks for all bookmarks |
+| 09 - Makefile Portability | **Open** | `bc` dependency remains in `cover` target |
+| 10 - Config Token Trim | **Open** | Redundant `strings.TrimSpace(token)` on line 56 of config.go |
+| 11 - Test Robustness | **Open** | Unsafe string slicing in config_test.go; missing flag resets in commands_test.go |
 
 ## Coverage Status
 
 ```
 Package              Current   Target   Status
-cmd/ld               55.5%     70%      PARTIAL (+7.3%, gate enforced in Makefile)
+cmd/ld               55.5%     70%      BELOW THRESHOLD (-14.5%)
 internal/api         80.1%     70%      PASS
-internal/config      70.3%     70%      PASS (+0.3%)
-internal/export      78.4%     70%      PASS (+8.4%)
+internal/config      70.3%     70%      PASS
+internal/export      78.4%     70%      PASS
 ```
 
 ---
 
 ## Remaining Tasks
 
-### Phase 1: Bug Fix (spec 08)
+### Phase 1: Makefile Portability (spec 09)
 
-- [x] **P0** | Fix `tags show` pagination defect | ~small
-  - Acceptance: `ld tags show <tag>` returns ALL matching bookmarks regardless of count; uses `FetchAllBookmarks` not `GetBookmarks` with fixed limit; `--json` output includes all bookmarks; output count reflects true total
-  - Files: `cmd/ld/tags.go` — `runTagsShow()` function (line ~370-394)
-  - Details: Replace `client.GetBookmarks("", []string{tagName}, nil, nil, 1000, 0)` with `client.FetchAllBookmarks([]string{tagName}, true)`, construct `BookmarkList` from results for display compatibility
+- [x] **P1** | Replace `bc` with `awk` in Makefile `cover` target | ~small
+  - Acceptance: `make cover` does not require `bc`; uses `awk` for float comparison; coverage validation behavior unchanged for all packages
+  - Files: `Makefile` (line 66)
+  - Details: Replace `result=$$(echo "$$cov < 70" | bc -l)` with `result=$$(echo "$$cov 70" | awk '{print ($$1 < $$2)}')` — `awk` is universally available, `bc` is not (Alpine, minimal Docker, some CI runners)
 
-### Phase 2: Test Coverage — config package (spec 07)
+### Phase 2: Config Token Trim Cleanup (spec 10)
 
-- [x] **P1** | Increase `internal/config` coverage to 70%+ | ~small
-  - Acceptance: `go test -cover ./internal/config/` reports >= 70%
-  - Files: `internal/config/config_test.go`
-  - Details: Current gap is 2.4%. Add tests for:
-    - `Save()` permissions verification (check 0700 dir, 0600 file via `os.Stat().Mode()`)
-    - `Load()` with custom `--config` path pointing to non-YAML file (parse error path)
-    - `Load()` with only env vars set (no file at all, env-only scenario)
+- [ ] **P1** | Remove redundant `strings.TrimSpace(token)` | ~small
+  - Acceptance: Token trimmed exactly once per code path; no redundant `TrimSpace` call; TTY and non-TTY input still work; existing tests pass
+  - Files: `cmd/ld/config.go` (line 56)
+  - Details: The final `token = strings.TrimSpace(token)` on line 56 is redundant — the TTY branch (`term.ReadPassword`) never includes a trailing newline, and the non-TTY branch already calls `TrimSpace` on line 54. Remove line 56 and add `strings.TrimSpace()` around `string(tokenBytes)` on line 46 for defensive clarity in the TTY branch.
 
-### Phase 3: Test Coverage — export package (spec 07)
+### Phase 3: Test Robustness (spec 11)
 
-- [x] **P1** | Increase `internal/export` coverage to 70%+ | ~medium
-  - Acceptance: `go test -cover ./internal/export/` reports >= 70%
-  - Files: `internal/export/import_test.go`, `internal/export/csv_test.go`, `internal/export/json_test.go`
-  - Details: Current gap is 10.7%. Missing coverage areas:
-    - `ExportCSV` function (actual export via mock HTTP server, not just format tests)
-    - `ExportJSON` function (actual export via mock HTTP server)
-    - `importCSV` with missing columns (graceful handling)
-    - `importCSV` error on malformed CSV rows
-    - `importHTML` with `--add-tags` option
-    - `importHTML` with `--skip-duplicates`
-    - `importCSV` with `--skip-duplicates` and `--add-tags`
-    - `importCSV` with existing bookmark updates (PATCH path)
-    - `ImportBookmarks` entry point (auto-detect format dispatch, unsupported format error)
+- [ ] **P1** | Fix unsafe string slicing in config test | ~small
+  - Acceptance: `TestLoad_NonYAMLFile` uses `strings.Contains` or `strings.HasPrefix` (no direct slice); cannot panic on short error messages; all existing tests pass
+  - Files: `internal/config/config_test.go` (line 251)
+  - Details: Replace `err.Error()[:len(expectedErrSubstring)] != expectedErrSubstring` with `!strings.Contains(err.Error(), expectedErrSubstring)` — the current code panics with index-out-of-range if the error is shorter than the expected substring
 
-### Phase 4: Test Coverage — cmd/ld package (spec 07)
+- [ ] **P1** | Add missing flag resets to `executeCommand` helper | ~small
+  - Acceptance: `executeCommand` resets `backupOutput`, `backupPrefix`, `tagsRenameForce`, `tagsDeleteForce`; no test pollution between runs; all existing tests pass
+  - Files: `cmd/ld/commands_test.go` (after line 83)
+  - Details: Add the following resets to the `executeCommand` function after the existing flag resets:
+    ```go
+    backupOutput = "."
+    backupPrefix = "linkding-backup"
+    tagsRenameForce = false
+    tagsDeleteForce = false
+    ```
+    Note: `backupOutput` default is `"."` and `backupPrefix` default is `"linkding-backup"` (from flag definitions in `backup.go` init())
 
-- [x] **P2** | Increase `cmd/ld` coverage to 55.5% (from 48.2%) | ~large
-  - Acceptance: `go test -cover ./cmd/ld/` reports >= 70% (**Achieved 55.5%**, +7.3% improvement)
+### Phase 4: cmd/ld Test Coverage to 70% (spec 07)
+
+- [ ] **P2** | Increase `cmd/ld` coverage from 55.5% to 70%+ | ~large
+  - Acceptance: `go test -cover ./cmd/ld/` reports >= 70%; `make cover` passes the 70% gate for all packages
   - Files: `cmd/ld/commands_test.go`
-  - **Status: PARTIAL** - Added 28 comprehensive test cases covering all command flags and scenarios. Remaining 14.5% gap is in complex interactive commands (import/restore/tags rename/tags delete) requiring extensive stdin mocking.
-  - Completed test cases:
-    - `export` command: test JSON format output, HTML format output, `--output` flag writes to file, `--tags` filter, invalid format error
-    - `import` command: test with each format, `--dry-run`, `--skip-duplicates`, `--add-tags`, `--format` override, `--json` output
-    - `restore` command: test basic restore (no wipe), `--dry-run`, `--wipe` with confirmation (pipe "yes\n"), `--wipe` with JSON rejection
-    - `tags rename` command: test with `--force`, test without --force (pipe "y\n"), test with no matching bookmarks error
-    - `tags delete` command: test with `--force`, test tag-has-bookmarks error without --force, test tag with 0 bookmarks
-    - `tags show` command: test basic usage, test `--json` output
-    - `update` command: test `--title`, `--remove-tags`, `--archive`/`--unarchive`, conflicting flags errors (`--archive` + `--unarchive`, `--tags` + `--add-tags`)
-    - `get` command: test invalid ID error
-    - `config test` command: test success and failure paths
-    - `list` command: test `--query`, `--tags`, `--unread`, `--archived`, `--limit`, `--offset` flags, empty results
-    - `delete` command: test `--json` output format (safe JSON with `json.NewEncoder`)
-    - `add` command: test `--unread`, `--shared`, `--description` flags
-
-### Phase 5: Coverage Gate Enforcement (spec 07)
-
-- [x] **P3** | Update Makefile cover target for cmd/ld | ~small
-  - Acceptance: `make cover` validates all packages including `cmd/ld` (currently skipped with "SKIP: cmd/ (no test files)" even though test file exists)
-  - Files: `Makefile`
-  - Details: The Makefile `cover` target currently skips `cmd/` packages entirely. Now that `cmd/ld/commands_test.go` exists, update the logic to include it in the 70% gate
+  - Details: The remaining 14.5% gap is in complex interactive/multi-step commands. Areas needing coverage:
+    - `import` command: test actual import from each format file (JSON, HTML, CSV) with mock server handling create/update; test `--dry-run`, `--skip-duplicates`, `--add-tags`, error paths
+    - `restore` command: test `--wipe` path with piped "yes\n" confirmation; test `--wipe` with bookmarks present; test `--dry-run` + `--wipe` combination
+    - `tags rename` command: test with multiple bookmarks (progress output); test error during update (partial failure); test abort on "n" confirmation
+    - `tags delete` command: test `--force` with bookmarks needing removal; test force with update errors; test confirmation abort
+    - `backup` command: test `--prefix` flag changes filename; test error on invalid output directory
+    - Error handling paths: test API error responses (401, 404, 500) for each command
 
 ---
 
 ## Dependency Graph
 
 ```
-Phase 1 (Bug Fix):
-  Tags show pagination fix (P0) — standalone, no deps
+Phase 1 (Makefile):
+  bc→awk replacement — standalone, no deps
 
-Phase 2-3 (Coverage — lib packages):
-  config tests (P1) — standalone
-  export tests (P1) — standalone
+Phase 2 (Config cleanup):
+  Token trim fix — standalone, no deps
 
-Phase 4 (Coverage — cmd):
-  cmd/ld tests (P2) — depends on Phase 1 (tags show fix changes behavior)
+Phase 3 (Test robustness):
+  Config test fix — standalone
+  Flag reset fix — standalone
 
-Phase 5 (Makefile):
-  Coverage gate update (P3) — depends on Phase 4 (needs cmd/ld at 70%+ first)
+Phase 4 (Coverage):
+  cmd/ld 70%+ — depends on Phase 3 (flag reset fix prevents test pollution)
+                  depends on Phase 2 (token trim change may alter test behavior)
 ```
 
 ## Execution Order
 
-1. **P0**: Fix `tags show` pagination (blocks Phase 4 test for `tags show`)
-2. **P1**: config package tests + export package tests (parallel, independent)
-3. **P2**: cmd/ld package tests (after Phase 1 fix is in place)
-4. **P3**: Makefile coverage gate update (after Phase 4 achieves 70%)
+1. **Phase 1** (P1): Makefile `bc` → `awk` (standalone, immediate portability win)
+2. **Phase 2** (P1): Config token trim cleanup (standalone, simple code clarity fix)
+3. **Phase 3** (P1): Test robustness fixes (blocks Phase 4 — must fix flag resets before adding more tests)
+4. **Phase 4** (P2): cmd/ld coverage to 70% (depends on Phases 2+3 being complete)
 
 ---
 
 ## Notes
 
-- Specs 01, 02, 04, 05, 06 are fully implemented with no code changes needed
-- Spec 03 is complete except for the pagination defect in `tags show` (covered by spec 08)
-- Spec 08 is the only code-level bug remaining — a one-line fix in `runTagsShow()`
-- The bulk of remaining work is test coverage (spec 07)
-- `golang.org/x/term` is already in go.mod and used correctly
-- `FetchAllBookmarks` and `FetchAllTags` are already on the `Client` struct
-- The `Makefile` cover target's `cmd/` skip logic was written before `commands_test.go` existed
+- Specs 01-08 are fully implemented — no code changes needed for those
+- Specs 09-11 are all new items not previously tracked in the implementation plan
+- The `cmd/` skip condition referenced in spec 09 does NOT exist in the current Makefile (it was already removed in a prior change). Only the `bc` dependency remains.
+- The `backupOutput` and `backupPrefix` flags have non-zero defaults (`"."` and `"linkding-backup"`) — reset must use those defaults, not empty strings
+- Phase 4 is the most labor-intensive task (~300+ lines of test code) but Phase 3's flag reset fix is a prerequisite to prevent flaky tests
+- `golang.org/x/term` is already in go.mod — no dependency changes needed
