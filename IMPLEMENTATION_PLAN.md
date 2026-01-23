@@ -90,7 +90,7 @@
   - Acceptance: `ld backup` creates timestamped file
   - Files: cmd/ld/backup.go
 
-- [ ] **P2** | Restore command | ~medium
+- [x] **P2** | Restore command | ~medium
   - Acceptance: `ld restore` with --wipe safety
   - Files: cmd/ld/restore.go
 
