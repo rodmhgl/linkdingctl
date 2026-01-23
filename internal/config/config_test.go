@@ -77,7 +77,7 @@ func TestLoad_MissingConfig(t *testing.T) {
 	}
 
 	expectedMsg := "no configuration found"
-	if err.Error() != expectedMsg+". Run 'ld config init' to set up" {
+	if err.Error() != expectedMsg+". Run 'linkdingctl config init' to set up" {
 		t.Errorf("expected error containing '%s', got '%v'", expectedMsg, err)
 	}
 }
@@ -279,5 +279,144 @@ func TestLoad_EnvVarsOnly(t *testing.T) {
 	}
 	if cfg.Token != "envonly-token" {
 		t.Errorf("expected Token from env 'envonly-token', got '%s'", cfg.Token)
+	}
+}
+
+func TestMigration_FromOldPath(t *testing.T) {
+	// Create temporary directories for old and new configs
+	tmpDir := t.TempDir()
+	oldConfigDir := filepath.Join(tmpDir, ".config", "ld")
+	oldConfigPath := filepath.Join(oldConfigDir, "config.yaml")
+	newConfigDir := filepath.Join(tmpDir, ".config", "linkdingctl")
+	newConfigPath := filepath.Join(newConfigDir, "config.yaml")
+
+	// Create old config directory and file
+	if err := os.MkdirAll(oldConfigDir, 0700); err != nil {
+		t.Fatalf("failed to create old config dir: %v", err)
+	}
+
+	oldConfigContent := []byte("url: https://old.example.com\ntoken: old-token\n")
+	if err := os.WriteFile(oldConfigPath, oldConfigContent, 0600); err != nil {
+		t.Fatalf("failed to write old config: %v", err)
+	}
+
+	// Temporarily override home directory for testing
+	originalHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpDir)
+	defer os.Setenv("HOME", originalHome)
+
+	// Load config - should trigger migration
+	cfg, err := Load("")
+	if err != nil {
+		t.Fatalf("Load() failed: %v", err)
+	}
+
+	// Verify config values were migrated
+	if cfg.URL != "https://old.example.com" {
+		t.Errorf("expected URL 'https://old.example.com', got '%s'", cfg.URL)
+	}
+	if cfg.Token != "old-token" {
+		t.Errorf("expected Token 'old-token', got '%s'", cfg.Token)
+	}
+
+	// Verify new config file was created
+	if _, err := os.Stat(newConfigPath); os.IsNotExist(err) {
+		t.Error("new config file was not created")
+	}
+
+	// Verify old config still exists (not deleted)
+	if _, err := os.Stat(oldConfigPath); os.IsNotExist(err) {
+		t.Error("old config file was deleted (should be preserved)")
+	}
+}
+
+func TestMigration_SkipIfNewConfigExists(t *testing.T) {
+	// Create temporary directories
+	tmpDir := t.TempDir()
+	oldConfigDir := filepath.Join(tmpDir, ".config", "ld")
+	oldConfigPath := filepath.Join(oldConfigDir, "config.yaml")
+	newConfigDir := filepath.Join(tmpDir, ".config", "linkdingctl")
+	newConfigPath := filepath.Join(newConfigDir, "config.yaml")
+
+	// Create both old and new configs with different values
+	if err := os.MkdirAll(oldConfigDir, 0700); err != nil {
+		t.Fatalf("failed to create old config dir: %v", err)
+	}
+	if err := os.MkdirAll(newConfigDir, 0700); err != nil {
+		t.Fatalf("failed to create new config dir: %v", err)
+	}
+
+	oldConfigContent := []byte("url: https://old.example.com\ntoken: old-token\n")
+	if err := os.WriteFile(oldConfigPath, oldConfigContent, 0600); err != nil {
+		t.Fatalf("failed to write old config: %v", err)
+	}
+
+	newConfigContent := []byte("url: https://new.example.com\ntoken: new-token\n")
+	if err := os.WriteFile(newConfigPath, newConfigContent, 0600); err != nil {
+		t.Fatalf("failed to write new config: %v", err)
+	}
+
+	// Temporarily override home directory for testing
+	originalHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpDir)
+	defer os.Setenv("HOME", originalHome)
+
+	// Load config - should NOT trigger migration
+	cfg, err := Load("")
+	if err != nil {
+		t.Fatalf("Load() failed: %v", err)
+	}
+
+	// Verify new config values are used (not old)
+	if cfg.URL != "https://new.example.com" {
+		t.Errorf("expected URL from new config 'https://new.example.com', got '%s'", cfg.URL)
+	}
+	if cfg.Token != "new-token" {
+		t.Errorf("expected Token from new config 'new-token', got '%s'", cfg.Token)
+	}
+
+	// Verify new config was not overwritten
+	newData, err := os.ReadFile(newConfigPath)
+	if err != nil {
+		t.Fatalf("failed to read new config: %v", err)
+	}
+	if string(newData) != string(newConfigContent) {
+		t.Error("new config file was modified during migration (should be unchanged)")
+	}
+}
+
+func TestMigration_SkipIfNoOldConfig(t *testing.T) {
+	// Create temporary directory without old config
+	tmpDir := t.TempDir()
+	newConfigDir := filepath.Join(tmpDir, ".config", "linkdingctl")
+	newConfigPath := filepath.Join(newConfigDir, "config.yaml")
+
+	// Temporarily override home directory for testing
+	originalHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpDir)
+	defer os.Setenv("HOME", originalHome)
+
+	// Set env vars so Load() doesn't fail due to missing config
+	os.Setenv("LINKDING_URL", "https://env.example.com")
+	os.Setenv("LINKDING_TOKEN", "env-token")
+	defer func() {
+		os.Unsetenv("LINKDING_URL")
+		os.Unsetenv("LINKDING_TOKEN")
+	}()
+
+	// Load config - should not trigger migration
+	cfg, err := Load("")
+	if err != nil {
+		t.Fatalf("Load() failed: %v", err)
+	}
+
+	// Verify config from env vars
+	if cfg.URL != "https://env.example.com" {
+		t.Errorf("expected URL from env 'https://env.example.com', got '%s'", cfg.URL)
+	}
+
+	// Verify new config file was NOT created (no migration happened)
+	if _, err := os.Stat(newConfigPath); !os.IsNotExist(err) {
+		t.Error("new config file was created when no old config existed (should not migrate)")
 	}
 }

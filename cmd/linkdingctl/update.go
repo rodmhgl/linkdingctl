@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/rodstewart/linkding-cli/internal/api"
-	"github.com/rodstewart/linkding-cli/internal/config"
 	"github.com/rodstewart/linkding-cli/internal/models"
 	"github.com/spf13/cobra"
 )
@@ -14,6 +13,7 @@ import (
 var (
 	updateTitle       string
 	updateDescription string
+	updateNotes       string
 	updateTags        []string
 	updateAddTags     []string
 	updateRemoveTags  []string
@@ -43,6 +43,7 @@ func init() {
 
 	updateCmd.Flags().StringVarP(&updateTitle, "title", "t", "", "New title")
 	updateCmd.Flags().StringVarP(&updateDescription, "description", "d", "", "New description")
+	updateCmd.Flags().StringVarP(&updateNotes, "notes", "n", "", "New notes")
 	updateCmd.Flags().StringSliceVarP(&updateTags, "tags", "T", nil, "Replace tags (comma-separated)")
 	updateCmd.Flags().StringSliceVar(&updateAddTags, "add-tags", nil, "Add tags to existing (comma-separated)")
 	updateCmd.Flags().StringSliceVar(&updateRemoveTags, "remove-tags", nil, "Remove specific tags (comma-separated)")
@@ -71,7 +72,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load configuration
-	cfg, err := config.Load(cfgFile)
+	cfg, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
 	}
@@ -88,6 +89,9 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	}
 	if cmd.Flags().Changed("description") {
 		update.Description = &updateDescription
+	}
+	if cmd.Flags().Changed("notes") {
+		update.Notes = &updateNotes
 	}
 
 	// Handle boolean flags - only set if explicitly provided

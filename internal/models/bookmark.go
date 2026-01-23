@@ -71,3 +71,11 @@ type TagWithCount struct {
 	Name  string `json:"name"`
 	Count int    `json:"count"`
 }
+
+// UserProfile represents a LinkDing user profile
+type UserProfile struct {
+	Theme         string `json:"theme"`
+	BookmarkCount int    `json:"bookmark_count"`
+	DisplayName   string `json:"display_name"`
+	Username      string `json:"username"`
+}

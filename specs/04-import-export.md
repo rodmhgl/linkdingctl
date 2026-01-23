@@ -8,7 +8,7 @@
 
 ## Export Bookmarks
 ```
-ld export [flags]
+linkdingctl export [flags]
 
 Flags:
   -f, --format string    Output format: json, html, csv (default: json)
@@ -19,9 +19,9 @@ Flags:
 
 Examples:
 ```bash
-ld export > bookmarks.json
-ld export -f html -o bookmarks.html
-ld export --tags homelab -f csv -o homelab.csv
+linkdingctl export > bookmarks.json
+linkdingctl export -f html -o bookmarks.html
+linkdingctl export --tags homelab -f csv -o homelab.csv
 ```
 
 ### Export Formats
@@ -69,7 +69,7 @@ https://example.com,Example,Notes here,"tag1,tag2",2025-06-15T08:00:00Z,false,fa
 
 ## Import Bookmarks
 ```
-ld import <file> [flags]
+linkdingctl import <file> [flags]
 
 Flags:
   -f, --format string    Input format: json, html, csv (default: auto-detect)
@@ -80,9 +80,9 @@ Flags:
 
 Examples:
 ```bash
-ld import bookmarks.json
-ld import bookmarks.html --add-tags "imported"
-ld import export.csv --dry-run
+linkdingctl import bookmarks.json
+linkdingctl import bookmarks.html --add-tags "imported"
+linkdingctl import export.csv --dry-run
 ```
 
 Auto-detection:
@@ -105,7 +105,7 @@ Errors:
 
 ## Backup Command
 ```
-ld backup [flags]
+linkdingctl backup [flags]
 
 Flags:
   -o, --output string    Output directory (default: current directory)
@@ -114,24 +114,24 @@ Flags:
 
 Creates timestamped backup file: `linkding-backup-2026-01-22T103000.json`
 
-Equivalent to: `ld export -f json -o <timestamped-file>`
+Equivalent to: `linkdingctl export -f json -o <timestamped-file>`
 
 Example:
 ```bash
-ld backup -o ~/backups/
+linkdingctl backup -o ~/backups/
 # Creates: ~/backups/linkding-backup-2026-01-22T103000.json
 ```
 
 ## Restore Command
 ```
-ld restore <backup-file> [flags]
+linkdingctl restore <backup-file> [flags]
 
 Flags:
   --dry-run              Show what would be restored
   --wipe                 Delete all existing bookmarks before restore (DANGEROUS)
 ```
 
-Without `--wipe`: Equivalent to `ld import <file>`
+Without `--wipe`: Equivalent to `linkdingctl import <file>`
 With `--wipe`: Clears all bookmarks first, then imports. Requires interactive confirmation:
 
 ```
@@ -140,16 +140,16 @@ Type 'yes' to confirm:
 ```
 
 ## Success Criteria
-- [ ] `ld export` outputs valid JSON to stdout
-- [ ] `ld export -f html` produces browser-importable HTML
-- [ ] `ld export -f csv` produces valid CSV with headers
-- [ ] `ld export -o <file>` writes to file instead of stdout
-- [ ] `ld export --tags` filters exported bookmarks
-- [ ] `ld import` auto-detects format from extension
-- [ ] `ld import` handles all three formats correctly
-- [ ] `ld import --dry-run` shows preview without changes
-- [ ] `ld import` reports success/update/skip/error counts
-- [ ] `ld backup` creates timestamped JSON file
-- [ ] `ld restore` imports from backup file
-- [ ] `ld restore --wipe` requires confirmation
+- [ ] `linkdingctl export` outputs valid JSON to stdout
+- [ ] `linkdingctl export -f html` produces browser-importable HTML
+- [ ] `linkdingctl export -f csv` produces valid CSV with headers
+- [ ] `linkdingctl export -o <file>` writes to file instead of stdout
+- [ ] `linkdingctl export --tags` filters exported bookmarks
+- [ ] `linkdingctl import` auto-detects format from extension
+- [ ] `linkdingctl import` handles all three formats correctly
+- [ ] `linkdingctl import --dry-run` shows preview without changes
+- [ ] `linkdingctl import` reports success/update/skip/error counts
+- [ ] `linkdingctl backup` creates timestamped JSON file
+- [ ] `linkdingctl restore` imports from backup file
+- [ ] `linkdingctl restore --wipe` requires confirmation
 - [ ] All commands respect `--json` flag for status output

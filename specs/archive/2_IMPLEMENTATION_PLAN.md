@@ -6,7 +6,7 @@
 
 - [x] **P0** | Project scaffolding | ~small
   - Acceptance: `go mod init`, directory structure created, main.go compiles
-  - Files: go.mod, cmd/ld/main.go, internal/ directories
+  - Files: go.mod, cmd/linkdingctl/main.go, internal/ directories
 
 - [x] **P0** | Configuration system | ~medium
   - Acceptance: Loads from file and env vars, viper configured
@@ -17,82 +17,82 @@
   - Files: internal/api/client.go, internal/api/client_test.go
 
 - [x] **P0** | Root command and help | ~small
-  - Acceptance: `ld --help` shows usage, global flags work
-  - Files: cmd/ld/root.go
+  - Acceptance: `linkdingctl --help` shows usage, global flags work
+  - Files: cmd/linkdingctl/root.go
 
 ## Phase 1: Core CRUD
 
 - [x] **P1** | Config commands | ~medium
-  - Acceptance: `ld config init`, `ld config show`, `ld config test` work
-  - Files: cmd/ld/config.go
+  - Acceptance: `linkdingctl config init`, `linkdingctl config show`, `linkdingctl config test` work
+  - Files: cmd/linkdingctl/config.go
 
 - [x] **P1** | Add bookmark command | ~medium
-  - Acceptance: `ld add <url>` creates bookmark with all flags
-  - Files: cmd/ld/add.go, internal/api/bookmarks.go
+  - Acceptance: `linkdingctl add <url>` creates bookmark with all flags
+  - Files: cmd/linkdingctl/add.go, internal/api/bookmarks.go
 
 - [x] **P1** | List bookmarks command | ~medium
-  - Acceptance: `ld list` with filters, table output, JSON output
-  - Files: cmd/ld/list.go
+  - Acceptance: `linkdingctl list` with filters, table output, JSON output
+  - Files: cmd/linkdingctl/list.go
 
 - [x] **P1** | Get bookmark command | ~small
-  - Acceptance: `ld get <id>` shows full details
-  - Files: cmd/ld/get.go
+  - Acceptance: `linkdingctl get <id>` shows full details
+  - Files: cmd/linkdingctl/get.go
 
 - [x] **P1** | Update bookmark command | ~medium
-  - Acceptance: `ld update <id>` with all flags, partial updates
-  - Files: cmd/ld/update.go
+  - Acceptance: `linkdingctl update <id>` with all flags, partial updates
+  - Files: cmd/linkdingctl/update.go
 
 - [x] **P1** | Delete bookmark command | ~small
-  - Acceptance: `ld delete <id>` with confirmation, --force
-  - Files: cmd/ld/delete.go
+  - Acceptance: `linkdingctl delete <id>` with confirmation, --force
+  - Files: cmd/linkdingctl/delete.go
 
 ## Phase 2: Tags
 
 - [x] **P2** | List tags command | ~small
-  - Acceptance: `ld tags` lists with counts, sorting
-  - Files: cmd/ld/tags.go, internal/api/tags.go
+  - Acceptance: `linkdingctl tags` lists with counts, sorting
+  - Files: cmd/linkdingctl/tags.go, internal/api/tags.go
 
 - [x] **P2** | Tag rename command | ~medium
-  - Acceptance: `ld tags rename` updates all affected bookmarks
-  - Files: cmd/ld/tags.go (extend)
+  - Acceptance: `linkdingctl tags rename` updates all affected bookmarks
+  - Files: cmd/linkdingctl/tags.go (extend)
 
 - [x] **P2** | Tag delete command | ~small
-  - Acceptance: `ld tags delete` with safety check and --force
-  - Files: cmd/ld/tags.go (extend)
+  - Acceptance: `linkdingctl tags delete` with safety check and --force
+  - Files: cmd/linkdingctl/tags.go (extend)
 
 ## Phase 3: Import/Export
 
 - [x] **P2** | Export JSON | ~medium
-  - Acceptance: `ld export` outputs valid JSON with metadata
-  - Files: cmd/ld/export.go, internal/export/json.go
+  - Acceptance: `linkdingctl export` outputs valid JSON with metadata
+  - Files: cmd/linkdingctl/export.go, internal/export/json.go
 
 - [x] **P2** | Export HTML | ~medium
-  - Acceptance: `ld export -f html` produces Netscape format
+  - Acceptance: `linkdingctl export -f html` produces Netscape format
   - Files: internal/export/html.go
 
 - [x] **P2** | Export CSV | ~small
-  - Acceptance: `ld export -f csv` produces valid CSV
+  - Acceptance: `linkdingctl export -f csv` produces valid CSV
   - Files: internal/export/csv.go
 
 - [x] **P2** | Import JSON | ~medium
-  - Acceptance: `ld import file.json` with dry-run, progress
-  - Files: cmd/ld/import.go, internal/export/import.go
+  - Acceptance: `linkdingctl import file.json` with dry-run, progress
+  - Files: cmd/linkdingctl/import.go, internal/export/import.go
 
 - [x] **P2** | Import HTML | ~medium
-  - Acceptance: `ld import file.html` parses Netscape format
+  - Acceptance: `linkdingctl import file.html` parses Netscape format
   - Files: internal/export/import.go (extend)
 
 - [x] **P2** | Import CSV | ~small
-  - Acceptance: `ld import file.csv` with proper parsing
+  - Acceptance: `linkdingctl import file.csv` with proper parsing
   - Files: internal/export/import.go (extend)
 
 - [x] **P2** | Backup command | ~small
-  - Acceptance: `ld backup` creates timestamped file
-  - Files: cmd/ld/backup.go
+  - Acceptance: `linkdingctl backup` creates timestamped file
+  - Files: cmd/linkdingctl/backup.go
 
 - [x] **P2** | Restore command | ~medium
-  - Acceptance: `ld restore` with --wipe safety
-  - Files: cmd/ld/restore.go
+  - Acceptance: `linkdingctl restore` with --wipe safety
+  - Files: cmd/linkdingctl/restore.go
 
 ## Phase 4: Polish
 

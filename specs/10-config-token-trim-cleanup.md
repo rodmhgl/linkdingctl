@@ -1,12 +1,12 @@
 # Specification: Config Token Trim Cleanup
 
 ## Jobs to Be Done
-- Token input in `ld config init` is trimmed exactly once, with clear intent
+- Token input in `linkdingctl config init` is trimmed exactly once, with clear intent
 - No redundant string operations that obscure control flow
 
 ## Problem
 
-In `cmd/ld/config.go`, the token input path has a redundant `strings.TrimSpace` call:
+In `cmd/linkdingctl/config.go`, the token input path has a redundant `strings.TrimSpace` call:
 
 ```go
 var token string
@@ -52,7 +52,7 @@ if term.IsTerminal(int(os.Stdin.Fd())) {
 ```
 
 Affected files:
-- `cmd/ld/config.go` — `configInitCmd` RunE function
+- `cmd/linkdingctl/config.go` — `configInitCmd` RunE function
 
 ## Success Criteria
 - [ ] Token is trimmed exactly once per code path

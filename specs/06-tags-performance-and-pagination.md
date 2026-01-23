@@ -1,11 +1,11 @@
 # Specification: Tags Performance & Pagination
 
 ## Jobs to Be Done
-- `ld tags` responds in reasonable time regardless of tag count
+- `linkdingctl tags` responds in reasonable time regardless of tag count
 - Tag rename/delete operations process ALL matching bookmarks, not just the first page
 - Tags list handles more than 1000 tags
 
-## N+1 Query Problem in `ld tags`
+## N+1 Query Problem in `linkdingctl tags`
 
 Current behavior: makes 1 API call per tag to count bookmarks (N+1 pattern). With 100 tags, that's 101 HTTP requests.
 
@@ -43,8 +43,8 @@ allBookmarks, err := fetchAllBookmarks(client, []string{tagName}, true)
 This loops until `Next == nil`, handling any number of bookmarks.
 
 Affected files:
-- `cmd/ld/tags.go` — `runTagsRename()` line 177
-- `cmd/ld/tags.go` — `runTagsDelete()` line 271
+- `cmd/linkdingctl/tags.go` — `runTagsRename()` line 177
+- `cmd/linkdingctl/tags.go` — `runTagsDelete()` line 271
 
 **Note**: `fetchAllBookmarks` is currently in `internal/export/json.go`. It should be either:
 - Moved to `internal/api/client.go` as a method on `Client`, or
@@ -73,9 +73,9 @@ for {
 ```
 
 ## Success Criteria
-- [ ] `ld tags` makes at most O(N/page_size) API calls, not O(tags) calls
-- [ ] `ld tags rename` processes all matching bookmarks regardless of count
-- [ ] `ld tags delete --force` processes all matching bookmarks regardless of count
-- [ ] `ld tags` displays all tags even if count exceeds 1000
+- [ ] `linkdingctl tags` makes at most O(N/page_size) API calls, not O(tags) calls
+- [ ] `linkdingctl tags rename` processes all matching bookmarks regardless of count
+- [ ] `linkdingctl tags delete --force` processes all matching bookmarks regardless of count
+- [ ] `linkdingctl tags` displays all tags even if count exceeds 1000
 - [ ] `fetchAllBookmarks` is accessible from both `export` and `cmd` packages
 - [ ] Progress output shows correct totals (e.g., "Updating 1/1500...")

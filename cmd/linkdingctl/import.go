@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/rodstewart/linkding-cli/internal/api"
-	"github.com/rodstewart/linkding-cli/internal/config"
 	"github.com/rodstewart/linkding-cli/internal/export"
 	"github.com/spf13/cobra"
 )
@@ -50,7 +49,7 @@ func runImport(cmd *cobra.Command, args []string) error {
 	filename := args[0]
 
 	// Load configuration
-	cfg, err := config.Load(cfgFile)
+	cfg, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
 	}

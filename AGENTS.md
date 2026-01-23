@@ -1,7 +1,7 @@
 # LinkDing CLI - Agent Operations Guide
 
 ## Project Overview
-A Go CLI tool (`ld`) for managing bookmarks in a LinkDing instance.
+A Go CLI tool (`linkdingctl`) for managing bookmarks in a LinkDing instance.
 
 ## Technology Stack
 - Language: Go 1.21+
@@ -12,7 +12,7 @@ A Go CLI tool (`ld`) for managing bookmarks in a LinkDing instance.
 
 ## Architecture Principles
 1. Single binary, no external dependencies
-2. Config via `~/.config/ld/config.yaml` or environment variables
+2. Config via `~/.config/linkdingctl/config.yaml` or environment variables
 3. All commands support `--json` flag for scriptable output
 4. Exit codes: 0=success, 1=error, 2=config error
 

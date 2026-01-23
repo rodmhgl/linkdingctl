@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/rodstewart/linkding-cli/internal/models"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // executeCommand executes a command with the given arguments and returns the output
@@ -71,6 +73,8 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	rootCmd.SetArgs(nil)
 	jsonOutput = false
 	debugMode = false
+	flagURL = ""
+	flagToken = ""
 	forceDelete = false
 	updateArchive = false
 	updateUnarchive = false
@@ -79,12 +83,25 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	updateRemoveTags = nil
 	updateTitle = ""
 	updateDescription = ""
+	updateNotes = ""
+	addNotes = ""
 	tagsSort = "name"
 	tagsUnused = false
 	backupOutput = "."
 	backupPrefix = "linkding-backup"
 	tagsRenameForce = false
 	tagsDeleteForce = false
+
+	// Reset all command flags' "Changed" state
+	rootCmd.Flags().VisitAll(func(f *pflag.Flag) {
+		f.Changed = false
+	})
+	// Reset subcommand flags as well
+	for _, cmd := range rootCmd.Commands() {
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			f.Changed = false
+		})
+	}
 
 	return output, cmdErr
 }
@@ -124,7 +141,7 @@ func mockBookmark(id int, url, title string, tags []string) models.Bookmark {
 	}
 }
 
-// TestAddCommand tests the 'ld add' command
+// TestAddCommand tests the 'linkdingctl add' command
 func TestAddCommand(t *testing.T) {
 	// Create a mock server
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +215,7 @@ func TestAddCommand(t *testing.T) {
 	})
 }
 
-// TestListCommand tests the 'ld list' command
+// TestListCommand tests the 'linkdingctl list' command
 func TestListCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
@@ -260,7 +277,7 @@ func TestListCommand(t *testing.T) {
 	})
 }
 
-// TestGetCommand tests the 'ld get' command
+// TestGetCommand tests the 'linkdingctl get' command
 func TestGetCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "GET" {
@@ -307,7 +324,7 @@ func TestGetCommand(t *testing.T) {
 	})
 }
 
-// TestUpdateCommand tests the 'ld update' command
+// TestUpdateCommand tests the 'linkdingctl update' command
 func TestUpdateCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") {
@@ -352,7 +369,7 @@ func TestUpdateCommand(t *testing.T) {
 	})
 }
 
-// TestDeleteCommand tests the 'ld delete' command
+// TestDeleteCommand tests the 'linkdingctl delete' command
 func TestDeleteCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "DELETE" {
@@ -376,7 +393,7 @@ func TestDeleteCommand(t *testing.T) {
 	})
 }
 
-// TestExportCommand tests the 'ld export' command
+// TestExportCommand tests the 'linkdingctl export' command
 func TestExportCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
@@ -416,7 +433,7 @@ func TestExportCommand(t *testing.T) {
 	})
 }
 
-// TestBackupCommand tests the 'ld backup' command
+// TestBackupCommand tests the 'linkdingctl backup' command
 func TestBackupCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
@@ -489,7 +506,7 @@ func TestBackupCommand(t *testing.T) {
 	})
 }
 
-// TestTagsCommand tests the 'ld tags' command
+// TestTagsCommand tests the 'linkdingctl tags' command
 func TestTagsCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/tags/" && r.Method == "GET" {
@@ -572,7 +589,7 @@ func TestTagsCommand(t *testing.T) {
 	})
 }
 
-// TestConfigCommand tests the 'ld config show' command
+// TestConfigCommand tests the 'linkdingctl config show' command
 func TestConfigCommand(t *testing.T) {
 	t.Run("config show redacts token", func(t *testing.T) {
 		// Set up environment with token
@@ -2532,4 +2549,873 @@ func TestAPIError500(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error with 500 response")
 	}
+}
+
+// TestAddWithNotes tests add command with --notes flag
+func TestAddWithNotes(t *testing.T) {
+	var lastReceivedNotes string
+	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/bookmarks/" && r.Method == "POST" {
+			var create models.BookmarkCreate
+			if err := json.NewDecoder(r.Body).Decode(&create); err != nil {
+				t.Fatalf("Failed to decode request: %v", err)
+			}
+			lastReceivedNotes = create.Notes
+			
+			bookmark := mockBookmark(1, create.URL, create.Title, create.TagNames)
+			bookmark.Notes = create.Notes
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(bookmark)
+			return
+		}
+		http.NotFound(w, r)
+	})
+
+	setTestEnv(t, server.URL, "test-token")
+
+	t.Run("add with notes", func(t *testing.T) {
+		lastReceivedNotes = "reset"
+		output, err := executeCommand(t, "add", "https://example.com/notes", "--notes", "Test notes content")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark added") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if lastReceivedNotes != "Test notes content" {
+			t.Errorf("Expected notes 'Test notes content', got: %s", lastReceivedNotes)
+		}
+	})
+
+	t.Run("add with notes shorthand -n", func(t *testing.T) {
+		lastReceivedNotes = "reset"
+		output, err := executeCommand(t, "add", "https://example.com/notes2", "-n", "Short notes")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark added") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if lastReceivedNotes != "Short notes" {
+			t.Errorf("Expected notes 'Short notes', got: %s", lastReceivedNotes)
+		}
+	})
+
+	t.Run("add with notes and json output", func(t *testing.T) {
+		lastReceivedNotes = "reset"
+		output, err := executeCommand(t, "add", "https://example.com/notes-json", "--notes", "JSON notes", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		
+		var bookmark models.Bookmark
+		if err := json.Unmarshal([]byte(output), &bookmark); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v", err)
+		}
+		if bookmark.Notes != "JSON notes" {
+			t.Errorf("Expected notes 'JSON notes' in output, got: %s", bookmark.Notes)
+		}
+	})
+
+	t.Run("add without notes", func(t *testing.T) {
+		lastReceivedNotes = "reset"
+		_, err := executeCommand(t, "add", "https://example.com/no-notes")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		// When --notes flag is not provided, the API should receive an empty string
+		if lastReceivedNotes != "" {
+			t.Errorf("Expected empty notes when not specified, got: %s", lastReceivedNotes)
+		}
+	})
+}
+
+// TestUpdateWithNotes tests update command with --notes flag
+func TestUpdateWithNotes(t *testing.T) {
+	type updateRequest struct {
+		receivedNotes *string
+		notesWasSet   bool
+	}
+	
+	var lastUpdate updateRequest
+	
+	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") {
+			if r.Method == "GET" {
+				// Return existing bookmark
+				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
+				bookmark.Notes = "Old notes"
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(bookmark)
+				return
+			} else if r.Method == "PATCH" {
+				// Parse update request
+				var update models.BookmarkUpdate
+				if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+					t.Fatalf("Failed to decode request: %v", err)
+				}
+				lastUpdate = updateRequest{
+					receivedNotes: update.Notes,
+					notesWasSet:   update.Notes != nil,
+				}
+				
+				// Return updated bookmark
+				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
+				if update.Notes != nil {
+					bookmark.Notes = *update.Notes
+				}
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(bookmark)
+				return
+			}
+		}
+		http.NotFound(w, r)
+	})
+
+	setTestEnv(t, server.URL, "test-token")
+
+	t.Run("update with notes", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "--notes", "Updated notes")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark updated") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !lastUpdate.notesWasSet {
+			t.Error("Expected notes to be set in update request")
+		} else if *lastUpdate.receivedNotes != "Updated notes" {
+			t.Errorf("Expected notes 'Updated notes', got: %s", *lastUpdate.receivedNotes)
+		}
+	})
+
+	t.Run("update notes with shorthand -n", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "-n", "Short updated")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark updated") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !lastUpdate.notesWasSet {
+			t.Error("Expected notes to be set in update request")
+		} else if *lastUpdate.receivedNotes != "Short updated" {
+			t.Errorf("Expected notes 'Short updated', got: %s", *lastUpdate.receivedNotes)
+		}
+	})
+
+	t.Run("clear notes with empty string", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "--notes", "")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark updated") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !lastUpdate.notesWasSet {
+			t.Error("Expected notes to be set in update request (even if empty)")
+		} else if *lastUpdate.receivedNotes != "" {
+			t.Errorf("Expected empty notes, got: %s", *lastUpdate.receivedNotes)
+		}
+	})
+
+	t.Run("update notes with json output", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "--notes", "JSON updated notes", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		
+		var bookmark models.Bookmark
+		if err := json.Unmarshal([]byte(output), &bookmark); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v", err)
+		}
+		if bookmark.Notes != "JSON updated notes" {
+			t.Errorf("Expected notes 'JSON updated notes' in output, got: %s", bookmark.Notes)
+		}
+	})
+
+	t.Run("update notes and description together", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "--notes", "Combined notes", "--description", "Combined desc")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark updated") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !lastUpdate.notesWasSet {
+			t.Error("Expected notes to be set in update request")
+		} else if *lastUpdate.receivedNotes != "Combined notes" {
+			t.Errorf("Expected notes 'Combined notes', got: %s", *lastUpdate.receivedNotes)
+		}
+	})
+
+	t.Run("update without notes flag", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "--title", "New title")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark updated") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		// When --notes flag is not provided, notes should not be in the update
+		if lastUpdate.notesWasSet {
+			t.Errorf("Expected notes to not be in update request when flag not provided, but it was set")
+		}
+	})
+}
+
+// TestTagsCreateCommand tests the 'linkdingctl tags create' command
+func TestTagsCreateCommand(t *testing.T) {
+	t.Run("create tag success", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
+				var req map[string]string
+				json.NewDecoder(r.Body).Decode(&req)
+				
+				tag := models.Tag{
+					ID:        42,
+					Name:      req["name"],
+					DateAdded: time.Now(),
+				}
+				w.WriteHeader(http.StatusCreated)
+				json.NewEncoder(w).Encode(tag)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "tags", "create", "mytag")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "✓ Tag created:") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !strings.Contains(output, "mytag") {
+			t.Errorf("Expected tag name in output, got: %s", output)
+		}
+		if !strings.Contains(output, "ID: 42") {
+			t.Errorf("Expected tag ID in output, got: %s", output)
+		}
+	})
+
+	t.Run("create tag with json output", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
+				var req map[string]string
+				json.NewDecoder(r.Body).Decode(&req)
+				
+				tag := models.Tag{
+					ID:        99,
+					Name:      req["name"],
+					DateAdded: time.Now(),
+				}
+				w.WriteHeader(http.StatusCreated)
+				json.NewEncoder(w).Encode(tag)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "tags", "create", "jsontag", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		var tag models.Tag
+		if err := json.Unmarshal([]byte(output), &tag); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
+		}
+		if tag.ID != 99 {
+			t.Errorf("Expected tag ID 99, got: %d", tag.ID)
+		}
+		if tag.Name != "jsontag" {
+			t.Errorf("Expected tag name 'jsontag', got: %s", tag.Name)
+		}
+	})
+
+	t.Run("create duplicate tag", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"name":["Tag with this name already exists"]}`))
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "create", "duplicate")
+		if err == nil {
+			t.Fatal("Expected error for duplicate tag, got nil")
+		}
+		if !strings.Contains(err.Error(), "already exists") {
+			t.Errorf("Expected 'already exists' in error, got: %v", err)
+		}
+	})
+
+	t.Run("create tag with empty name", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "create", "")
+		if err == nil {
+			t.Fatal("Expected error for empty tag name, got nil")
+		}
+		// Cobra will complain about missing required argument
+		if !strings.Contains(err.Error(), "requires") && !strings.Contains(err.Error(), "arg") {
+			t.Logf("Note: Got error but message may differ from expected: %v", err)
+		}
+	})
+
+	t.Run("create tag no args", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "create")
+		if err == nil {
+			t.Fatal("Expected error when no tag name provided, got nil")
+		}
+	})
+}
+
+// TestTagsGetCommand tests the 'linkdingctl tags get' command
+func TestTagsGetCommand(t *testing.T) {
+	t.Run("get tag success", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/tags/42/" && r.Method == "GET" {
+				tag := models.Tag{
+					ID:        42,
+					Name:      "kubernetes",
+					DateAdded: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+				}
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(tag)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "tags", "get", "42")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "Tag: kubernetes") {
+			t.Errorf("Expected tag name in output, got: %s", output)
+		}
+		if !strings.Contains(output, "ID: 42") {
+			t.Errorf("Expected tag ID in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Date Added:") {
+			t.Errorf("Expected date added in output, got: %s", output)
+		}
+	})
+
+	t.Run("get tag with json output", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/tags/100/" && r.Method == "GET" {
+				tag := models.Tag{
+					ID:        100,
+					Name:      "golang",
+					DateAdded: time.Date(2024, 6, 20, 14, 0, 0, 0, time.UTC),
+				}
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(tag)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "tags", "get", "100", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		var tag models.Tag
+		if err := json.Unmarshal([]byte(output), &tag); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
+		}
+		if tag.ID != 100 {
+			t.Errorf("Expected tag ID 100, got: %d", tag.ID)
+		}
+		if tag.Name != "golang" {
+			t.Errorf("Expected tag name 'golang', got: %s", tag.Name)
+		}
+	})
+
+	t.Run("get tag not found", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/api/tags/") && r.Method == "GET" {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "get", "999")
+		if err == nil {
+			t.Fatal("Expected error for non-existent tag, got nil")
+		}
+		if !strings.Contains(err.Error(), "not found") {
+			t.Errorf("Expected 'not found' in error, got: %v", err)
+		}
+		if !strings.Contains(err.Error(), "999") {
+			t.Errorf("Expected tag ID in error message, got: %v", err)
+		}
+	})
+
+	t.Run("get tag invalid id", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "get", "notanumber")
+		if err == nil {
+			t.Fatal("Expected error for invalid tag ID, got nil")
+		}
+		if !strings.Contains(err.Error(), "invalid") {
+			t.Errorf("Expected 'invalid' in error message, got: %v", err)
+		}
+	})
+
+	t.Run("get tag no args", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "get")
+		if err == nil {
+			t.Fatal("Expected error when no tag ID provided, got nil")
+		}
+	})
+}
+
+// ================= USER PROFILE COMMAND TESTS =================
+
+// TestUserProfileCommand tests the 'linkdingctl user profile' command
+func TestUserProfileCommand(t *testing.T) {
+	t.Run("profile success", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
+				profile := models.UserProfile{
+					Username:      "testuser",
+					DisplayName:   "Test User",
+					Theme:         "dark",
+					BookmarkCount: 42,
+				}
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(profile)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "user", "profile")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "Username: testuser") {
+			t.Errorf("Expected username in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Display Name: Test User") {
+			t.Errorf("Expected display name in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Theme: dark") {
+			t.Errorf("Expected theme in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Bookmark Count: 42") {
+			t.Errorf("Expected bookmark count in output, got: %s", output)
+		}
+	})
+
+	t.Run("profile with json output", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
+				profile := models.UserProfile{
+					Username:      "jsonuser",
+					DisplayName:   "JSON User",
+					Theme:         "light",
+					BookmarkCount: 100,
+				}
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(profile)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "user", "profile", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		var profile models.UserProfile
+		if err := json.Unmarshal([]byte(output), &profile); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
+		}
+		if profile.Username != "jsonuser" {
+			t.Errorf("Expected username 'jsonuser', got: %s", profile.Username)
+		}
+		if profile.DisplayName != "JSON User" {
+			t.Errorf("Expected display name 'JSON User', got: %s", profile.DisplayName)
+		}
+		if profile.Theme != "light" {
+			t.Errorf("Expected theme 'light', got: %s", profile.Theme)
+		}
+		if profile.BookmarkCount != 100 {
+			t.Errorf("Expected bookmark count 100, got: %d", profile.BookmarkCount)
+		}
+	})
+
+	t.Run("profile 401 unauthorized", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "bad-token")
+
+		_, err := executeCommand(t, "user", "profile")
+		if err == nil {
+			t.Fatal("Expected error for 401 response, got nil")
+		}
+		if !strings.Contains(err.Error(), "authentication failed") || !strings.Contains(err.Error(), "Check your API token") {
+			t.Errorf("Expected authentication error message, got: %v", err)
+		}
+	})
+
+	t.Run("profile 403 forbidden", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "user", "profile")
+		if err == nil {
+			t.Fatal("Expected error for 403 response, got nil")
+		}
+		if !strings.Contains(err.Error(), "access forbidden") || !strings.Contains(err.Error(), "don't have permission") {
+			t.Errorf("Expected forbidden error message, got: %v", err)
+		}
+	})
+
+	t.Run("profile json output on error", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "bad-token")
+
+		output, err := executeCommand(t, "user", "profile", "--json")
+		if err == nil {
+			t.Fatal("Expected error for 401 response, got nil")
+		}
+
+		// Check if JSON error was output
+		var result map[string]string
+		if jsonErr := json.Unmarshal([]byte(output), &result); jsonErr == nil {
+			if result["status"] != "failed" {
+				t.Errorf("Expected status 'failed' in JSON error output, got: %s", result["status"])
+			}
+			if result["error"] == "" {
+				t.Error("Expected error field in JSON error output")
+			}
+		}
+	})
+}
+
+// TestConfigOverrides tests the CLI flag override functionality
+func TestConfigOverrides(t *testing.T) {
+	t.Run("Flag parsing check", func(t *testing.T) {
+		// Create a test command that just prints flag values
+		testCmd := &cobra.Command{
+			Use: "flagtest",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				fmt.Printf("flagURL=%s flagToken=%s\n", flagURL, flagToken)
+				return nil
+			},
+		}
+		rootCmd.AddCommand(testCmd)
+		defer rootCmd.RemoveCommand(testCmd)
+
+		// Test with flags
+		output, err := executeCommand(t, "flagtest", "--url", "https://test.example.com", "--token", "testtoken123")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		expected := "flagURL=https://test.example.com flagToken=testtoken123"
+		if !strings.Contains(output, expected) {
+			t.Errorf("Expected output to contain '%s', got: '%s'", expected, output)
+		}
+	})
+
+	t.Run("URL override", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Set different URL in env
+		setTestEnv(t, "https://wrong-url.example.com", "test-token")
+
+		// Override with CLI flag (should use server.URL)
+		// Use --config to avoid loading real config file
+		output, err := executeCommand(t, "list", "--config", "/nonexistent/config.yaml", "--url", server.URL, "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		// Should succeed because CLI flag overrides env var
+		if !strings.Contains(output, "[]") {
+			t.Errorf("Expected empty bookmarks array, got: %s", output)
+		}
+	})
+
+	t.Run("Token override", func(t *testing.T) {
+		// Create a mock server that checks the Authorization header
+		correctToken := "correct-token"
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			auth := r.Header.Get("Authorization")
+			expectedAuth := "Token " + correctToken
+			if auth != expectedAuth {
+				w.WriteHeader(http.StatusUnauthorized)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Invalid token"})
+				return
+			}
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Set wrong token in env
+		setTestEnv(t, server.URL, "wrong-token")
+
+		// Override with CLI flag (should use correct-token)
+		output, err := executeCommand(t, "list", "--config", "/nonexistent/config.yaml", "--token", correctToken, "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		// Should succeed because CLI flag overrides env var
+		if !strings.Contains(output, "[]") {
+			t.Errorf("Expected empty bookmarks array, got: %s", output)
+		}
+	})
+
+	t.Run("Both URL and token override", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Set different values in env
+		setTestEnv(t, "https://wrong-url.example.com", "wrong-token")
+
+		// Override both with CLI flags
+		output, err := executeCommand(t, "list", "--config", "/nonexistent/config.yaml", "--url", server.URL, "--token", "test-token", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		// Should succeed because CLI flags override env vars
+		if !strings.Contains(output, "[]") {
+			t.Errorf("Expected empty bookmarks array, got: %s", output)
+		}
+	})
+
+	t.Run("Partial override - only URL", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Set URL in env (wrong) and token in env (correct)
+		setTestEnv(t, "https://wrong-url.example.com", "test-token")
+
+		// Override only URL with CLI flag, token comes from env
+		output, err := executeCommand(t, "list", "--config", "/nonexistent/config.yaml", "--url", server.URL, "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		// Should succeed
+		if !strings.Contains(output, "[]") {
+			t.Errorf("Expected empty bookmarks array, got: %s", output)
+		}
+	})
+
+	t.Run("No config file with CLI flags", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Temporarily unset env vars and restore them after test
+		oldURL := os.Getenv("LINKDING_URL")
+		oldToken := os.Getenv("LINKDING_TOKEN")
+		os.Unsetenv("LINKDING_URL")
+		os.Unsetenv("LINKDING_TOKEN")
+		t.Cleanup(func() {
+			if oldURL != "" {
+				os.Setenv("LINKDING_URL", oldURL)
+			}
+			if oldToken != "" {
+				os.Setenv("LINKDING_TOKEN", oldToken)
+			}
+		})
+
+		// Should work with only CLI flags
+		output, err := executeCommand(t, "list", "--config", "/nonexistent/config.yaml", "--url", server.URL, "--token", "test-token", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		// Should succeed
+		if !strings.Contains(output, "[]") {
+			t.Errorf("Expected empty bookmarks array, got: %s", output)
+		}
+	})
+
+	t.Run("Config show displays override source", func(t *testing.T) {
+		// Create a mock server (not needed but helps with config loading)
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {})
+
+		// Set env vars
+		setTestEnv(t, server.URL, "test-token")
+
+		// Test with URL flag override
+		output, err := executeCommand(t, "config", "show", "--url", "https://override.example.com")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		if !strings.Contains(output, "(--url flag)") {
+			t.Errorf("Expected '(--url flag)' in output, got: %s", output)
+		}
+		if !strings.Contains(output, "(environment variable)") {
+			t.Errorf("Expected '(environment variable)' for token in output, got: %s", output)
+		}
+	})
+
+	t.Run("Config show JSON includes override source", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {})
+
+		// Set env vars
+		setTestEnv(t, server.URL, "test-token")
+
+		// Test with token flag override
+		output, err := executeCommand(t, "config", "show", "--token", "override-token", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		var result map[string]interface{}
+		if err := json.Unmarshal([]byte(output), &result); err != nil {
+			t.Fatalf("Failed to parse JSON output: %v", err)
+		}
+
+		if result["url_source"] != "environment variable" {
+			t.Errorf("Expected url_source to be 'environment variable', got: %v", result["url_source"])
+		}
+		if result["token_source"] != "--token flag" {
+			t.Errorf("Expected token_source to be '--token flag', got: %v", result["token_source"])
+		}
+	})
+
+	t.Run("Config test uses effective config", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Set wrong URL in env
+		setTestEnv(t, "https://wrong-url.example.com", "test-token")
+
+		// Override URL with CLI flag - should test the overridden connection
+		output, err := executeCommand(t, "config", "test", "--config", "/nonexistent/config.yaml", "--url", server.URL)
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		if !strings.Contains(output, "Successfully connected") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+	})
 }

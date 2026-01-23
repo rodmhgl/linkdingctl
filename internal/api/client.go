@@ -326,3 +326,90 @@ func (c *Client) FetchAllTags() ([]models.Tag, error) {
 
 	return allTags, nil
 }
+
+// CreateTag creates a new tag
+func (c *Client) CreateTag(name string) (*models.Tag, error) {
+	body := map[string]string{"name": name}
+	
+	resp, err := c.doRequest("POST", "/api/tags/", body)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusBadRequest {
+		// Handle duplicate tag error
+		respBody, _ := io.ReadAll(resp.Body)
+		if strings.Contains(string(respBody), "already exists") || strings.Contains(string(respBody), "duplicate") {
+			return nil, fmt.Errorf("tag '%s' already exists", name)
+		}
+		return nil, fmt.Errorf("invalid tag name: %s", string(respBody))
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return nil, c.handleErrorResponse(resp)
+	}
+
+	var created models.Tag
+	if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &created, nil
+}
+
+// GetTag retrieves a single tag by ID
+func (c *Client) GetTag(id int) (*models.Tag, error) {
+	path := fmt.Sprintf("/api/tags/%d/", id)
+
+	resp, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("tag with ID %d not found", id)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleErrorResponse(resp)
+	}
+
+	var tag models.Tag
+	if err := json.NewDecoder(resp.Body).Decode(&tag); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &tag, nil
+}
+
+// GetUserProfile retrieves the user profile information
+func (c *Client) GetUserProfile() (*models.UserProfile, error) {
+	path := "/api/user/profile/"
+
+	resp, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, fmt.Errorf("authentication failed. Check your API token")
+	}
+
+	if resp.StatusCode == http.StatusForbidden {
+		return nil, fmt.Errorf("access forbidden. You don't have permission to view this profile")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleErrorResponse(resp)
+	}
+
+	var profile models.UserProfile
+	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &profile, nil
+}

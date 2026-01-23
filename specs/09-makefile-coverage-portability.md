@@ -1,12 +1,12 @@
 # Specification: Makefile Coverage Portability
 
 ## Jobs to Be Done
-- `make cover` validates coverage for ALL packages with test files, including `cmd/ld`
+- `make cover` validates coverage for ALL packages with test files, including `cmd/linkdingctl`
 - Coverage validation runs reliably on minimal environments (CI, Docker) without `bc`
 
 ## Problem 1: cmd/ Packages Skipped
 
-The `cover` target skips all packages matching `cmd/` from coverage threshold checks. This made sense before command tests existed, but `cmd/ld/commands_test.go` now provides coverage for the `cmd/ld` package. The skip condition silently exempts `cmd/ld` from the 70% threshold, defeating the purpose of adding those tests.
+The `cover` target skips all packages matching `cmd/` from coverage threshold checks. This made sense before command tests existed, but `cmd/linkdingctl/commands_test.go` now provides coverage for the `cmd/linkdingctl` package. The skip condition silently exempts `cmd/linkdingctl` from the 70% threshold, defeating the purpose of adding those tests.
 
 Relevant Makefile logic:
 
@@ -41,7 +41,7 @@ Affected files:
 - `Makefile` — `cover` target
 
 ## Success Criteria
-- [ ] `make cover` enforces the 70% threshold on `cmd/ld` package
+- [ ] `make cover` enforces the 70% threshold on `cmd/linkdingctl` package
 - [ ] `make cover` does not skip any package that has test files
 - [ ] `make cover` does not require `bc` to be installed
 - [ ] Coverage comparison uses `awk` for portable float comparison

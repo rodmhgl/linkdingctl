@@ -10,7 +10,7 @@
 
 The config file contains a plaintext API token. File and directory permissions must restrict access.
 
-**Directory**: `~/.config/ld/` created with `0700` (owner-only)
+**Directory**: `~/.config/linkdingctl/` created with `0700` (owner-only)
 **File**: `config.yaml` created with `0600` (owner read/write only)
 
 Current behavior: directory uses `0755`, file permissions depend on umask.
@@ -24,7 +24,7 @@ Current behavior: directory uses `0755`, file permissions depend on umask.
 
 ## Token Input Masking
 
-`ld config init` currently echoes the API token in plaintext during entry.
+`linkdingctl config init` currently echoes the API token in plaintext during entry.
 
 ### Masking Implementation
 
@@ -39,7 +39,7 @@ Fallback: if stdin is not a terminal (piped input), read normally.
 
 ## Safe JSON Output in Backup Command
 
-`cmd/ld/backup.go` constructs JSON via `fmt.Printf` with unescaped path:
+`cmd/linkdingctl/backup.go` constructs JSON via `fmt.Printf` with unescaped path:
 
 ```go
 fmt.Printf("{\"file\": \"%s\"}\n", fullPath)  // BROKEN if path contains quotes
@@ -58,7 +58,7 @@ json.NewEncoder(os.Stdout).Encode(output)
 
 - [ ] Config directory created with `0700`
 - [ ] Config file created with `0600`
-- [ ] `ld config init` does not echo token to terminal
+- [ ] `linkdingctl config init` does not echo token to terminal
 - [ ] Token input works when stdin is piped (non-TTY fallback)
-- [ ] `ld backup --json` produces valid JSON regardless of output path characters
+- [ ] `linkdingctl backup --json` produces valid JSON regardless of output path characters
 - [ ] Existing configs are not re-permissioned (only new writes)

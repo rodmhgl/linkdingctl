@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-LinkDing CLI (`ld`) — a Go CLI for managing bookmarks in a [LinkDing](https://github.com/sissbruecker/linkding) instance. Uses Cobra for commands, Viper for config, and stdlib `net/http` for API calls.
+LinkDing CLI (`linkdingctl`) — a Go CLI for managing bookmarks in a [LinkDing](https://github.com/sissbruecker/linkding) instance. Uses Cobra for commands, Viper for config, and stdlib `net/http` for API calls.
 
 ## Build & Development Commands
 
 ```bash
-make build          # Build binary → ./ld
+make build          # Build binary → ./linkdingctl
 make test           # Run all tests (go test -v ./...)
 make cover          # Tests with 70% per-package coverage gate
 make test-coverage  # Tests + HTML coverage report
@@ -23,23 +23,23 @@ make clean          # Remove binary and coverage artifacts
 ### Running a single test
 
 ```bash
-go test -v -run TestFunctionName ./cmd/ld/
+go test -v -run TestFunctionName ./cmd/linkdingctl/
 go test -v -run TestFunctionName ./internal/api/
 ```
 
 ### Build from scratch
 
 ```bash
-go build -trimpath -ldflags "-s -w" -o ld ./cmd/ld
+go build -trimpath -ldflags "-s -w" -o linkdingctl ./cmd/linkdingctl
 ```
 
 ## Architecture
 
 ```
-cmd/ld/             # Cobra commands (one file per command + root.go + main.go)
+cmd/linkdingctl/             # Cobra commands (one file per command + root.go + main.go)
 internal/
   api/              # LinkDing REST API client (Client struct, all HTTP logic)
-  config/           # Viper-based config loading (~/.config/ld/config.yaml + env vars)
+  config/           # Viper-based config loading (~/.config/linkdingctl/config.yaml + env vars)
   models/           # Bookmark, Tag, and request/response structs
   export/           # Import/export logic (JSON, HTML/Netscape, CSV formats)
 specs/              # Feature specification documents (numbered, sequential)
@@ -66,7 +66,7 @@ specs/              # Feature specification documents (numbered, sequential)
 
 - Unit tests use mock HTTP servers (`httptest.NewServer`)
 - Tests live alongside source files (`*_test.go`)
-- `cmd/ld/commands_test.go` contains integration-style tests for all CLI commands
+- `cmd/linkdingctl/commands_test.go` contains integration-style tests for all CLI commands
 - Coverage threshold: 70% per package (enforced by `make cover`)
 
 ## Constraints (Do Not Add)

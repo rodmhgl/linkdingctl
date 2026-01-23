@@ -14,6 +14,48 @@ type Config struct {
 	Token string
 }
 
+// migrateFromOldPath attempts to migrate config from old path (~/.config/ld/)
+// to new path (~/.config/linkdingctl/). Returns true if migration was performed.
+func migrateFromOldPath(newConfigPath string) (bool, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return false, fmt.Errorf("failed to get user home directory: %w", err)
+	}
+
+	oldConfigPath := filepath.Join(homeDir, ".config", "ld", "config.yaml")
+	
+	// Check if new config already exists - if so, skip migration
+	if _, err := os.Stat(newConfigPath); err == nil {
+		return false, nil
+	}
+
+	// Check if old config exists - if not, nothing to migrate
+	oldData, err := os.ReadFile(oldConfigPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to read old config file: %w", err)
+	}
+
+	// Create new config directory with restricted permissions
+	newConfigDir := filepath.Dir(newConfigPath)
+	if err := os.MkdirAll(newConfigDir, 0700); err != nil {
+		return false, fmt.Errorf("failed to create new config directory: %w", err)
+	}
+
+	// Write config to new location with restricted permissions
+	if err := os.WriteFile(newConfigPath, oldData, 0600); err != nil {
+		return false, fmt.Errorf("failed to write new config file: %w", err)
+	}
+
+	// Print notice to stderr
+	fmt.Fprintf(os.Stderr, "Notice: Configuration migrated from %s to %s\n", oldConfigPath, newConfigPath)
+	fmt.Fprintf(os.Stderr, "The old config file has been preserved and can be safely deleted.\n")
+
+	return true, nil
+}
+
 // Load loads configuration from file and environment variables.
 // Environment variables take precedence over config file values.
 func Load(configPath string) (*Config, error) {
@@ -28,7 +70,15 @@ func Load(configPath string) (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user home directory: %w", err)
 		}
-		configDir := filepath.Join(homeDir, ".config", "ld")
+		configDir := filepath.Join(homeDir, ".config", "linkdingctl")
+		defaultPath := filepath.Join(configDir, "config.yaml")
+		
+		// Attempt migration from old path if needed
+		if _, err := migrateFromOldPath(defaultPath); err != nil {
+			// Log the error but don't fail - config might exist elsewhere
+			fmt.Fprintf(os.Stderr, "Warning: config migration failed: %v\n", err)
+		}
+		
 		v.AddConfigPath(configDir)
 		v.SetConfigName("config")
 		v.SetConfigType("yaml")
@@ -57,7 +107,7 @@ func Load(configPath string) (*Config, error) {
 
 	// Validate that required fields are present
 	if cfg.URL == "" || cfg.Token == "" {
-		return nil, fmt.Errorf("no configuration found. Run 'ld config init' to set up")
+		return nil, fmt.Errorf("no configuration found. Run 'linkdingctl config init' to set up")
 	}
 
 	return cfg, nil
@@ -69,7 +119,7 @@ func DefaultConfigPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
-	return filepath.Join(homeDir, ".config", "ld", "config.yaml"), nil
+	return filepath.Join(homeDir, ".config", "linkdingctl", "config.yaml"), nil
 }
 
 // Save writes configuration to the specified path
