@@ -12,7 +12,7 @@
   - Acceptance: Loads from file and env vars, viper configured
   - Files: internal/config/config.go, internal/config/config_test.go
 
-- [ ] **P0** | LinkDing API client | ~medium
+- [x] **P0** | LinkDing API client | ~medium
   - Acceptance: HTTP client with auth, error handling, can call /api/bookmarks/
   - Files: internal/api/client.go, internal/api/client_test.go
 
