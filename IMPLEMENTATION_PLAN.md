@@ -74,7 +74,7 @@
   - Files: internal/export/import_test.go (new)
   - Details: Test `importJSON`, `importHTML`, `importCSV` with fixture data; test `DetectFormat` for all extensions and unknown; test skip-duplicates vs update behavior
 
-- [ ] **P2** | Command-level tests | ~large
+- [x] **P2** | Command-level tests | ~large
   - Acceptance: Core commands tested via cobra's `Execute()` with `httptest.NewServer`; `go test ./...` covers `cmd/ld`
   - Files: cmd/ld/commands_test.go (new)
   - Details: Pattern from spec: `executeCommand(args ...string)` helper; test `add`, `list`, `list --json`, `get`, `update --add-tags`, `delete --force`, `export -f csv`, `backup`, `tags`, `config show`
