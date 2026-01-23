@@ -53,7 +53,7 @@ internal/export            78.4%     70%      PASS
   - Acceptance: Job runs on `push` to `main`; uses `actions/checkout@v4`; sets up Go via `actions/setup-go@v5` with `go-version-file: go.mod`; runs `go mod download`, `go vet ./...`, `golangci-lint` (via `golangci/golangci-lint-action@v6`), `go test -v -race ./...`, and `go build -trimpath -ldflags "-s -w" -o linkdingctl ./cmd/linkdingctl`
   - Files: `.github/workflows/release.yaml`
 
-- [ ] **P1** | Create release job | ~medium
+- [x] **P1** | Create release job | ~medium
   - Acceptance: Job depends on `lint-test`; uses `actions/checkout@v4` with `fetch-depth: 0`; uses `go-semantic-release/action@v1` with `github-token: ${{ secrets.GITHUB_TOKEN }}`; has `permissions: contents: write`; outputs `version` from the semantic release step; version output is empty when no release-worthy commits exist
   - Files: `.github/workflows/release.yaml`
 
