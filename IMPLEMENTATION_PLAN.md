@@ -126,7 +126,7 @@ internal/export      78.4%     70%      PASS
   - Acceptance: `BINARY_NAME=linkdingctl`; build path `./cmd/linkdingctl`; `make build` produces `./linkdingctl`; all targets work
   - Files: `Makefile`
 
-- [ ] **P0** | Update Cobra root command | ~small
+- [x] **P0** | Update Cobra root command | ~small
   - Acceptance: `rootCmd.Use = "linkdingctl"`; Long description references `linkdingctl`; error messages say `"Run 'linkdingctl config init'"`
   - Files: `cmd/linkdingctl/root.go`
 
