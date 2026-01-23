@@ -64,14 +64,14 @@ internal/export      78.4%     70%      PASS
   - Acceptance: `GetTag(id)` sends GET to `/api/tags/{id}/`; returns Tag model; handles 404 with "Tag with ID X not found"
   - Files: `internal/api/client.go`
 
-- [ ] **P1** | Add `tags create` subcommand | ~small
-  - Acceptance: `ld tags create <name>` creates tag and prints ID; duplicate name shows clear error; empty name shows validation error; respects `--json`
-  - Files: `cmd/ld/tags.go`
+- [x] **P1** | Add `tags create` subcommand | ~small
+  - Acceptance: `linkdingctl tags create <name>` creates tag and prints ID; duplicate name shows clear error; empty name shows validation error; respects `--json`
+  - Files: `cmd/linkdingctl/tags.go`
   - Details: Add `tagsCreateCmd` cobra command; validate non-empty arg; call `client.CreateTag(name)`; output human/JSON based on flag
 
-- [ ] **P1** | Add `tags get` subcommand | ~small
-  - Acceptance: `ld tags get <id>` displays tag ID, Name, DateAdded; non-existent ID shows "not found"; respects `--json`
-  - Files: `cmd/ld/tags.go`
+- [x] **P1** | Add `tags get` subcommand | ~small
+  - Acceptance: `linkdingctl tags get <id>` displays tag ID, Name, DateAdded; non-existent ID shows "not found"; respects `--json`
+  - Files: `cmd/linkdingctl/tags.go`
   - Details: Add `tagsGetCmd` cobra command; parse int arg; call `client.GetTag(id)`; output human/JSON based on flag
 
 - [ ] **P2** | Add tests for tags create and get | ~medium

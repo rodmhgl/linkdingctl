@@ -36,6 +36,8 @@ var (
 
 func init() {
 	rootCmd.AddCommand(tagsCmd)
+	tagsCmd.AddCommand(tagsCreateCmd)
+	tagsCmd.AddCommand(tagsGetCmd)
 	tagsCmd.AddCommand(tagsRenameCmd)
 	tagsCmd.AddCommand(tagsDeleteCmd)
 	tagsCmd.AddCommand(tagsShowCmd)
@@ -45,6 +47,104 @@ func init() {
 
 	tagsRenameCmd.Flags().BoolVarP(&tagsRenameForce, "force", "f", false, "Skip confirmation")
 	tagsDeleteCmd.Flags().BoolVarP(&tagsDeleteForce, "force", "f", false, "Skip confirmation and remove tag from all bookmarks")
+}
+
+// tagsCreateCmd represents the tags create command
+var tagsCreateCmd = &cobra.Command{
+	Use:   "create <name>",
+	Short: "Create a new tag",
+	Long: `Create a new tag in LinkDing.
+
+Examples:
+  linkdingctl tags create mytag
+  linkdingctl tags create "my tag" --json`,
+	Args: cobra.ExactArgs(1),
+	RunE: runTagsCreate,
+}
+
+func runTagsCreate(cmd *cobra.Command, args []string) error {
+	tagName := args[0]
+
+	// Validate tag name is not empty
+	if tagName == "" {
+		return fmt.Errorf("tag name cannot be empty")
+	}
+
+	// Load configuration
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		return fmt.Errorf("configuration error: %w", err)
+	}
+
+	// Create API client
+	client := api.NewClient(cfg.URL, cfg.Token)
+
+	// Create the tag
+	tag, err := client.CreateTag(tagName)
+	if err != nil {
+		return err
+	}
+
+	// Output based on format
+	if jsonOutput {
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(tag)
+	}
+
+	fmt.Printf("✓ Tag created: %s\n", tag.Name)
+	fmt.Printf("  ID: %d\n", tag.ID)
+
+	return nil
+}
+
+// tagsGetCmd represents the tags get command
+var tagsGetCmd = &cobra.Command{
+	Use:   "get <id>",
+	Short: "Get a tag by ID",
+	Long: `Retrieve a single tag by its ID.
+
+Examples:
+  linkdingctl tags get 42
+  linkdingctl tags get 42 --json`,
+	Args: cobra.ExactArgs(1),
+	RunE: runTagsGet,
+}
+
+func runTagsGet(cmd *cobra.Command, args []string) error {
+	// Parse tag ID
+	var tagID int
+	if _, err := fmt.Sscanf(args[0], "%d", &tagID); err != nil {
+		return fmt.Errorf("invalid tag ID: %s (must be a number)", args[0])
+	}
+
+	// Load configuration
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		return fmt.Errorf("configuration error: %w", err)
+	}
+
+	// Create API client
+	client := api.NewClient(cfg.URL, cfg.Token)
+
+	// Get the tag
+	tag, err := client.GetTag(tagID)
+	if err != nil {
+		return err
+	}
+
+	// Output based on format
+	if jsonOutput {
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(tag)
+	}
+
+	fmt.Printf("Tag: %s\n", tag.Name)
+	fmt.Printf("  ID: %d\n", tag.ID)
+	fmt.Printf("  Date Added: %s\n", tag.DateAdded.Format("2006-01-02 15:04:05"))
+
+	return nil
 }
 
 func runTags(cmd *cobra.Command, args []string) error {
