@@ -78,7 +78,7 @@
   - Acceptance: `ld import file.json` with dry-run, progress
   - Files: cmd/ld/import.go, internal/export/import.go
 
-- [ ] **P2** | Import HTML | ~medium
+- [x] **P2** | Import HTML | ~medium
   - Acceptance: `ld import file.html` parses Netscape format
   - Files: internal/export/import.go (extend)
 
