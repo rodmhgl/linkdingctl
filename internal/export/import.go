@@ -96,7 +96,7 @@ func importJSON(client *api.Client, reader io.Reader, options ImportOptions) (*I
 	// Get existing bookmarks to check for duplicates
 	existingURLs := make(map[string]int)
 	if !options.DryRun {
-		existing, err := fetchAllBookmarks(client, nil, true)
+		existing, err := client.FetchAllBookmarks(nil, true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch existing bookmarks: %w", err)
 		}
@@ -199,7 +199,7 @@ func importHTML(client *api.Client, reader io.Reader, options ImportOptions) (*I
 	// Get existing bookmarks to check for duplicates
 	existingURLs := make(map[string]int)
 	if !options.DryRun {
-		existing, err := fetchAllBookmarks(client, nil, true)
+		existing, err := client.FetchAllBookmarks(nil, true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch existing bookmarks: %w", err)
 		}
@@ -364,7 +364,7 @@ func importCSV(client *api.Client, reader io.Reader, options ImportOptions) (*Im
 	// Get existing bookmarks to check for duplicates
 	existingURLs := make(map[string]int)
 	if !options.DryRun {
-		existing, err := fetchAllBookmarks(client, nil, true)
+		existing, err := client.FetchAllBookmarks(nil, true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch existing bookmarks: %w", err)
 		}

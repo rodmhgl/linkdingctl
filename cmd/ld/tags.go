@@ -38,6 +38,7 @@ func init() {
 	rootCmd.AddCommand(tagsCmd)
 	tagsCmd.AddCommand(tagsRenameCmd)
 	tagsCmd.AddCommand(tagsDeleteCmd)
+	tagsCmd.AddCommand(tagsShowCmd)
 
 	tagsCmd.Flags().StringVarP(&tagsSort, "sort", "s", "name", "Sort by: name, count")
 	tagsCmd.Flags().BoolVar(&tagsUnused, "unused", false, "Show only tags with 0 bookmarks")
@@ -56,21 +57,32 @@ func runTags(cmd *cobra.Command, args []string) error {
 	// Create API client
 	client := api.NewClient(cfg.URL, cfg.Token)
 
-	// Fetch all tags (paginated)
-	tagList, err := client.GetTags(1000, 0)
+	// Fetch all tags to get complete list (including unused ones)
+	allTagsList, err := client.FetchAllTags()
 	if err != nil {
 		return err
 	}
 
-	// Build tag counts by fetching bookmarks for each tag
+	// Fetch all bookmarks (including archived) to count tags client-side
+	// This is more efficient than making N API calls (one per tag)
+	allBookmarks, err := client.FetchAllBookmarks(nil, true)
+	if err != nil {
+		return fmt.Errorf("failed to fetch bookmarks: %w", err)
+	}
+
+	// Build tag counts by iterating through bookmarks
 	tagCounts := make(map[string]int)
-	for _, tag := range tagList.Results {
-		// Query bookmarks with this tag to get count
-		bookmarkList, err := client.GetBookmarks("", []string{tag.Name}, nil, nil, 1, 0)
-		if err != nil {
-			return fmt.Errorf("failed to get count for tag '%s': %w", tag.Name, err)
+
+	// Initialize all tags with 0 count
+	for _, tag := range allTagsList {
+		tagCounts[tag.Name] = 0
+	}
+
+	// Count tags from bookmarks
+	for _, bookmark := range allBookmarks {
+		for _, tag := range bookmark.TagNames {
+			tagCounts[tag]++
 		}
-		tagCounts[tag.Name] = bookmarkList.Count
 	}
 
 	// Build list of TagWithCount
@@ -173,19 +185,19 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 	// Create API client
 	client := api.NewClient(cfg.URL, cfg.Token)
 
-	// Get all bookmarks with the old tag
-	bookmarkList, err := client.GetBookmarks("", []string{oldTag}, nil, nil, 1000, 0)
+	// Get all bookmarks with the old tag (including archived)
+	allBookmarks, err := client.FetchAllBookmarks([]string{oldTag}, true)
 	if err != nil {
 		return fmt.Errorf("failed to fetch bookmarks with tag '%s': %w", oldTag, err)
 	}
 
-	if bookmarkList.Count == 0 {
+	if len(allBookmarks) == 0 {
 		return fmt.Errorf("no bookmarks found with tag '%s'", oldTag)
 	}
 
 	// Ask for confirmation unless --force is used
 	if !tagsRenameForce {
-		fmt.Printf("This will rename tag '%s' to '%s' on %d bookmark(s).\n", oldTag, newTag, bookmarkList.Count)
+		fmt.Printf("This will rename tag '%s' to '%s' on %d bookmark(s).\n", oldTag, newTag, len(allBookmarks))
 		fmt.Print("Continue? (y/N): ")
 
 		var response string
@@ -200,9 +212,9 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 	successCount := 0
 	errorCount := 0
 
-	for i, bookmark := range bookmarkList.Results {
+	for i, bookmark := range allBookmarks {
 		// Show progress
-		fmt.Printf("Updating bookmark %d/%d (ID: %d)...\n", i+1, bookmarkList.Count, bookmark.ID)
+		fmt.Printf("Updating bookmark %d/%d (ID: %d)...\n", i+1, len(allBookmarks), bookmark.ID)
 
 		// Build new tag list: replace old tag with new tag
 		newTags := make([]string, 0, len(bookmark.TagNames))
@@ -268,25 +280,27 @@ func runTagsDelete(cmd *cobra.Command, args []string) error {
 	client := api.NewClient(cfg.URL, cfg.Token)
 
 	// Get all bookmarks with the tag to check count
-	bookmarkList, err := client.GetBookmarks("", []string{tagName}, nil, nil, 1000, 0)
+	allBookmarks, err := client.FetchAllBookmarks([]string{tagName}, true)
 	if err != nil {
 		return fmt.Errorf("failed to fetch bookmarks with tag '%s': %w", tagName, err)
 	}
 
+	bookmarkCount := len(allBookmarks)
+
 	// If tag has bookmarks and --force is not set, error
-	if bookmarkList.Count > 0 && !tagsDeleteForce {
-		return fmt.Errorf("tag '%s' has %d bookmark(s). Remove tag from bookmarks first or use --force to remove from all", tagName, bookmarkList.Count)
+	if bookmarkCount > 0 && !tagsDeleteForce {
+		return fmt.Errorf("tag '%s' has %d bookmark(s). Remove tag from bookmarks first or use --force to remove from all", tagName, bookmarkCount)
 	}
 
 	// If tag has no bookmarks, we can just confirm deletion
-	if bookmarkList.Count == 0 {
+	if bookmarkCount == 0 {
 		fmt.Printf("Tag '%s' has no bookmarks and will be removed.\n", tagName)
 		return nil
 	}
 
 	// If we get here, --force is set and tag has bookmarks
 	// Ask for confirmation
-	fmt.Printf("This will remove tag '%s' from %d bookmark(s).\n", tagName, bookmarkList.Count)
+	fmt.Printf("This will remove tag '%s' from %d bookmark(s).\n", tagName, bookmarkCount)
 	fmt.Print("Continue? (y/N): ")
 
 	var response string
@@ -300,9 +314,9 @@ func runTagsDelete(cmd *cobra.Command, args []string) error {
 	successCount := 0
 	errorCount := 0
 
-	for i, bookmark := range bookmarkList.Results {
+	for i, bookmark := range allBookmarks {
 		// Show progress
-		fmt.Printf("Updating bookmark %d/%d (ID: %d)...\n", i+1, bookmarkList.Count, bookmark.ID)
+		fmt.Printf("Updating bookmark %d/%d (ID: %d)...\n", i+1, bookmarkCount, bookmark.ID)
 
 		// Build new tag list: remove the tag
 		newTags := make([]string, 0, len(bookmark.TagNames)-1)
@@ -336,4 +350,53 @@ func runTagsDelete(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// tagsShowCmd represents the tags show command
+var tagsShowCmd = &cobra.Command{
+	Use:   "show <tag-name>",
+	Short: "Show all bookmarks with a specific tag",
+	Long: `List all bookmarks that have the specified tag.
+
+This is equivalent to: ld list --tags <tag-name>
+
+Examples:
+  ld tags show kubernetes
+  ld tags show "web dev" --json`,
+	Args: cobra.ExactArgs(1),
+	RunE: runTagsShow,
+}
+
+func runTagsShow(cmd *cobra.Command, args []string) error {
+	tagName := args[0]
+
+	// Load configuration
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		return fmt.Errorf("configuration error: %w", err)
+	}
+
+	// Create API client
+	client := api.NewClient(cfg.URL, cfg.Token)
+
+	// Fetch all bookmarks with the specified tag (including archived)
+	allBookmarks, err := client.FetchAllBookmarks([]string{tagName}, true)
+	if err != nil {
+		return err
+	}
+
+	// Construct BookmarkList from results for display compatibility
+	bookmarkList := &models.BookmarkList{
+		Count:    len(allBookmarks),
+		Next:     nil,
+		Previous: nil,
+		Results:  allBookmarks,
+	}
+
+	// Output based on format
+	if jsonOutput {
+		return outputJSON(bookmarkList)
+	}
+
+	return outputTable(bookmarkList)
 }

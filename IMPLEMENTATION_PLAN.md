@@ -1,112 +1,119 @@
 # Implementation Plan - LinkDing CLI
 
-> Auto-generated plan. Run `./loop.sh plan` to regenerate from specs.
+> Gap analysis based on specs 01-11 vs current codebase (2026-01-23).
+> Specs 01-08 are fully implemented. Specs 09-11 introduce new defects and cleanup tasks.
 
-## Phase 0: Foundation
+## Current State Summary
 
-- [x] **P0** | Project scaffolding | ~small
-  - Acceptance: `go mod init`, directory structure created, main.go compiles
-  - Files: go.mod, cmd/ld/main.go, internal/ directories
+| Spec | Status | Notes |
+|------|--------|-------|
+| 01 - Core CLI | Complete | Config init/show/test, env overrides, --json, --debug all work |
+| 02 - Bookmark CRUD | Complete | add/list/get/update/delete all implemented with --json |
+| 03 - Tags | Complete | tags/tags show/rename/delete all implemented |
+| 04 - Import/Export | Complete | JSON/HTML/CSV export+import, backup, restore with --wipe |
+| 05 - Security | Complete | 0700/0600 perms, token masking, safe JSON backup output |
+| 06 - Tags Performance | Complete | FetchAllBookmarks on Client, client-side counting, paginated rename/delete |
+| 07 - Test Coverage | **Partial** | cmd/ld=55.5% (target 70%), other packages meet threshold |
+| 08 - Tags Show Pagination | Complete | Uses FetchAllBookmarks for all bookmarks |
+| 09 - Makefile Portability | **Open** | `bc` dependency remains in `cover` target |
+| 10 - Config Token Trim | **Open** | Redundant `strings.TrimSpace(token)` on line 56 of config.go |
+| 11 - Test Robustness | **Open** | Unsafe string slicing in config_test.go; missing flag resets in commands_test.go |
 
-- [x] **P0** | Configuration system | ~medium
-  - Acceptance: Loads from file and env vars, viper configured
-  - Files: internal/config/config.go, internal/config/config_test.go
+## Coverage Status
 
-- [x] **P0** | LinkDing API client | ~medium
-  - Acceptance: HTTP client with auth, error handling, can call /api/bookmarks/
-  - Files: internal/api/client.go, internal/api/client_test.go
+```
+Package              Current   Target   Status
+cmd/ld               78.1%     70%      PASS (+8.1%)
+internal/api         80.1%     70%      PASS
+internal/config      70.3%     70%      PASS
+internal/export      78.4%     70%      PASS
+```
 
-- [x] **P0** | Root command and help | ~small
-  - Acceptance: `ld --help` shows usage, global flags work
-  - Files: cmd/ld/root.go
+---
 
-## Phase 1: Core CRUD
+## Remaining Tasks
 
-- [x] **P1** | Config commands | ~medium
-  - Acceptance: `ld config init`, `ld config show`, `ld config test` work
-  - Files: cmd/ld/config.go
+### Phase 1: Makefile Portability (spec 09)
 
-- [x] **P1** | Add bookmark command | ~medium
-  - Acceptance: `ld add <url>` creates bookmark with all flags
-  - Files: cmd/ld/add.go, internal/api/bookmarks.go
+- [x] **P1** | Replace `bc` with `awk` in Makefile `cover` target | ~small
+  - Acceptance: `make cover` does not require `bc`; uses `awk` for float comparison; coverage validation behavior unchanged for all packages
+  - Files: `Makefile` (line 66)
+  - Details: Replace `result=$$(echo "$$cov < 70" | bc -l)` with `result=$$(echo "$$cov 70" | awk '{print ($$1 < $$2)}')` — `awk` is universally available, `bc` is not (Alpine, minimal Docker, some CI runners)
 
-- [x] **P1** | List bookmarks command | ~medium
-  - Acceptance: `ld list` with filters, table output, JSON output
-  - Files: cmd/ld/list.go
+### Phase 2: Config Token Trim Cleanup (spec 10)
 
-- [x] **P1** | Get bookmark command | ~small
-  - Acceptance: `ld get <id>` shows full details
-  - Files: cmd/ld/get.go
+- [x] **P1** | Remove redundant `strings.TrimSpace(token)` | ~small
+  - Acceptance: Token trimmed exactly once per code path; no redundant `TrimSpace` call; TTY and non-TTY input still work; existing tests pass
+  - Files: `cmd/ld/config.go` (line 56)
+  - Details: The final `token = strings.TrimSpace(token)` on line 56 is redundant — the TTY branch (`term.ReadPassword`) never includes a trailing newline, and the non-TTY branch already calls `TrimSpace` on line 54. Remove line 56 and add `strings.TrimSpace()` around `string(tokenBytes)` on line 46 for defensive clarity in the TTY branch.
 
-- [x] **P1** | Update bookmark command | ~medium
-  - Acceptance: `ld update <id>` with all flags, partial updates
-  - Files: cmd/ld/update.go
+### Phase 3: Test Robustness (spec 11)
 
-- [x] **P1** | Delete bookmark command | ~small
-  - Acceptance: `ld delete <id>` with confirmation, --force
-  - Files: cmd/ld/delete.go
+- [x] **P1** | Fix unsafe string slicing in config test | ~small
+  - Acceptance: `TestLoad_NonYAMLFile` uses `strings.Contains` or `strings.HasPrefix` (no direct slice); cannot panic on short error messages; all existing tests pass
+  - Files: `internal/config/config_test.go` (line 251)
+  - Details: Replace `err.Error()[:len(expectedErrSubstring)] != expectedErrSubstring` with `!strings.Contains(err.Error(), expectedErrSubstring)` — the current code panics with index-out-of-range if the error is shorter than the expected substring
 
-## Phase 2: Tags
+- [x] **P1** | Add missing flag resets to `executeCommand` helper | ~small
+  - Acceptance: `executeCommand` resets `backupOutput`, `backupPrefix`, `tagsRenameForce`, `tagsDeleteForce`; no test pollution between runs; all existing tests pass
+  - Files: `cmd/ld/commands_test.go` (after line 83)
+  - Details: Add the following resets to the `executeCommand` function after the existing flag resets:
+    ```go
+    backupOutput = "."
+    backupPrefix = "linkding-backup"
+    tagsRenameForce = false
+    tagsDeleteForce = false
+    ```
+    Note: `backupOutput` default is `"."` and `backupPrefix` default is `"linkding-backup"` (from flag definitions in `backup.go` init())
 
-- [x] **P2** | List tags command | ~small
-  - Acceptance: `ld tags` lists with counts, sorting
-  - Files: cmd/ld/tags.go, internal/api/tags.go
+### Phase 4: cmd/ld Test Coverage to 70% (spec 07)
 
-- [x] **P2** | Tag rename command | ~medium
-  - Acceptance: `ld tags rename` updates all affected bookmarks
-  - Files: cmd/ld/tags.go (extend)
+- [x] **P2** | Increase `cmd/ld` coverage from 55.5% to 70%+ | ~large
+  - Acceptance: `go test -cover ./cmd/ld/` reports >= 70%; `make cover` passes the 70% gate for all packages
+  - Files: `cmd/ld/commands_test.go`
+  - Result: Coverage increased to 78.1% (8.1% above target). All packages pass `make cover` validation.
+  - Tests added:
+    - `import` command: JSON/HTML/CSV format tests, `--dry-run`, `--skip-duplicates`, `--add-tags`, JSON output
+    - `restore` command: basic restore, `--wipe` with confirmation, `--dry-run`, `--dry-run` + `--wipe`, JSON output
+    - `tags rename` command: force flag, confirmation (yes/no), multiple bookmarks, update errors, no bookmarks found
+    - `tags delete` command: force flag with confirmation, update errors, no bookmarks, without force, confirmation abort
+    - `backup` command: custom `--prefix`, invalid output directory
+    - API errors: 401 Unauthorized, 404 Not Found, 500 Internal Server Error
 
-- [x] **P2** | Tag delete command | ~small
-  - Acceptance: `ld tags delete` with safety check and --force
-  - Files: cmd/ld/tags.go (extend)
+---
 
-## Phase 3: Import/Export
+## Dependency Graph
 
-- [x] **P2** | Export JSON | ~medium
-  - Acceptance: `ld export` outputs valid JSON with metadata
-  - Files: cmd/ld/export.go, internal/export/json.go
+```
+Phase 1 (Makefile):
+  bc→awk replacement — standalone, no deps
 
-- [x] **P2** | Export HTML | ~medium
-  - Acceptance: `ld export -f html` produces Netscape format
-  - Files: internal/export/html.go
+Phase 2 (Config cleanup):
+  Token trim fix — standalone, no deps
 
-- [x] **P2** | Export CSV | ~small
-  - Acceptance: `ld export -f csv` produces valid CSV
-  - Files: internal/export/csv.go
+Phase 3 (Test robustness):
+  Config test fix — standalone
+  Flag reset fix — standalone
 
-- [x] **P2** | Import JSON | ~medium
-  - Acceptance: `ld import file.json` with dry-run, progress
-  - Files: cmd/ld/import.go, internal/export/import.go
+Phase 4 (Coverage):
+  cmd/ld 70%+ — depends on Phase 3 (flag reset fix prevents test pollution)
+                  depends on Phase 2 (token trim change may alter test behavior)
+```
 
-- [x] **P2** | Import HTML | ~medium
-  - Acceptance: `ld import file.html` parses Netscape format
-  - Files: internal/export/import.go (extend)
+## Execution Order
 
-- [x] **P2** | Import CSV | ~small
-  - Acceptance: `ld import file.csv` with proper parsing
-  - Files: internal/export/import.go (extend)
-
-- [x] **P2** | Backup command | ~small
-  - Acceptance: `ld backup` creates timestamped file
-  - Files: cmd/ld/backup.go
-
-- [x] **P2** | Restore command | ~medium
-  - Acceptance: `ld restore` with --wipe safety
-  - Files: cmd/ld/restore.go
-
-## Phase 4: Polish
-
-- [x] **P3** | README documentation | ~small
-  - Acceptance: Installation, usage examples, all commands documented
-  - Files: README.md
-
-- [x] **P3** | Makefile | ~small
-  - Acceptance: `make build`, `make test`, `make install`
-  - Files: Makefile
+1. **Phase 1** (P1): Makefile `bc` → `awk` (standalone, immediate portability win)
+2. **Phase 2** (P1): Config token trim cleanup (standalone, simple code clarity fix)
+3. **Phase 3** (P1): Test robustness fixes (blocks Phase 4 — must fix flag resets before adding more tests)
+4. **Phase 4** (P2): cmd/ld coverage to 70% (depends on Phases 2+3 being complete)
 
 ---
 
 ## Notes
 
-_Claude: Add notes about blockers or discoveries here_
-
+- Specs 01-08 are fully implemented — no code changes needed for those
+- Specs 09-11 are all new items not previously tracked in the implementation plan
+- The `cmd/` skip condition referenced in spec 09 does NOT exist in the current Makefile (it was already removed in a prior change). Only the `bc` dependency remains.
+- The `backupOutput` and `backupPrefix` flags have non-zero defaults (`"."` and `"linkding-backup"`) — reset must use those defaults, not empty strings
+- Phase 4 is the most labor-intensive task (~300+ lines of test code) but Phase 3's flag reset fix is a prerequisite to prevent flaky tests
+- `golang.org/x/term` is already in go.mod — no dependency changes needed

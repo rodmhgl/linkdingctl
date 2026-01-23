@@ -74,9 +74,9 @@ func DefaultConfigPath() (string, error) {
 
 // Save writes configuration to the specified path
 func Save(cfg *Config, configPath string) error {
-	// Ensure directory exists
+	// Ensure directory exists with restricted permissions (owner-only)
 	dir := filepath.Dir(configPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -87,6 +87,11 @@ func Save(cfg *Config, configPath string) error {
 
 	if err := v.WriteConfig(); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	// Set restrictive permissions on config file (owner read/write only)
+	if err := os.Chmod(configPath, 0600); err != nil {
+		return fmt.Errorf("failed to set config file permissions: %w", err)
 	}
 
 	return nil

@@ -38,40 +38,6 @@ type ExportOptions struct {
 	IncludeArchived bool
 }
 
-// fetchAllBookmarks retrieves all bookmarks from the API, handling pagination
-func fetchAllBookmarks(client *api.Client, tags []string, includeArchived bool) ([]models.Bookmark, error) {
-	var allBookmarks []models.Bookmark
-	limit := 100
-	offset := 0
-
-	// Determine archived filter
-	var archivedPtr *bool
-	if !includeArchived {
-		archived := false
-		archivedPtr = &archived
-	}
-
-	for {
-		// Fetch a page of bookmarks
-		bookmarkList, err := client.GetBookmarks("", tags, nil, archivedPtr, limit, offset)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch bookmarks: %w", err)
-		}
-
-		// Add to results
-		allBookmarks = append(allBookmarks, bookmarkList.Results...)
-
-		// Check if there are more pages
-		if bookmarkList.Next == nil || len(bookmarkList.Results) == 0 {
-			break
-		}
-
-		offset += limit
-	}
-
-	return allBookmarks, nil
-}
-
 // convertToExportFormat converts internal bookmark models to export format
 func convertToExportFormat(bookmarks []models.Bookmark) []ExportBookmark {
 	exported := make([]ExportBookmark, len(bookmarks))
@@ -94,8 +60,8 @@ func convertToExportFormat(bookmarks []models.Bookmark) []ExportBookmark {
 
 // ExportJSON exports bookmarks to JSON format
 func ExportJSON(client *api.Client, writer io.Writer, options ExportOptions) error {
-	// Fetch all bookmarks
-	bookmarks, err := fetchAllBookmarks(client, options.Tags, options.IncludeArchived)
+	// Fetch all bookmarks using the Client's pagination method
+	bookmarks, err := client.FetchAllBookmarks(options.Tags, options.IncludeArchived)
 	if err != nil {
 		return err
 	}
