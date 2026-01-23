@@ -142,7 +142,7 @@ internal/export      78.4%     70%      PASS
   - Acceptance: `/linkdingctl` entry replaces or accompanies `/ld`
   - Files: `.gitignore`
 
-- [ ] **P1** | Update all test expected strings | ~medium
+- [x] **P1** | Update all test expected strings | ~medium
   - Acceptance: `config_test.go` references `linkdingctl`; `commands_test.go` uses correct binary name; all tests pass with `go test ./...`
   - Files: `internal/config/config_test.go`, `cmd/linkdingctl/commands_test.go`
 

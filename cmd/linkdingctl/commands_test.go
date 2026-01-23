@@ -124,7 +124,7 @@ func mockBookmark(id int, url, title string, tags []string) models.Bookmark {
 	}
 }
 
-// TestAddCommand tests the 'ld add' command
+// TestAddCommand tests the 'linkdingctl add' command
 func TestAddCommand(t *testing.T) {
 	// Create a mock server
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +198,7 @@ func TestAddCommand(t *testing.T) {
 	})
 }
 
-// TestListCommand tests the 'ld list' command
+// TestListCommand tests the 'linkdingctl list' command
 func TestListCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
@@ -260,7 +260,7 @@ func TestListCommand(t *testing.T) {
 	})
 }
 
-// TestGetCommand tests the 'ld get' command
+// TestGetCommand tests the 'linkdingctl get' command
 func TestGetCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "GET" {
@@ -307,7 +307,7 @@ func TestGetCommand(t *testing.T) {
 	})
 }
 
-// TestUpdateCommand tests the 'ld update' command
+// TestUpdateCommand tests the 'linkdingctl update' command
 func TestUpdateCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") {
@@ -352,7 +352,7 @@ func TestUpdateCommand(t *testing.T) {
 	})
 }
 
-// TestDeleteCommand tests the 'ld delete' command
+// TestDeleteCommand tests the 'linkdingctl delete' command
 func TestDeleteCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "DELETE" {
@@ -376,7 +376,7 @@ func TestDeleteCommand(t *testing.T) {
 	})
 }
 
-// TestExportCommand tests the 'ld export' command
+// TestExportCommand tests the 'linkdingctl export' command
 func TestExportCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
@@ -416,7 +416,7 @@ func TestExportCommand(t *testing.T) {
 	})
 }
 
-// TestBackupCommand tests the 'ld backup' command
+// TestBackupCommand tests the 'linkdingctl backup' command
 func TestBackupCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
@@ -489,7 +489,7 @@ func TestBackupCommand(t *testing.T) {
 	})
 }
 
-// TestTagsCommand tests the 'ld tags' command
+// TestTagsCommand tests the 'linkdingctl tags' command
 func TestTagsCommand(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/tags/" && r.Method == "GET" {
@@ -572,7 +572,7 @@ func TestTagsCommand(t *testing.T) {
 	})
 }
 
-// TestConfigCommand tests the 'ld config show' command
+// TestConfigCommand tests the 'linkdingctl config show' command
 func TestConfigCommand(t *testing.T) {
 	t.Run("config show redacts token", func(t *testing.T) {
 		// Set up environment with token
