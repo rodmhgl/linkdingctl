@@ -13,7 +13,7 @@
 | 04 - Import/Export | Complete | JSON/HTML/CSV export+import, backup, restore with --wipe |
 | 05 - Security | Complete | 0700/0600 perms, token masking, safe JSON backup output |
 | 06 - Tags Performance | Complete | FetchAllBookmarks on Client, client-side counting, paginated rename/delete |
-| 07 - Test Coverage | **Below Threshold** | config=67.6%, export=59.3% (need 70%+), cmd/ld=48.3% |
+| 07 - Test Coverage | **Partial** | config=70.3%, export=78.4% (PASS), cmd/ld=48.3% (need 70%+) |
 | 08 - Tags Show Pagination | **Not Implemented** | Still calls `GetBookmarks(..., 1000, 0)` |
 
 ## Coverage Status
@@ -22,8 +22,8 @@
 Package              Current   Target   Status
 cmd/ld               48.3%     70%      FAIL (exempted by Makefile, but spec 07 wants coverage)
 internal/api         80.1%     70%      PASS
-internal/config      67.6%     70%      FAIL (-2.4%)
-internal/export      59.3%     70%      FAIL (-10.7%)
+internal/config      70.3%     70%      PASS (+0.3%)
+internal/export      78.4%     70%      PASS (+8.4%)
 ```
 
 ---
@@ -49,7 +49,7 @@ internal/export      59.3%     70%      FAIL (-10.7%)
 
 ### Phase 3: Test Coverage — export package (spec 07)
 
-- [ ] **P1** | Increase `internal/export` coverage to 70%+ | ~medium
+- [x] **P1** | Increase `internal/export` coverage to 70%+ | ~medium
   - Acceptance: `go test -cover ./internal/export/` reports >= 70%
   - Files: `internal/export/import_test.go`, `internal/export/csv_test.go`, `internal/export/json_test.go`
   - Details: Current gap is 10.7%. Missing coverage areas:

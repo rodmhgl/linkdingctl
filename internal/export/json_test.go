@@ -3,9 +3,13 @@ package export
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/rodstewart/linkding-cli/internal/api"
 	"github.com/rodstewart/linkding-cli/internal/models"
 )
 
@@ -122,5 +126,154 @@ func TestExportJSONFormat(t *testing.T) {
 	}
 	if decoded.Bookmarks[0].URL != "https://example.com" {
 		t.Errorf("Expected URL https://example.com, got %s", decoded.Bookmarks[0].URL)
+	}
+}
+
+// TestExportJSON_WithMockServer tests ExportJSON with actual API client
+func TestExportJSON_WithMockServer(t *testing.T) {
+	testTime := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+	bookmarks := []models.Bookmark{
+		{
+			ID:           1,
+			URL:          "https://example.com",
+			Title:        "Example",
+			Description:  "Test bookmark",
+			TagNames:     []string{"tag1", "tag2"},
+			DateAdded:    testTime,
+			DateModified: testTime,
+			Unread:       false,
+			Shared:       true,
+			IsArchived:   false,
+		},
+		{
+			ID:           2,
+			URL:          "https://test.com",
+			Title:        "Test",
+			Description:  "",
+			TagNames:     []string{},
+			DateAdded:    testTime,
+			DateModified: testTime,
+			Unread:       true,
+			Shared:       false,
+			IsArchived:   true,
+		},
+	}
+
+	// Create mock server
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := models.BookmarkList{
+			Count:   2,
+			Next:    nil,
+			Results: bookmarks,
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	// Create client and export
+	client := api.NewClient(server.URL, "test-token")
+	var buf bytes.Buffer
+	err := ExportJSON(client, &buf, ExportOptions{})
+
+	if err != nil {
+		t.Fatalf("ExportJSON() failed: %v", err)
+	}
+
+	// Decode the exported JSON
+	var exported ExportData
+	if err := json.Unmarshal(buf.Bytes(), &exported); err != nil {
+		t.Fatalf("Failed to decode exported JSON: %v", err)
+	}
+
+	// Verify export data
+	if exported.Version != "1" {
+		t.Errorf("Expected version 1, got %s", exported.Version)
+	}
+	if exported.Source != "linkding" {
+		t.Errorf("Expected source linkding, got %s", exported.Source)
+	}
+	if len(exported.Bookmarks) != 2 {
+		t.Errorf("Expected 2 bookmarks, got %d", len(exported.Bookmarks))
+	}
+
+	// Verify first bookmark
+	if exported.Bookmarks[0].URL != "https://example.com" {
+		t.Errorf("Expected URL https://example.com, got %s", exported.Bookmarks[0].URL)
+	}
+	if exported.Bookmarks[0].Title != "Example" {
+		t.Errorf("Expected title Example, got %s", exported.Bookmarks[0].Title)
+	}
+	if len(exported.Bookmarks[0].Tags) != 2 {
+		t.Errorf("Expected 2 tags, got %d", len(exported.Bookmarks[0].Tags))
+	}
+	if !exported.Bookmarks[0].Shared {
+		t.Error("Expected Shared to be true")
+	}
+
+	// Verify second bookmark
+	if exported.Bookmarks[1].URL != "https://test.com" {
+		t.Errorf("Expected URL https://test.com, got %s", exported.Bookmarks[1].URL)
+	}
+	if !exported.Bookmarks[1].Unread {
+		t.Error("Expected Unread to be true")
+	}
+	if !exported.Bookmarks[1].Archived {
+		t.Error("Expected Archived to be true")
+	}
+}
+
+// TestExportJSON_WithTags tests ExportJSON with tag filtering
+func TestExportJSON_WithTags(t *testing.T) {
+	testTime := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+
+	// Create mock server that checks for tag filter
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify tag filter is passed via query parameter (tags are added to "q" parameter)
+		query := r.URL.Query()
+		qParam := query.Get("q")
+		if !strings.Contains(qParam, "test-tag") {
+			t.Errorf("Expected 'test-tag' in q parameter, got %s", qParam)
+		}
+
+		bookmarks := []models.Bookmark{
+			{
+				ID:        1,
+				URL:       "https://example.com",
+				Title:     "Example",
+				TagNames:  []string{"test-tag"},
+				DateAdded: testTime,
+			},
+		}
+
+		response := models.BookmarkList{
+			Count:   1,
+			Next:    nil,
+			Results: bookmarks,
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	// Create client and export with tags filter
+	client := api.NewClient(server.URL, "test-token")
+	var buf bytes.Buffer
+	err := ExportJSON(client, &buf, ExportOptions{
+		Tags: []string{"test-tag"},
+	})
+
+	if err != nil {
+		t.Fatalf("ExportJSON() with tags failed: %v", err)
+	}
+
+	// Verify export succeeded
+	var exported ExportData
+	if err := json.Unmarshal(buf.Bytes(), &exported); err != nil {
+		t.Fatalf("Failed to decode exported JSON: %v", err)
+	}
+
+	if len(exported.Bookmarks) != 1 {
+		t.Errorf("Expected 1 bookmark, got %d", len(exported.Bookmarks))
 	}
 }
