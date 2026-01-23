@@ -38,7 +38,7 @@
   - Acceptance: `ld get <id>` shows full details
   - Files: cmd/ld/get.go
 
-- [ ] **P1** | Update bookmark command | ~medium
+- [x] **P1** | Update bookmark command | ~medium
   - Acceptance: `ld update <id>` with all flags, partial updates
   - Files: cmd/ld/update.go
 
