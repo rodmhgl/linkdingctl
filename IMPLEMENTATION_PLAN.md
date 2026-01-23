@@ -64,7 +64,7 @@
   - Files: internal/api/pagination_test.go
   - Details: Mock multi-page responses with `Next` pointer set; verify all pages are fetched and combined
 
-- [ ] **P1** | HTML export tests | ~medium
+- [x] **P1** | HTML export tests | ~medium
   - Acceptance: `ExportHTML` produces valid Netscape format; HTML-escapes URLs, titles, descriptions; includes TAGS attribute; omits DD when description empty
   - Files: internal/export/html_test.go (new)
   - Details: Use mock `httptest.Server` or refactor to accept `[]models.Bookmark` directly for testability
