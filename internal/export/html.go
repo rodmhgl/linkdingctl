@@ -11,8 +11,8 @@ import (
 
 // ExportHTML exports bookmarks to Netscape bookmark format (HTML)
 func ExportHTML(client *api.Client, writer io.Writer, options ExportOptions) error {
-	// Fetch all bookmarks
-	bookmarks, err := fetchAllBookmarks(client, options.Tags, options.IncludeArchived)
+	// Fetch all bookmarks using the Client's pagination method
+	bookmarks, err := client.FetchAllBookmarks(options.Tags, options.IncludeArchived)
 	if err != nil {
 		return err
 	}

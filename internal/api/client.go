@@ -231,6 +231,42 @@ func (c *Client) DeleteBookmark(id int) error {
 	return nil
 }
 
+// FetchAllBookmarks retrieves all bookmarks from the API, handling pagination automatically.
+// If includeArchived is false, only non-archived bookmarks are fetched.
+// Tags can be used to filter bookmarks (space-separated for AND logic).
+func (c *Client) FetchAllBookmarks(tags []string, includeArchived bool) ([]models.Bookmark, error) {
+	var allBookmarks []models.Bookmark
+	limit := 100
+	offset := 0
+
+	// Determine archived filter
+	var archivedPtr *bool
+	if !includeArchived {
+		archived := false
+		archivedPtr = &archived
+	}
+
+	for {
+		// Fetch a page of bookmarks
+		bookmarkList, err := c.GetBookmarks("", tags, nil, archivedPtr, limit, offset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch bookmarks: %w", err)
+		}
+
+		// Add to results
+		allBookmarks = append(allBookmarks, bookmarkList.Results...)
+
+		// Check if there are more pages
+		if bookmarkList.Next == nil || len(bookmarkList.Results) == 0 {
+			break
+		}
+
+		offset += limit
+	}
+
+	return allBookmarks, nil
+}
+
 // GetTags retrieves a list of all tags with optional filters
 func (c *Client) GetTags(limit, offset int) (*models.TagList, error) {
 	params := url.Values{}
