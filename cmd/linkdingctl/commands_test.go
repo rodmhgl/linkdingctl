@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/rodstewart/linkding-cli/internal/models"
+	"github.com/spf13/pflag"
 )
 
 // executeCommand executes a command with the given arguments and returns the output
@@ -79,12 +80,25 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	updateRemoveTags = nil
 	updateTitle = ""
 	updateDescription = ""
+	updateNotes = ""
+	addNotes = ""
 	tagsSort = "name"
 	tagsUnused = false
 	backupOutput = "."
 	backupPrefix = "linkding-backup"
 	tagsRenameForce = false
 	tagsDeleteForce = false
+
+	// Reset all command flags' "Changed" state
+	rootCmd.Flags().VisitAll(func(f *pflag.Flag) {
+		f.Changed = false
+	})
+	// Reset subcommand flags as well
+	for _, cmd := range rootCmd.Commands() {
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			f.Changed = false
+		})
+	}
 
 	return output, cmdErr
 }
@@ -2532,4 +2546,224 @@ func TestAPIError500(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error with 500 response")
 	}
+}
+
+// TestAddWithNotes tests add command with --notes flag
+func TestAddWithNotes(t *testing.T) {
+	var lastReceivedNotes string
+	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/bookmarks/" && r.Method == "POST" {
+			var create models.BookmarkCreate
+			if err := json.NewDecoder(r.Body).Decode(&create); err != nil {
+				t.Fatalf("Failed to decode request: %v", err)
+			}
+			lastReceivedNotes = create.Notes
+			
+			bookmark := mockBookmark(1, create.URL, create.Title, create.TagNames)
+			bookmark.Notes = create.Notes
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(bookmark)
+			return
+		}
+		http.NotFound(w, r)
+	})
+
+	setTestEnv(t, server.URL, "test-token")
+
+	t.Run("add with notes", func(t *testing.T) {
+		lastReceivedNotes = "reset"
+		output, err := executeCommand(t, "add", "https://example.com/notes", "--notes", "Test notes content")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark added") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if lastReceivedNotes != "Test notes content" {
+			t.Errorf("Expected notes 'Test notes content', got: %s", lastReceivedNotes)
+		}
+	})
+
+	t.Run("add with notes shorthand -n", func(t *testing.T) {
+		lastReceivedNotes = "reset"
+		output, err := executeCommand(t, "add", "https://example.com/notes2", "-n", "Short notes")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark added") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if lastReceivedNotes != "Short notes" {
+			t.Errorf("Expected notes 'Short notes', got: %s", lastReceivedNotes)
+		}
+	})
+
+	t.Run("add with notes and json output", func(t *testing.T) {
+		lastReceivedNotes = "reset"
+		output, err := executeCommand(t, "add", "https://example.com/notes-json", "--notes", "JSON notes", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		
+		var bookmark models.Bookmark
+		if err := json.Unmarshal([]byte(output), &bookmark); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v", err)
+		}
+		if bookmark.Notes != "JSON notes" {
+			t.Errorf("Expected notes 'JSON notes' in output, got: %s", bookmark.Notes)
+		}
+	})
+
+	t.Run("add without notes", func(t *testing.T) {
+		lastReceivedNotes = "reset"
+		_, err := executeCommand(t, "add", "https://example.com/no-notes")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		// When --notes flag is not provided, the API should receive an empty string
+		if lastReceivedNotes != "" {
+			t.Errorf("Expected empty notes when not specified, got: %s", lastReceivedNotes)
+		}
+	})
+}
+
+// TestUpdateWithNotes tests update command with --notes flag
+func TestUpdateWithNotes(t *testing.T) {
+	type updateRequest struct {
+		receivedNotes *string
+		notesWasSet   bool
+	}
+	
+	var lastUpdate updateRequest
+	
+	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") {
+			if r.Method == "GET" {
+				// Return existing bookmark
+				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
+				bookmark.Notes = "Old notes"
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(bookmark)
+				return
+			} else if r.Method == "PATCH" {
+				// Parse update request
+				var update models.BookmarkUpdate
+				if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+					t.Fatalf("Failed to decode request: %v", err)
+				}
+				lastUpdate = updateRequest{
+					receivedNotes: update.Notes,
+					notesWasSet:   update.Notes != nil,
+				}
+				
+				// Return updated bookmark
+				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
+				if update.Notes != nil {
+					bookmark.Notes = *update.Notes
+				}
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(bookmark)
+				return
+			}
+		}
+		http.NotFound(w, r)
+	})
+
+	setTestEnv(t, server.URL, "test-token")
+
+	t.Run("update with notes", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "--notes", "Updated notes")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark updated") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !lastUpdate.notesWasSet {
+			t.Error("Expected notes to be set in update request")
+		} else if *lastUpdate.receivedNotes != "Updated notes" {
+			t.Errorf("Expected notes 'Updated notes', got: %s", *lastUpdate.receivedNotes)
+		}
+	})
+
+	t.Run("update notes with shorthand -n", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "-n", "Short updated")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark updated") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !lastUpdate.notesWasSet {
+			t.Error("Expected notes to be set in update request")
+		} else if *lastUpdate.receivedNotes != "Short updated" {
+			t.Errorf("Expected notes 'Short updated', got: %s", *lastUpdate.receivedNotes)
+		}
+	})
+
+	t.Run("clear notes with empty string", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "--notes", "")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark updated") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !lastUpdate.notesWasSet {
+			t.Error("Expected notes to be set in update request (even if empty)")
+		} else if *lastUpdate.receivedNotes != "" {
+			t.Errorf("Expected empty notes, got: %s", *lastUpdate.receivedNotes)
+		}
+	})
+
+	t.Run("update notes with json output", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "--notes", "JSON updated notes", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		
+		var bookmark models.Bookmark
+		if err := json.Unmarshal([]byte(output), &bookmark); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v", err)
+		}
+		if bookmark.Notes != "JSON updated notes" {
+			t.Errorf("Expected notes 'JSON updated notes' in output, got: %s", bookmark.Notes)
+		}
+	})
+
+	t.Run("update notes and description together", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "--notes", "Combined notes", "--description", "Combined desc")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark updated") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !lastUpdate.notesWasSet {
+			t.Error("Expected notes to be set in update request")
+		} else if *lastUpdate.receivedNotes != "Combined notes" {
+			t.Errorf("Expected notes 'Combined notes', got: %s", *lastUpdate.receivedNotes)
+		}
+	})
+
+	t.Run("update without notes flag", func(t *testing.T) {
+		lastUpdate = updateRequest{}
+		output, err := executeCommand(t, "update", "1", "--title", "New title")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+		if !strings.Contains(output, "✓ Bookmark updated") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		// When --notes flag is not provided, notes should not be in the update
+		if lastUpdate.notesWasSet {
+			t.Errorf("Expected notes to not be in update request when flag not provided, but it was set")
+		}
+	})
 }

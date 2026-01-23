@@ -50,7 +50,7 @@ internal/export      78.4%     70%      PASS
   - Files: `cmd/linkdingctl/update.go`
   - Details: Add `updateNotes string` var; register `-n`/`--notes` flag; use `cmd.Flags().Changed("notes")` to detect explicit set; map to `BookmarkUpdate.Notes` pointer field
 
-- [ ] **P2** | Add tests for `--notes` flag | ~small
+- [x] **P2** | Add tests for `--notes` flag | ~small
   - Acceptance: Tests verify notes set on add, notes set on update, notes cleared on update; coverage maintained ≥70%
   - Files: `cmd/ld/commands_test.go`
 

@@ -310,3 +310,99 @@ func TestDeleteBookmark_NotFound(t *testing.T) {
 		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
 	}
 }
+
+// TestCreateTag_Success tests successful tag creation
+func TestCreateTag_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/tags/" || r.Method != "POST" {
+			t.Errorf("expected POST /api/tags/, got %s %s", r.Method, r.URL.Path)
+		}
+
+		var req map[string]string
+		json.NewDecoder(r.Body).Decode(&req)
+		if req["name"] != "test-tag" {
+			t.Errorf("expected name 'test-tag', got '%s'", req["name"])
+		}
+
+		tag := models.Tag{ID: 1, Name: "test-tag"}
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(tag)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	tag, err := client.CreateTag("test-tag")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if tag.ID != 1 {
+		t.Errorf("expected ID 1, got %d", tag.ID)
+	}
+	if tag.Name != "test-tag" {
+		t.Errorf("expected name 'test-tag', got '%s'", tag.Name)
+	}
+}
+
+// TestCreateTag_Duplicate tests creating a duplicate tag
+func TestCreateTag_Duplicate(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"name":["Tag with this name already exists"]}`))
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	_, err := client.CreateTag("duplicate")
+
+	if err == nil {
+		t.Fatal("expected error for duplicate tag, got nil")
+	}
+}
+
+// TestGetTag_Success tests getting a tag by ID
+func TestGetTag_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/tags/1/" || r.Method != "GET" {
+			t.Errorf("expected GET /api/tags/1/, got %s %s", r.Method, r.URL.Path)
+		}
+
+		tag := models.Tag{ID: 1, Name: "test-tag"}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(tag)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	tag, err := client.GetTag(1)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if tag.ID != 1 {
+		t.Errorf("expected ID 1, got %d", tag.ID)
+	}
+	if tag.Name != "test-tag" {
+		t.Errorf("expected name 'test-tag', got '%s'", tag.Name)
+	}
+}
+
+// TestGetTag_NotFound tests getting a non-existent tag
+func TestGetTag_NotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	_, err := client.GetTag(999)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	expectedMsg := "tag with ID 999 not found"
+	if err.Error() != expectedMsg {
+		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
+	}
+}
