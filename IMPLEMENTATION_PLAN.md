@@ -57,7 +57,7 @@ internal/export            78.4%     70%      PASS
   - Acceptance: Job depends on `lint-test`; uses `actions/checkout@v4` with `fetch-depth: 0`; uses `go-semantic-release/action@v1` with `github-token: ${{ secrets.GITHUB_TOKEN }}`; has `permissions: contents: write`; outputs `version` from the semantic release step; version output is empty when no release-worthy commits exist
   - Files: `.github/workflows/release.yaml`
 
-- [ ] **P1** | Create build-binaries job | ~medium
+- [x] **P1** | Create build-binaries job | ~medium
   - Acceptance: Job depends on `release`; conditional on `needs.release.outputs.version != ''`; checks out tagged commit via `ref: v${{ needs.release.outputs.version }}`; uses matrix strategy for 5 targets (linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64); builds with `-X main.version=${VERSION}` linker flag; binary names follow `linkdingctl-<os>-<arch>[.exe]` pattern; uploads via `gh release upload` with `--clobber`; has `permissions: contents: write`
   - Files: `.github/workflows/release.yaml`
 
