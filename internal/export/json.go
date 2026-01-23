@@ -34,7 +34,7 @@ type ExportData struct {
 
 // ExportOptions configures the export behavior
 type ExportOptions struct {
-	Tags           []string
+	Tags            []string
 	IncludeArchived bool
 }
 

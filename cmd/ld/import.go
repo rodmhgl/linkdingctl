@@ -31,10 +31,10 @@ Examples:
 }
 
 var (
-	importFormat        string
-	importDryRun        bool
+	importFormat         string
+	importDryRun         bool
 	importSkipDuplicates bool
-	importAddTags       []string
+	importAddTags        []string
 )
 
 func init() {

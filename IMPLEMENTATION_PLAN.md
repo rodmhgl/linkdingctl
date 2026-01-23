@@ -96,11 +96,11 @@
 
 ## Phase 4: Polish
 
-- [ ] **P3** | README documentation | ~small
+- [x] **P3** | README documentation | ~small
   - Acceptance: Installation, usage examples, all commands documented
   - Files: README.md
 
-- [ ] **P3** | Makefile | ~small
+- [x] **P3** | Makefile | ~small
   - Acceptance: `make build`, `make test`, `make install`
   - Files: Makefile
 

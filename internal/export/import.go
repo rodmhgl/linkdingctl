@@ -32,7 +32,7 @@ type ImportError struct {
 
 // ImportOptions configures the import behavior
 type ImportOptions struct {
-	Format         string   // json, html, csv, or auto
+	Format         string // json, html, csv, or auto
 	DryRun         bool
 	SkipDuplicates bool
 	AddTags        []string
@@ -137,7 +137,7 @@ func importJSON(client *api.Client, reader io.Reader, options ImportOptions) (*I
 
 		// Check for duplicates
 		existingID, exists := existingURLs[exportBookmark.URL]
-		
+
 		if exists && options.SkipDuplicates {
 			result.Skipped++
 			continue
@@ -268,9 +268,9 @@ func importHTML(client *api.Client, reader io.Reader, options ImportOptions) (*I
 }
 
 // processHTMLBookmark processes a single bookmark from HTML import
-func processHTMLBookmark(client *api.Client, result *ImportResult, existingURLs map[string]int, 
+func processHTMLBookmark(client *api.Client, result *ImportResult, existingURLs map[string]int,
 	url, title, tagsStr, description string, lineNum int, options ImportOptions) error {
-	
+
 	// Parse tags
 	var tags []string
 	if tagsStr != "" {
@@ -294,7 +294,7 @@ func processHTMLBookmark(client *api.Client, result *ImportResult, existingURLs 
 
 	// Check for duplicates
 	existingID, exists := existingURLs[url]
-	
+
 	if exists && options.SkipDuplicates {
 		result.Skipped++
 		return nil
@@ -346,7 +346,7 @@ func processHTMLBookmark(client *api.Client, result *ImportResult, existingURLs 
 // importCSV imports bookmarks from CSV format
 func importCSV(client *api.Client, reader io.Reader, options ImportOptions) (*ImportResult, error) {
 	csvReader := csv.NewReader(reader)
-	
+
 	// Read header
 	header, err := csvReader.Read()
 	if err != nil {
@@ -404,7 +404,7 @@ func importCSV(client *api.Client, reader io.Reader, options ImportOptions) (*Im
 		title := getCSVField(record, colMap, "title")
 		description := getCSVField(record, colMap, "description")
 		tagsStr := getCSVField(record, colMap, "tags")
-		
+
 		var tags []string
 		if tagsStr != "" {
 			tags = strings.Split(tagsStr, ",")
@@ -435,7 +435,7 @@ func importCSV(client *api.Client, reader io.Reader, options ImportOptions) (*Im
 
 		// Check for duplicates
 		existingID, exists := existingURLs[url]
-		
+
 		if exists && options.SkipDuplicates {
 			result.Skipped++
 			continue

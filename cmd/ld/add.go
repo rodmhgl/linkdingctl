@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/rodstewart/linkding-cli/internal/api"
 	"github.com/rodstewart/linkding-cli/internal/models"
+	"github.com/spf13/cobra"
 )
 
 var (

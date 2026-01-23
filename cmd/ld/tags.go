@@ -187,7 +187,7 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 	if !tagsRenameForce {
 		fmt.Printf("This will rename tag '%s' to '%s' on %d bookmark(s).\n", oldTag, newTag, bookmarkList.Count)
 		fmt.Print("Continue? (y/N): ")
-		
+
 		var response string
 		fmt.Scanln(&response)
 		if response != "y" && response != "Y" {
@@ -199,7 +199,7 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 	// Update each bookmark
 	successCount := 0
 	errorCount := 0
-	
+
 	for i, bookmark := range bookmarkList.Results {
 		// Show progress
 		fmt.Printf("Updating bookmark %d/%d (ID: %d)...\n", i+1, bookmarkList.Count, bookmark.ID)
@@ -225,7 +225,7 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 			errorCount++
 			continue
 		}
-		
+
 		successCount++
 	}
 

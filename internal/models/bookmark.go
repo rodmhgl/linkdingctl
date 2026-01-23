@@ -4,19 +4,19 @@ import "time"
 
 // Bookmark represents a LinkDing bookmark
 type Bookmark struct {
-	ID          int       `json:"id"`
-	URL         string    `json:"url"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Notes       string    `json:"notes"`
-	WebsiteTitle string   `json:"website_title"`
-	WebsiteDescription string `json:"website_description"`
-	IsArchived  bool      `json:"is_archived"`
-	Unread      bool      `json:"unread"`
-	Shared      bool      `json:"shared"`
-	TagNames    []string  `json:"tag_names"`
-	DateAdded   time.Time `json:"date_added"`
-	DateModified time.Time `json:"date_modified"`
+	ID                 int       `json:"id"`
+	URL                string    `json:"url"`
+	Title              string    `json:"title"`
+	Description        string    `json:"description"`
+	Notes              string    `json:"notes"`
+	WebsiteTitle       string    `json:"website_title"`
+	WebsiteDescription string    `json:"website_description"`
+	IsArchived         bool      `json:"is_archived"`
+	Unread             bool      `json:"unread"`
+	Shared             bool      `json:"shared"`
+	TagNames           []string  `json:"tag_names"`
+	DateAdded          time.Time `json:"date_added"`
+	DateModified       time.Time `json:"date_modified"`
 }
 
 // BookmarkCreate represents the request to create a bookmark
@@ -53,9 +53,9 @@ type BookmarkList struct {
 
 // Tag represents a LinkDing tag
 type Tag struct {
-	ID          int       `json:"id"`
-	Name        string    `json:"name"`
-	DateAdded   time.Time `json:"date_added"`
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	DateAdded time.Time `json:"date_added"`
 }
 
 // TagList represents the paginated response from the tags API

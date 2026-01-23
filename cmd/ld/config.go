@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/rodstewart/linkding-cli/internal/api"
 	"github.com/rodstewart/linkding-cli/internal/config"
+	"github.com/spf13/cobra"
 )
 
 var configCmd = &cobra.Command{
