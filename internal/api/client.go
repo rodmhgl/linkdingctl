@@ -383,3 +383,33 @@ func (c *Client) GetTag(id int) (*models.Tag, error) {
 
 	return &tag, nil
 }
+
+// GetUserProfile retrieves the user profile information
+func (c *Client) GetUserProfile() (*models.UserProfile, error) {
+	path := "/api/user/profile/"
+
+	resp, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, fmt.Errorf("authentication failed. Check your API token")
+	}
+
+	if resp.StatusCode == http.StatusForbidden {
+		return nil, fmt.Errorf("access forbidden. You don't have permission to view this profile")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleErrorResponse(resp)
+	}
+
+	var profile models.UserProfile
+	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &profile, nil
+}

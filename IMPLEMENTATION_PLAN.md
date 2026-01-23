@@ -84,7 +84,7 @@ internal/export      78.4%     70%      PASS
   - Acceptance: `UserProfile` struct with Theme, BookmarkCount, DisplayName, Username fields; proper JSON tags matching API response
   - Files: `internal/models/bookmark.go` (or new `internal/models/user.go`)
 
-- [ ] **P1** | Add `GetUserProfile` API method | ~small
+- [x] **P1** | Add `GetUserProfile` API method | ~small
   - Acceptance: `GetUserProfile()` sends GET to `/api/user/profile/`; returns `*UserProfile`; handles 401/403 errors with clear messages
   - Files: `internal/api/client.go`
 
