@@ -1,0 +1,20 @@
+# Binary
+ld
+linkding-cli
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test coverage
+coverage.out
+coverage.html
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
