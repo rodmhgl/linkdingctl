@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/rodstewart/linkding-cli/internal/models"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -72,6 +73,8 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	rootCmd.SetArgs(nil)
 	jsonOutput = false
 	debugMode = false
+	flagURL = ""
+	flagToken = ""
 	forceDelete = false
 	updateArchive = false
 	updateUnarchive = false
@@ -3164,6 +3167,255 @@ func TestUserProfileCommand(t *testing.T) {
 			if result["error"] == "" {
 				t.Error("Expected error field in JSON error output")
 			}
+		}
+	})
+}
+
+// TestConfigOverrides tests the CLI flag override functionality
+func TestConfigOverrides(t *testing.T) {
+	t.Run("Flag parsing check", func(t *testing.T) {
+		// Create a test command that just prints flag values
+		testCmd := &cobra.Command{
+			Use: "flagtest",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				fmt.Printf("flagURL=%s flagToken=%s\n", flagURL, flagToken)
+				return nil
+			},
+		}
+		rootCmd.AddCommand(testCmd)
+		defer rootCmd.RemoveCommand(testCmd)
+
+		// Test with flags
+		output, err := executeCommand(t, "flagtest", "--url", "https://test.example.com", "--token", "testtoken123")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		expected := "flagURL=https://test.example.com flagToken=testtoken123"
+		if !strings.Contains(output, expected) {
+			t.Errorf("Expected output to contain '%s', got: '%s'", expected, output)
+		}
+	})
+
+	t.Run("URL override", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Set different URL in env
+		setTestEnv(t, "https://wrong-url.example.com", "test-token")
+
+		// Override with CLI flag (should use server.URL)
+		// Use --config to avoid loading real config file
+		output, err := executeCommand(t, "list", "--config", "/nonexistent/config.yaml", "--url", server.URL, "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		// Should succeed because CLI flag overrides env var
+		if !strings.Contains(output, "[]") {
+			t.Errorf("Expected empty bookmarks array, got: %s", output)
+		}
+	})
+
+	t.Run("Token override", func(t *testing.T) {
+		// Create a mock server that checks the Authorization header
+		correctToken := "correct-token"
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			auth := r.Header.Get("Authorization")
+			expectedAuth := "Token " + correctToken
+			if auth != expectedAuth {
+				w.WriteHeader(http.StatusUnauthorized)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Invalid token"})
+				return
+			}
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Set wrong token in env
+		setTestEnv(t, server.URL, "wrong-token")
+
+		// Override with CLI flag (should use correct-token)
+		output, err := executeCommand(t, "list", "--config", "/nonexistent/config.yaml", "--token", correctToken, "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		// Should succeed because CLI flag overrides env var
+		if !strings.Contains(output, "[]") {
+			t.Errorf("Expected empty bookmarks array, got: %s", output)
+		}
+	})
+
+	t.Run("Both URL and token override", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Set different values in env
+		setTestEnv(t, "https://wrong-url.example.com", "wrong-token")
+
+		// Override both with CLI flags
+		output, err := executeCommand(t, "list", "--config", "/nonexistent/config.yaml", "--url", server.URL, "--token", "test-token", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		// Should succeed because CLI flags override env vars
+		if !strings.Contains(output, "[]") {
+			t.Errorf("Expected empty bookmarks array, got: %s", output)
+		}
+	})
+
+	t.Run("Partial override - only URL", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Set URL in env (wrong) and token in env (correct)
+		setTestEnv(t, "https://wrong-url.example.com", "test-token")
+
+		// Override only URL with CLI flag, token comes from env
+		output, err := executeCommand(t, "list", "--config", "/nonexistent/config.yaml", "--url", server.URL, "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		// Should succeed
+		if !strings.Contains(output, "[]") {
+			t.Errorf("Expected empty bookmarks array, got: %s", output)
+		}
+	})
+
+	t.Run("No config file with CLI flags", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Temporarily unset env vars and restore them after test
+		oldURL := os.Getenv("LINKDING_URL")
+		oldToken := os.Getenv("LINKDING_TOKEN")
+		os.Unsetenv("LINKDING_URL")
+		os.Unsetenv("LINKDING_TOKEN")
+		t.Cleanup(func() {
+			if oldURL != "" {
+				os.Setenv("LINKDING_URL", oldURL)
+			}
+			if oldToken != "" {
+				os.Setenv("LINKDING_TOKEN", oldToken)
+			}
+		})
+
+		// Should work with only CLI flags
+		output, err := executeCommand(t, "list", "--config", "/nonexistent/config.yaml", "--url", server.URL, "--token", "test-token", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		// Should succeed
+		if !strings.Contains(output, "[]") {
+			t.Errorf("Expected empty bookmarks array, got: %s", output)
+		}
+	})
+
+	t.Run("Config show displays override source", func(t *testing.T) {
+		// Create a mock server (not needed but helps with config loading)
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {})
+
+		// Set env vars
+		setTestEnv(t, server.URL, "test-token")
+
+		// Test with URL flag override
+		output, err := executeCommand(t, "config", "show", "--url", "https://override.example.com")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		if !strings.Contains(output, "(--url flag)") {
+			t.Errorf("Expected '(--url flag)' in output, got: %s", output)
+		}
+		if !strings.Contains(output, "(environment variable)") {
+			t.Errorf("Expected '(environment variable)' for token in output, got: %s", output)
+		}
+	})
+
+	t.Run("Config show JSON includes override source", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {})
+
+		// Set env vars
+		setTestEnv(t, server.URL, "test-token")
+
+		// Test with token flag override
+		output, err := executeCommand(t, "config", "show", "--token", "override-token", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		var result map[string]interface{}
+		if err := json.Unmarshal([]byte(output), &result); err != nil {
+			t.Fatalf("Failed to parse JSON output: %v", err)
+		}
+
+		if result["url_source"] != "environment variable" {
+			t.Errorf("Expected url_source to be 'environment variable', got: %v", result["url_source"])
+		}
+		if result["token_source"] != "--token flag" {
+			t.Errorf("Expected token_source to be '--token flag', got: %v", result["token_source"])
+		}
+	})
+
+	t.Run("Config test uses effective config", func(t *testing.T) {
+		// Create a mock server
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bookmarks/" {
+				response := models.BookmarkList{
+					Results: []models.Bookmark{},
+				}
+				json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		// Set wrong URL in env
+		setTestEnv(t, "https://wrong-url.example.com", "test-token")
+
+		// Override URL with CLI flag - should test the overridden connection
+		output, err := executeCommand(t, "config", "test", "--config", "/nonexistent/config.yaml", "--url", server.URL)
+		if err != nil {
+			t.Fatalf("Command failed: %v\nOutput: %s", err, output)
+		}
+
+		if !strings.Contains(output, "Successfully connected") {
+			t.Errorf("Expected success message, got: %s", output)
 		}
 	})
 }

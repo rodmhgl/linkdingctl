@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/rodstewart/linkding-cli/internal/api"
-	"github.com/rodstewart/linkding-cli/internal/config"
 	"github.com/rodstewart/linkding-cli/internal/models"
 	"github.com/spf13/cobra"
 )
@@ -73,7 +72,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load configuration
-	cfg, err := config.Load(cfgFile)
+	cfg, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
 	}

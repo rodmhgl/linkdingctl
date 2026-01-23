@@ -112,7 +112,7 @@ internal/export            78.4%     70%      PASS
   - Acceptance: `ld config test --url X --token Y` tests the overridden connection, not the config file
   - Files: `cmd/ld/config.go`
 
-- [ ] **P2** | Add tests for per-command overrides | ~medium
+- [x] **P2** | Add tests for per-command overrides | ~medium
   - Acceptance: Tests for URL override, token override, both overrides, partial override, no-config-file-with-flags, token not in debug output; coverage maintained ≥70%
   - Files: `cmd/ld/commands_test.go`
 

@@ -8,7 +8,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/rodstewart/linkding-cli/internal/api"
-	"github.com/rodstewart/linkding-cli/internal/config"
 	"github.com/rodstewart/linkding-cli/internal/models"
 	"github.com/spf13/cobra"
 )
@@ -71,7 +70,7 @@ func runTagsCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load configuration
-	cfg, err := config.Load(cfgFile)
+	cfg, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
 	}
@@ -119,7 +118,7 @@ func runTagsGet(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load configuration
-	cfg, err := config.Load(cfgFile)
+	cfg, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
 	}
@@ -149,7 +148,7 @@ func runTagsGet(cmd *cobra.Command, args []string) error {
 
 func runTags(cmd *cobra.Command, args []string) error {
 	// Load configuration
-	cfg, err := config.Load(cfgFile)
+	cfg, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
 	}
@@ -277,7 +276,7 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 	newTag := args[1]
 
 	// Load configuration
-	cfg, err := config.Load(cfgFile)
+	cfg, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
 	}
@@ -371,7 +370,7 @@ func runTagsDelete(cmd *cobra.Command, args []string) error {
 	tagName := args[0]
 
 	// Load configuration
-	cfg, err := config.Load(cfgFile)
+	cfg, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
 	}
@@ -471,7 +470,7 @@ func runTagsShow(cmd *cobra.Command, args []string) error {
 	tagName := args[0]
 
 	// Load configuration
-	cfg, err := config.Load(cfgFile)
+	cfg, err := loadConfig()
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
 	}
