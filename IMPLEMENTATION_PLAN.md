@@ -104,7 +104,7 @@ internal/export            78.4%     70%      PASS
   - Files: `cmd/ld/root.go`, `internal/config/config.go`
   - Details: Add `flagURL string` and `flagToken string` vars; register as PersistentFlags on rootCmd; modify `loadConfig()` to accept and apply overrides after `config.Load()`; if `config.Load()` fails but CLI flags provide both URL+token, succeed without config file
 
-- [ ] **P1** | Update `config show` to reflect overrides | ~small
+- [x] **P1** | Update `config show` to reflect overrides | ~small
   - Acceptance: `ld config show --url X` shows "URL: X (--url flag)"; `ld config show --token Y` shows override indicator; JSON output includes override source
   - Files: `cmd/ld/config.go`
 

@@ -103,16 +103,34 @@ var configShowCmd = &cobra.Command{
 			return err
 		}
 
+		// Determine the source of each config value
+		urlSource := "config file"
+		tokenSource := "config file"
+
+		if flagURL != "" {
+			urlSource = "--url flag"
+		} else if os.Getenv("LINKDING_URL") != "" {
+			urlSource = "environment variable"
+		}
+
+		if flagToken != "" {
+			tokenSource = "--token flag"
+		} else if os.Getenv("LINKDING_TOKEN") != "" {
+			tokenSource = "environment variable"
+		}
+
 		if jsonOutput {
-			output := map[string]string{
-				"url":   cfg.URL,
-				"token": redactToken(cfg.Token),
+			output := map[string]interface{}{
+				"url":         cfg.URL,
+				"url_source":  urlSource,
+				"token":       redactToken(cfg.Token),
+				"token_source": tokenSource,
 			}
 			return json.NewEncoder(os.Stdout).Encode(output)
 		}
 
-		fmt.Printf("URL: %s\n", cfg.URL)
-		fmt.Printf("Token: %s\n", redactToken(cfg.Token))
+		fmt.Printf("URL: %s (%s)\n", cfg.URL, urlSource)
+		fmt.Printf("Token: %s (%s)\n", redactToken(cfg.Token), tokenSource)
 		return nil
 	},
 }
