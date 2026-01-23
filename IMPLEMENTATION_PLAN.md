@@ -10,7 +10,7 @@
   - Files: internal/config/config.go
   - Details: Change `os.MkdirAll(dir, 0755)` to `0700`; add `os.Chmod(configPath, 0600)` after `v.WriteConfig()`
 
-- [ ] **P1** | Token input masking in config init | ~small
+- [x] **P1** | Token input masking in config init | ~small
   - Acceptance: `ld config init` does not echo token; works when stdin is piped (non-TTY fallback)
   - Files: cmd/ld/config.go, go.mod (add `golang.org/x/term`)
   - Details: Use `term.ReadPassword(int(os.Stdin.Fd()))` for token prompt; detect non-TTY with `term.IsTerminal()` and fall back to `bufio.Reader`

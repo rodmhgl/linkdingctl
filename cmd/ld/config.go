@@ -10,6 +10,7 @@ import (
 	"github.com/rodstewart/linkding-cli/internal/api"
 	"github.com/rodstewart/linkding-cli/internal/config"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var configCmd = &cobra.Command{
@@ -35,9 +36,22 @@ var configInitCmd = &cobra.Command{
 
 		// Get token
 		fmt.Print("API Token: ")
-		token, err := reader.ReadString('\n')
-		if err != nil {
-			return fmt.Errorf("failed to read token: %w", err)
+		var token string
+		if term.IsTerminal(int(os.Stdin.Fd())) {
+			// TTY: Use password masking
+			tokenBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+			if err != nil {
+				return fmt.Errorf("failed to read token: %w", err)
+			}
+			token = string(tokenBytes)
+			fmt.Println() // Print newline after password input
+		} else {
+			// Non-TTY: Fall back to regular reading (for piped input)
+			tokenInput, err := reader.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("failed to read token: %w", err)
+			}
+			token = strings.TrimSpace(tokenInput)
 		}
 		token = strings.TrimSpace(token)
 
