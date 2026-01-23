@@ -80,7 +80,7 @@ internal/export      78.4%     70%      PASS
 
 ### Phase 7: User Profile Command (spec 12)
 
-- [ ] **P1** | Add `UserProfile` model | ~small
+- [x] **P1** | Add `UserProfile` model | ~small
   - Acceptance: `UserProfile` struct with Theme, BookmarkCount, DisplayName, Username fields; proper JSON tags matching API response
   - Files: `internal/models/bookmark.go` (or new `internal/models/user.go`)
 
