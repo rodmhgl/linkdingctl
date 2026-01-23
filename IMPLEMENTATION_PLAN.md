@@ -27,11 +27,11 @@
 ## Coverage Status
 
 ```
-Package              Current   Target   Status
-cmd/ld               78.1%     70%      PASS
-internal/api         80.1%     70%      PASS
-internal/config      70.3%     70%      PASS
-internal/export      78.4%     70%      PASS
+Package                    Current   Target   Status
+cmd/linkdingctl            79.7%     70%      PASS
+internal/api               79.5%     70%      PASS
+internal/config            83.1%     70%      PASS
+internal/export            78.4%     70%      PASS
 ```
 
 ---
@@ -93,7 +93,7 @@ internal/export      78.4%     70%      PASS
   - Files: `cmd/ld/user.go` (new)
   - Details: Create `userCmd` (parent, help-only), `userProfileCmd` (subcommand); register on rootCmd; load config, create client, call `GetUserProfile()`; format human/JSON output
 
-- [ ] **P2** | Add tests for user profile command | ~small
+- [x] **P2** | Add tests for user profile command | ~small
   - Acceptance: Tests for successful profile display (human + JSON), 401 error, 403 error; coverage maintained ≥70%
   - Files: `cmd/ld/commands_test.go`, `internal/api/client_test.go`
 

@@ -406,3 +406,87 @@ func TestGetTag_NotFound(t *testing.T) {
 		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
 	}
 }
+
+// TestGetUserProfile_Success tests successfully retrieving a user profile
+func TestGetUserProfile_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/user/profile/" {
+			t.Errorf("expected path /api/user/profile/, got %s", r.URL.Path)
+		}
+		if r.Method != "GET" {
+			t.Errorf("expected GET method, got %s", r.Method)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"username":       "testuser",
+			"display_name":   "Test User",
+			"theme":          "dark",
+			"bookmark_count": 42,
+		})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	profile, err := client.GetUserProfile()
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if profile == nil {
+		t.Fatal("expected profile, got nil")
+	}
+	if profile.Username != "testuser" {
+		t.Errorf("expected username 'testuser', got '%s'", profile.Username)
+	}
+	if profile.DisplayName != "Test User" {
+		t.Errorf("expected display name 'Test User', got '%s'", profile.DisplayName)
+	}
+	if profile.Theme != "dark" {
+		t.Errorf("expected theme 'dark', got '%s'", profile.Theme)
+	}
+	if profile.BookmarkCount != 42 {
+		t.Errorf("expected bookmark count 42, got %d", profile.BookmarkCount)
+	}
+}
+
+// TestGetUserProfile_Unauthorized tests 401 response
+func TestGetUserProfile_Unauthorized(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "bad-token")
+	_, err := client.GetUserProfile()
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	expectedMsg := "authentication failed. Check your API token"
+	if err.Error() != expectedMsg {
+		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
+	}
+}
+
+// TestGetUserProfile_Forbidden tests 403 response
+func TestGetUserProfile_Forbidden(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	_, err := client.GetUserProfile()
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	expectedMsg := "access forbidden. You don't have permission to view this profile"
+	if err.Error() != expectedMsg {
+		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
+	}
+}

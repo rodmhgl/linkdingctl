@@ -3016,3 +3016,154 @@ func TestTagsGetCommand(t *testing.T) {
 		}
 	})
 }
+
+// ================= USER PROFILE COMMAND TESTS =================
+
+// TestUserProfileCommand tests the 'linkdingctl user profile' command
+func TestUserProfileCommand(t *testing.T) {
+	t.Run("profile success", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
+				profile := models.UserProfile{
+					Username:      "testuser",
+					DisplayName:   "Test User",
+					Theme:         "dark",
+					BookmarkCount: 42,
+				}
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(profile)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "user", "profile")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "Username: testuser") {
+			t.Errorf("Expected username in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Display Name: Test User") {
+			t.Errorf("Expected display name in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Theme: dark") {
+			t.Errorf("Expected theme in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Bookmark Count: 42") {
+			t.Errorf("Expected bookmark count in output, got: %s", output)
+		}
+	})
+
+	t.Run("profile with json output", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
+				profile := models.UserProfile{
+					Username:      "jsonuser",
+					DisplayName:   "JSON User",
+					Theme:         "light",
+					BookmarkCount: 100,
+				}
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(profile)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "user", "profile", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		var profile models.UserProfile
+		if err := json.Unmarshal([]byte(output), &profile); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
+		}
+		if profile.Username != "jsonuser" {
+			t.Errorf("Expected username 'jsonuser', got: %s", profile.Username)
+		}
+		if profile.DisplayName != "JSON User" {
+			t.Errorf("Expected display name 'JSON User', got: %s", profile.DisplayName)
+		}
+		if profile.Theme != "light" {
+			t.Errorf("Expected theme 'light', got: %s", profile.Theme)
+		}
+		if profile.BookmarkCount != 100 {
+			t.Errorf("Expected bookmark count 100, got: %d", profile.BookmarkCount)
+		}
+	})
+
+	t.Run("profile 401 unauthorized", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "bad-token")
+
+		_, err := executeCommand(t, "user", "profile")
+		if err == nil {
+			t.Fatal("Expected error for 401 response, got nil")
+		}
+		if !strings.Contains(err.Error(), "authentication failed") || !strings.Contains(err.Error(), "Check your API token") {
+			t.Errorf("Expected authentication error message, got: %v", err)
+		}
+	})
+
+	t.Run("profile 403 forbidden", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "user", "profile")
+		if err == nil {
+			t.Fatal("Expected error for 403 response, got nil")
+		}
+		if !strings.Contains(err.Error(), "access forbidden") || !strings.Contains(err.Error(), "don't have permission") {
+			t.Errorf("Expected forbidden error message, got: %v", err)
+		}
+	})
+
+	t.Run("profile json output on error", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "bad-token")
+
+		output, err := executeCommand(t, "user", "profile", "--json")
+		if err == nil {
+			t.Fatal("Expected error for 401 response, got nil")
+		}
+
+		// Check if JSON error was output
+		var result map[string]string
+		if jsonErr := json.Unmarshal([]byte(output), &result); jsonErr == nil {
+			if result["status"] != "failed" {
+				t.Errorf("Expected status 'failed' in JSON error output, got: %s", result["status"])
+			}
+			if result["error"] == "" {
+				t.Error("Expected error field in JSON error output")
+			}
+		}
+	})
+}
