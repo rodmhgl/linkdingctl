@@ -1,6 +1,6 @@
-# Binary
-ld
-linkding-cli
+# Binary (at root only)
+/ld
+/linkding-cli
 
 # IDE
 .idea/

@@ -16,13 +16,13 @@
   - Acceptance: HTTP client with auth, error handling, can call /api/bookmarks/
   - Files: internal/api/client.go, internal/api/client_test.go
 
-- [ ] **P0** | Root command and help | ~small
+- [x] **P0** | Root command and help | ~small
   - Acceptance: `ld --help` shows usage, global flags work
   - Files: cmd/ld/root.go
 
 ## Phase 1: Core CRUD
 
-- [ ] **P1** | Config commands | ~medium
+- [x] **P1** | Config commands | ~medium
   - Acceptance: `ld config init`, `ld config show`, `ld config test` work
   - Files: cmd/ld/config.go
 
