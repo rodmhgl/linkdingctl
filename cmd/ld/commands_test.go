@@ -71,6 +71,7 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	rootCmd.SetArgs(nil)
 	jsonOutput = false
 	debugMode = false
+	forceDelete = false
 
 	return output, cmdErr
 }
@@ -598,6 +599,213 @@ func TestMissingConfig(t *testing.T) {
 		_, err := executeCommand(t, "--config", nonExistentConfig, "list")
 		if err == nil {
 			t.Error("Expected error with missing config, got nil")
+		}
+	})
+}
+
+// TestDeleteWithConfirmation tests the delete command with stdin confirmation
+func TestDeleteWithConfirmation(t *testing.T) {
+	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") {
+			if r.Method == "GET" {
+				// Return bookmark for confirmation display
+				bookmark := mockBookmark(1, "https://example.com", "Example Site", []string{"test"})
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(bookmark)
+				return
+			} else if r.Method == "DELETE" {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+		}
+		http.NotFound(w, r)
+	})
+
+	setTestEnv(t, server.URL, "test-token")
+
+	t.Run("delete with confirmation yes", func(t *testing.T) {
+		// Save original stdin
+		oldStdin := os.Stdin
+		defer func() { os.Stdin = oldStdin }()
+
+		// Create a pipe and provide "y\n" as input
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("Failed to create pipe: %v", err)
+		}
+		os.Stdin = r
+
+		// Write confirmation input
+		go func() {
+			w.WriteString("y\n")
+			w.Close()
+		}()
+
+		output, err := executeCommand(t, "delete", "1")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "About to delete bookmark") {
+			t.Errorf("Expected confirmation prompt, got: %s", output)
+		}
+		if !strings.Contains(output, "✓ Bookmark 1 deleted") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+	})
+
+	t.Run("delete with confirmation no", func(t *testing.T) {
+		// Save original stdin
+		oldStdin := os.Stdin
+		defer func() { os.Stdin = oldStdin }()
+
+		// Create a pipe and provide "n\n" as input
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("Failed to create pipe: %v", err)
+		}
+		os.Stdin = r
+
+		// Write rejection input
+		go func() {
+			w.WriteString("n\n")
+			w.Close()
+		}()
+
+		output, err := executeCommand(t, "delete", "1")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "About to delete bookmark") {
+			t.Errorf("Expected confirmation prompt, got: %s", output)
+		}
+		if !strings.Contains(output, "Delete cancelled") {
+			t.Errorf("Expected cancellation message, got: %s", output)
+		}
+		if strings.Contains(output, "deleted") {
+			t.Errorf("Should not have deleted bookmark, got: %s", output)
+		}
+	})
+}
+
+// TestConfigInitWithStdin tests the config init command with piped stdin
+func TestConfigInitWithStdin(t *testing.T) {
+	t.Run("config init with piped input", func(t *testing.T) {
+		// Save original stdin
+		oldStdin := os.Stdin
+		defer func() { os.Stdin = oldStdin }()
+
+		// Create a pipe and provide URL and token
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("Failed to create pipe: %v", err)
+		}
+		os.Stdin = r
+
+		// Write config inputs
+		go func() {
+			w.WriteString("https://linkding.example.com\n")
+			w.WriteString("test-token-12345\n")
+			w.Close()
+		}()
+
+		// Use a temporary config file
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config.yaml")
+
+		output, err := executeCommand(t, "--config", configPath, "config", "init")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "Configuration saved") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+
+		// Verify config file was created
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			t.Errorf("Config file was not created at: %s", configPath)
+		}
+	})
+
+	t.Run("config init with json output", func(t *testing.T) {
+		// Save original stdin
+		oldStdin := os.Stdin
+		defer func() { os.Stdin = oldStdin }()
+
+		// Create a pipe and provide URL and token
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("Failed to create pipe: %v", err)
+		}
+		os.Stdin = r
+
+		// Write config inputs
+		go func() {
+			w.WriteString("https://linkding.example.com\n")
+			w.WriteString("test-token-json\n")
+			w.Close()
+		}()
+
+		// Use a temporary config file
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config-json.yaml")
+
+		output, err := executeCommand(t, "--config", configPath, "config", "init", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		// The output may contain prompts before the JSON, so extract the JSON part
+		// Look for the opening brace of JSON output
+		jsonStart := strings.Index(output, "{")
+		if jsonStart == -1 {
+			t.Fatalf("No JSON found in output: %s", output)
+		}
+		jsonOutput := output[jsonStart:]
+
+		var result map[string]string
+		if err := json.Unmarshal([]byte(jsonOutput), &result); err != nil {
+			t.Errorf("Expected valid JSON, got error: %v, json output: %s", err, jsonOutput)
+		}
+		if result["status"] != "success" {
+			t.Errorf("Expected success status, got: %s", result["status"])
+		}
+		if result["path"] != configPath {
+			t.Errorf("Expected path %s, got: %s", configPath, result["path"])
+		}
+	})
+
+	t.Run("config init with empty inputs", func(t *testing.T) {
+		// Save original stdin
+		oldStdin := os.Stdin
+		defer func() { os.Stdin = oldStdin }()
+
+		// Create a pipe and provide empty inputs
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("Failed to create pipe: %v", err)
+		}
+		os.Stdin = r
+
+		// Write empty inputs
+		go func() {
+			w.WriteString("\n")
+			w.WriteString("\n")
+			w.Close()
+		}()
+
+		// Use a temporary config file
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config-empty.yaml")
+
+		_, err = executeCommand(t, "--config", configPath, "config", "init")
+		if err == nil {
+			t.Error("Expected error with empty inputs, got nil")
+		}
+		if err != nil && !strings.Contains(err.Error(), "required") {
+			t.Errorf("Expected 'required' error message, got: %v", err)
 		}
 	})
 }

@@ -79,7 +79,7 @@
   - Files: cmd/ld/commands_test.go (new)
   - Details: Pattern from spec: `executeCommand(args ...string)` helper; test `add`, `list`, `list --json`, `get`, `update --add-tags`, `delete --force`, `export -f csv`, `backup`, `tags`, `config show`
 
-- [ ] **P2** | Integration test for stdin interaction | ~small
+- [x] **P2** | Integration test for stdin interaction | ~small
   - Acceptance: Delete confirmation and config init can be tested with piped stdin
   - Files: cmd/ld/commands_test.go (extend)
   - Details: Use `os.Pipe()` pattern from spec to provide "y\n" via stdin
