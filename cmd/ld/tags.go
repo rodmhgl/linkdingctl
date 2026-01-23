@@ -38,6 +38,7 @@ func init() {
 	rootCmd.AddCommand(tagsCmd)
 	tagsCmd.AddCommand(tagsRenameCmd)
 	tagsCmd.AddCommand(tagsDeleteCmd)
+	tagsCmd.AddCommand(tagsShowCmd)
 
 	tagsCmd.Flags().StringVarP(&tagsSort, "sort", "s", "name", "Sort by: name, count")
 	tagsCmd.Flags().BoolVar(&tagsUnused, "unused", false, "Show only tags with 0 bookmarks")
@@ -349,4 +350,45 @@ func runTagsDelete(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// tagsShowCmd represents the tags show command
+var tagsShowCmd = &cobra.Command{
+	Use:   "show <tag-name>",
+	Short: "Show all bookmarks with a specific tag",
+	Long: `List all bookmarks that have the specified tag.
+
+This is equivalent to: ld list --tags <tag-name>
+
+Examples:
+  ld tags show kubernetes
+  ld tags show "web dev" --json`,
+	Args: cobra.ExactArgs(1),
+	RunE: runTagsShow,
+}
+
+func runTagsShow(cmd *cobra.Command, args []string) error {
+	tagName := args[0]
+
+	// Load configuration
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		return fmt.Errorf("configuration error: %w", err)
+	}
+
+	// Create API client
+	client := api.NewClient(cfg.URL, cfg.Token)
+
+	// Fetch bookmarks with the specified tag
+	bookmarkList, err := client.GetBookmarks("", []string{tagName}, nil, nil, 1000, 0)
+	if err != nil {
+		return err
+	}
+
+	// Output based on format
+	if jsonOutput {
+		return outputJSON(bookmarkList)
+	}
+
+	return outputTable(bookmarkList)
 }

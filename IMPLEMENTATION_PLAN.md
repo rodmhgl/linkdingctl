@@ -52,7 +52,7 @@
 
 ## Phase 7: Missing Commands (spec 03)
 
-- [ ] **P2** | Tags show subcommand | ~small
+- [x] **P2** | Tags show subcommand | ~small
   - Acceptance: `ld tags show <tag-name>` lists all bookmarks with that tag (delegates to list --tags behavior)
   - Files: cmd/ld/tags.go
   - Details: Add `tagsShowCmd` that calls `runList` equivalent with the specified tag filter; respects `--json` flag
