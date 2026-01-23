@@ -49,7 +49,7 @@ internal/export            78.4%     70%      PASS
 
 ### Phase 2: GitHub Actions Workflow (spec 18)
 
-- [ ] **P1** | Create lint-test job | ~medium
+- [x] **P1** | Create lint-test job | ~medium
   - Acceptance: Job runs on `push` to `main`; uses `actions/checkout@v4`; sets up Go via `actions/setup-go@v5` with `go-version-file: go.mod`; runs `go mod download`, `go vet ./...`, `golangci-lint` (via `golangci/golangci-lint-action@v6`), `go test -v -race ./...`, and `go build -trimpath -ldflags "-s -w" -o linkdingctl ./cmd/linkdingctl`
   - Files: `.github/workflows/release.yaml`
 
