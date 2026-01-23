@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -248,7 +249,7 @@ func TestLoad_NonYAMLFile(t *testing.T) {
 
 	// Verify it's a parse error (not just "not found")
 	expectedErrSubstring := "failed to read config file"
-	if err.Error()[:len(expectedErrSubstring)] != expectedErrSubstring {
+	if !strings.Contains(err.Error(), expectedErrSubstring) {
 		t.Errorf("expected error containing '%s', got '%v'", expectedErrSubstring, err)
 	}
 }

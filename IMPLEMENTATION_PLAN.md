@@ -49,7 +49,7 @@ internal/export      78.4%     70%      PASS
 
 ### Phase 3: Test Robustness (spec 11)
 
-- [ ] **P1** | Fix unsafe string slicing in config test | ~small
+- [x] **P1** | Fix unsafe string slicing in config test | ~small
   - Acceptance: `TestLoad_NonYAMLFile` uses `strings.Contains` or `strings.HasPrefix` (no direct slice); cannot panic on short error messages; all existing tests pass
   - Files: `internal/config/config_test.go` (line 251)
   - Details: Replace `err.Error()[:len(expectedErrSubstring)] != expectedErrSubstring` with `!strings.Contains(err.Error(), expectedErrSubstring)` — the current code panics with index-out-of-range if the error is shorter than the expected substring
