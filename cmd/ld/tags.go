@@ -379,10 +379,18 @@ func runTagsShow(cmd *cobra.Command, args []string) error {
 	// Create API client
 	client := api.NewClient(cfg.URL, cfg.Token)
 
-	// Fetch bookmarks with the specified tag
-	bookmarkList, err := client.GetBookmarks("", []string{tagName}, nil, nil, 1000, 0)
+	// Fetch all bookmarks with the specified tag (including archived)
+	allBookmarks, err := client.FetchAllBookmarks([]string{tagName}, true)
 	if err != nil {
 		return err
+	}
+
+	// Construct BookmarkList from results for display compatibility
+	bookmarkList := &models.BookmarkList{
+		Count:    len(allBookmarks),
+		Next:     nil,
+		Previous: nil,
+		Results:  allBookmarks,
 	}
 
 	// Output based on format

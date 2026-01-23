@@ -1,125 +1,128 @@
 # Implementation Plan - LinkDing CLI
 
-> Gap analysis based on specs 01-07 vs current codebase. All Phase 0-3 original items are complete.
-> This plan covers remaining gaps identified from specs 05, 06, 07, and 03.
+> Gap analysis based on specs 01-08 vs current codebase (2026-01-23).
+> Previous phases (0-8 original items) were marked complete but re-analysis reveals remaining defects and coverage gaps.
 
-## Phase 5: Security Hardening (spec 05)
+## Current State Summary
 
-- [x] **P1** | Config file permissions hardening | ~small
-  - Acceptance: `Save()` creates directory with `0700`, file with `0600`; existing configs not re-permissioned on read
-  - Files: internal/config/config.go
-  - Details: Change `os.MkdirAll(dir, 0755)` to `0700`; add `os.Chmod(configPath, 0600)` after `v.WriteConfig()`
+| Spec | Status | Notes |
+|------|--------|-------|
+| 01 - Core CLI | Complete | Config init/show/test, env overrides, --json, --debug all work |
+| 02 - Bookmark CRUD | Complete | add/list/get/update/delete all implemented with --json |
+| 03 - Tags | **Defect** | `tags show` uses hardcoded 1000 limit (spec 08) |
+| 04 - Import/Export | Complete | JSON/HTML/CSV export+import, backup, restore with --wipe |
+| 05 - Security | Complete | 0700/0600 perms, token masking, safe JSON backup output |
+| 06 - Tags Performance | Complete | FetchAllBookmarks on Client, client-side counting, paginated rename/delete |
+| 07 - Test Coverage | **Below Threshold** | config=67.6%, export=59.3% (need 70%+), cmd/ld=48.3% |
+| 08 - Tags Show Pagination | **Not Implemented** | Still calls `GetBookmarks(..., 1000, 0)` |
 
-- [x] **P1** | Token input masking in config init | ~small
-  - Acceptance: `ld config init` does not echo token; works when stdin is piped (non-TTY fallback)
-  - Files: cmd/ld/config.go, go.mod (add `golang.org/x/term`)
-  - Details: Use `term.ReadPassword(int(os.Stdin.Fd()))` for token prompt; detect non-TTY with `term.IsTerminal()` and fall back to `bufio.Reader`
+## Coverage Status
 
-- [x] **P1** | Safe JSON output in backup command | ~small
-  - Acceptance: `ld backup --json` produces valid JSON regardless of output path characters (quotes, backslashes)
-  - Files: cmd/ld/backup.go
-  - Details: Replace `fmt.Printf("{\"file\": \"%s\"}\n", fullPath)` with `json.NewEncoder(os.Stdout).Encode(map[string]string{"file": fullPath})`
+```
+Package              Current   Target   Status
+cmd/ld               48.3%     70%      FAIL (exempted by Makefile, but spec 07 wants coverage)
+internal/api         80.1%     70%      PASS
+internal/config      67.6%     70%      FAIL (-2.4%)
+internal/export      59.3%     70%      FAIL (-10.7%)
+```
 
-## Phase 6: Tags Performance & Pagination (spec 06)
+---
 
-- [x] **P0** | Extract fetchAllBookmarks to shared location | ~small
-  - Acceptance: `fetchAllBookmarks` is accessible from both `internal/export` and `cmd/ld` packages
-  - Files: internal/api/client.go (add `FetchAllBookmarks` method), internal/export/json.go (update to call new method)
-  - Details: Move pagination logic to `Client.FetchAllBookmarks(tags []string, includeArchived bool) ([]models.Bookmark, error)` as exported method on Client; update `internal/export/json.go` to delegate to it
+## Remaining Tasks
 
-- [x] **P1** | Fix N+1 query in `ld tags` | ~medium
-  - Acceptance: `ld tags` makes at most O(N/page_size) API calls, not O(tags) calls; tag counts are correct
-  - Files: cmd/ld/tags.go
-  - Details: Replace per-tag `GetBookmarks` loop with single `FetchAllBookmarks(nil, true)` call, then count tags client-side in a `map[string]int`
-  - Depends on: Extract fetchAllBookmarks
+### Phase 1: Bug Fix (spec 08)
 
-- [x] **P1** | Paginate tag rename operations | ~small
-  - Acceptance: `ld tags rename` processes all matching bookmarks regardless of count (not just first 1000)
-  - Files: cmd/ld/tags.go (runTagsRename around line 177)
-  - Details: Replace `client.GetBookmarks("", []string{oldTag}, nil, nil, 1000, 0)` with `client.FetchAllBookmarks([]string{oldTag}, true)`; update progress display to use `len(allBookmarks)` instead of `bookmarkList.Count`
-  - Depends on: Extract fetchAllBookmarks
+- [x] **P0** | Fix `tags show` pagination defect | ~small
+  - Acceptance: `ld tags show <tag>` returns ALL matching bookmarks regardless of count; uses `FetchAllBookmarks` not `GetBookmarks` with fixed limit; `--json` output includes all bookmarks; output count reflects true total
+  - Files: `cmd/ld/tags.go` — `runTagsShow()` function (line ~370-394)
+  - Details: Replace `client.GetBookmarks("", []string{tagName}, nil, nil, 1000, 0)` with `client.FetchAllBookmarks([]string{tagName}, true)`, construct `BookmarkList` from results for display compatibility
 
-- [x] **P1** | Paginate tag delete operations | ~small
-  - Acceptance: `ld tags delete --force` processes all matching bookmarks regardless of count
-  - Files: cmd/ld/tags.go (runTagsDelete around line 271)
-  - Details: Same pattern as rename — replace fixed-limit fetch with `FetchAllBookmarks`
-  - Depends on: Extract fetchAllBookmarks
+### Phase 2: Test Coverage — config package (spec 07)
 
-- [x] **P1** | Paginate tags list | ~small
-  - Acceptance: `ld tags` displays all tags even if count exceeds 1000
-  - Files: cmd/ld/tags.go (runTags around line 60), internal/api/client.go
-  - Details: Add `Client.FetchAllTags() ([]models.Tag, error)` that loops with pagination until `Next == nil`; replace `client.GetTags(1000, 0)` with `client.FetchAllTags()`
+- [ ] **P1** | Increase `internal/config` coverage to 70%+ | ~small
+  - Acceptance: `go test -cover ./internal/config/` reports >= 70%
+  - Files: `internal/config/config_test.go`
+  - Details: Current gap is 2.4%. Add tests for:
+    - `Save()` permissions verification (check 0700 dir, 0600 file via `os.Stat().Mode()`)
+    - `Load()` with custom `--config` path pointing to non-YAML file (parse error path)
+    - `Load()` with only env vars set (no file at all, env-only scenario)
 
-## Phase 7: Missing Commands (spec 03)
+### Phase 3: Test Coverage — export package (spec 07)
 
-- [x] **P2** | Tags show subcommand | ~small
-  - Acceptance: `ld tags show <tag-name>` lists all bookmarks with that tag (delegates to list --tags behavior)
-  - Files: cmd/ld/tags.go
-  - Details: Add `tagsShowCmd` that calls `runList` equivalent with the specified tag filter; respects `--json` flag
+- [ ] **P1** | Increase `internal/export` coverage to 70%+ | ~medium
+  - Acceptance: `go test -cover ./internal/export/` reports >= 70%
+  - Files: `internal/export/import_test.go`, `internal/export/csv_test.go`, `internal/export/json_test.go`
+  - Details: Current gap is 10.7%. Missing coverage areas:
+    - `ExportCSV` function (actual export via mock HTTP server, not just format tests)
+    - `ExportJSON` function (actual export via mock HTTP server)
+    - `importCSV` with missing columns (graceful handling)
+    - `importCSV` error on malformed CSV rows
+    - `importHTML` with `--add-tags` option
+    - `importHTML` with `--skip-duplicates`
+    - `importCSV` with `--skip-duplicates` and `--add-tags`
+    - `importCSV` with existing bookmark updates (PATCH path)
+    - `ImportBookmarks` entry point (auto-detect format dispatch, unsupported format error)
 
-## Phase 8: Test Coverage (spec 07)
+### Phase 4: Test Coverage — cmd/ld package (spec 07)
 
-- [x] **P1** | API client pagination tests | ~medium
-  - Acceptance: Tests cover multi-page `GetBookmarks` fetch, `GetTags` pagination, `FetchAllBookmarks` with multiple pages
-  - Files: internal/api/pagination_test.go
-  - Details: Mock multi-page responses with `Next` pointer set; verify all pages are fetched and combined
+- [ ] **P2** | Increase `cmd/ld` coverage to 70%+ | ~large
+  - Acceptance: `go test -cover ./cmd/ld/` reports >= 70%
+  - Files: `cmd/ld/commands_test.go`
+  - Details: Current 48.3% means ~22% more coverage needed. Priority test cases:
+    - `export` command: test JSON format output, HTML format output, `--output` flag writes to file, `--tags` filter, invalid format error
+    - `import` command: test with each format, `--dry-run`, `--skip-duplicates`, `--add-tags`, `--format` override, `--json` output
+    - `restore` command: test basic restore (no wipe), `--dry-run`, `--wipe` with confirmation (pipe "yes\n"), `--wipe` with JSON rejection
+    - `tags rename` command: test with `--force`, test without --force (pipe "y\n"), test with no matching bookmarks error
+    - `tags delete` command: test with `--force`, test tag-has-bookmarks error without --force, test tag with 0 bookmarks
+    - `tags show` command: test basic usage, test `--json` output
+    - `update` command: test `--title`, `--remove-tags`, `--archive`/`--unarchive`, conflicting flags errors (`--archive` + `--unarchive`, `--tags` + `--add-tags`)
+    - `get` command: test invalid ID error
+    - `config test` command: test success and failure paths
+    - `list` command: test `--query`, `--tags`, `--unread`, `--archived`, `--limit`, `--offset` flags, empty results
+    - `delete` command: test `--json` output format (safe JSON with `json.NewEncoder`)
+    - `add` command: test `--unread`, `--shared`, `--description` flags
 
-- [x] **P1** | HTML export tests | ~medium
-  - Acceptance: `ExportHTML` produces valid Netscape format; HTML-escapes URLs, titles, descriptions; includes TAGS attribute; omits DD when description empty
-  - Files: internal/export/html_test.go (new)
-  - Details: Use mock `httptest.Server` or refactor to accept `[]models.Bookmark` directly for testability
+### Phase 5: Coverage Gate Enforcement (spec 07)
 
-- [x] **P1** | Import tests (all formats) | ~large
-  - Acceptance: Round-trip tests for JSON/CSV; HTML import parses correctly; `DetectFormat` works; duplicate handling works; `--add-tags` appends correctly
-  - Files: internal/export/import_test.go (new)
-  - Details: Test `importJSON`, `importHTML`, `importCSV` with fixture data; test `DetectFormat` for all extensions and unknown; test skip-duplicates vs update behavior
-
-- [x] **P2** | Command-level tests | ~large
-  - Acceptance: Core commands tested via cobra's `Execute()` with `httptest.NewServer`; `go test ./...` covers `cmd/ld`
-  - Files: cmd/ld/commands_test.go (new)
-  - Details: Pattern from spec: `executeCommand(args ...string)` helper; test `add`, `list`, `list --json`, `get`, `update --add-tags`, `delete --force`, `export -f csv`, `backup`, `tags`, `config show`
-
-- [x] **P2** | Integration test for stdin interaction | ~small
-  - Acceptance: Delete confirmation and config init can be tested with piped stdin
-  - Files: cmd/ld/commands_test.go (extend)
-  - Details: Use `os.Pipe()` pattern from spec to provide "y\n" via stdin
-
-- [x] **P3** | Coverage target validation | ~small
-  - Acceptance: `go test -cover ./...` reports >70% coverage for each package
-  - Files: Makefile (add `cover` target)
-  - Details: Add `make cover` that runs `go test -cover ./...` and fails if any package is below 70%
-  - Note: Tool implemented and working. Current coverage: api=80.1%, config=67.6%, export=59.3%. Config and export need additional tests to reach 70%.
+- [ ] **P3** | Update Makefile cover target for cmd/ld | ~small
+  - Acceptance: `make cover` validates all packages including `cmd/ld` (currently skipped with "SKIP: cmd/ (no test files)" even though test file exists)
+  - Files: `Makefile`
+  - Details: The Makefile `cover` target currently skips `cmd/` packages entirely. Now that `cmd/ld/commands_test.go` exists, update the logic to include it in the 70% gate
 
 ---
 
 ## Dependency Graph
 
 ```
-Phase 6 (Performance):
-  Extract fetchAllBookmarks (P0)
-    -> Fix N+1 in ld tags (P1)
-    -> Paginate tag rename (P1)
-    -> Paginate tag delete (P1)
-    -> Paginate tags list (P1)
+Phase 1 (Bug Fix):
+  Tags show pagination fix (P0) — standalone, no deps
 
-Phase 5 (Security): Independent, can run in parallel with Phase 6
-Phase 7 (Commands): Independent
-Phase 8 (Tests): Should run last (tests validate all other changes)
+Phase 2-3 (Coverage — lib packages):
+  config tests (P1) — standalone
+  export tests (P1) — standalone
+
+Phase 4 (Coverage — cmd):
+  cmd/ld tests (P2) — depends on Phase 1 (tags show fix changes behavior)
+
+Phase 5 (Makefile):
+  Coverage gate update (P3) — depends on Phase 4 (needs cmd/ld at 70%+ first)
 ```
 
 ## Execution Order
 
-1. **P0**: Extract `fetchAllBookmarks` to `api.Client` (blocks all Phase 6 items)
-2. **P1 Security**: Config permissions, token masking, backup JSON (independent batch)
-3. **P1 Performance**: N+1 fix, pagination for rename/delete/list (depends on #1)
-4. **P2**: Tags show command, command-level tests
-5. **P3**: Coverage validation
+1. **P0**: Fix `tags show` pagination (blocks Phase 4 test for `tags show`)
+2. **P1**: config package tests + export package tests (parallel, independent)
+3. **P2**: cmd/ld package tests (after Phase 1 fix is in place)
+4. **P3**: Makefile coverage gate update (after Phase 4 achieves 70%)
 
 ---
 
 ## Notes
 
-- `golang.org/x/term` dependency needed for token masking (spec 05)
-- The existing `IMPLEMENTATION_PLAN.md` had all original phases marked complete; this plan covers only remaining gaps
-- Specs 01, 02, 04 are fully implemented with no remaining gaps
-- The `tags show` subcommand (spec 03) was never implemented despite tags.go being marked complete
+- Specs 01, 02, 04, 05, 06 are fully implemented with no code changes needed
+- Spec 03 is complete except for the pagination defect in `tags show` (covered by spec 08)
+- Spec 08 is the only code-level bug remaining — a one-line fix in `runTagsShow()`
+- The bulk of remaining work is test coverage (spec 07)
+- `golang.org/x/term` is already in go.mod and used correctly
+- `FetchAllBookmarks` and `FetchAllTags` are already on the `Client` struct
+- The `Makefile` cover target's `cmd/` skip logic was written before `commands_test.go` existed
