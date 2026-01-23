@@ -108,7 +108,7 @@ internal/export            78.4%     70%      PASS
   - Acceptance: `ld config show --url X` shows "URL: X (--url flag)"; `ld config show --token Y` shows override indicator; JSON output includes override source
   - Files: `cmd/ld/config.go`
 
-- [ ] **P1** | Update `config test` to use effective config | ~small
+- [x] **P1** | Update `config test` to use effective config | ~small
   - Acceptance: `ld config test --url X --token Y` tests the overridden connection, not the config file
   - Files: `cmd/ld/config.go`
 
