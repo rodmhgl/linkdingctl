@@ -67,7 +67,7 @@ internal/export            78.4%     70%      PASS
   - Acceptance: `python -c "import yaml; yaml.safe_load(open('.github/workflows/release.yaml'))"` or equivalent linting passes; no YAML syntax errors; all action version references are valid (checkout@v4, setup-go@v5, golangci-lint-action@v6, go-semantic-release/action@v1)
   - Files: `.github/workflows/release.yaml`
 
-- [ ] **P2** | Verify local build with version flag | ~small
+- [x] **P2** | Verify local build with version flag | ~small
   - Acceptance: `go build -ldflags "-X main.version=1.2.3" -o /dev/null ./cmd/linkdingctl` compiles without error; confirms the `version` variable is accessible to the linker
   - Files: (verification only)
 
