@@ -138,7 +138,7 @@ internal/export      78.4%     70%      PASS
   - Acceptance: On startup, if `~/.config/linkdingctl/config.yaml` missing but `~/.config/ld/config.yaml` exists: copy with 0600 perms, create dir with 0700 perms, print notice to stderr; does NOT delete old config; runs only once (subsequent runs skip migration)
   - Files: `internal/config/config.go`
 
-- [ ] **P0** | Update `.gitignore` | ~small
+- [x] **P0** | Update `.gitignore` | ~small
   - Acceptance: `/linkdingctl` entry replaces or accompanies `/ld`
   - Files: `.gitignore`
 
