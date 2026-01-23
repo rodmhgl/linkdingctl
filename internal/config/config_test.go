@@ -189,3 +189,94 @@ func TestDefaultConfigPath(t *testing.T) {
 		t.Errorf("expected path to end with 'config.yaml', got '%s'", path)
 	}
 }
+
+func TestSave_PermissionsVerification(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "subdir", "config.yaml")
+
+	cfg := &Config{
+		URL:   "https://test.example.com",
+		Token: "test-token",
+	}
+
+	// Save config
+	if err := Save(cfg, configPath); err != nil {
+		t.Fatalf("Save() failed: %v", err)
+	}
+
+	// Verify directory permissions (should be 0700)
+	dirPath := filepath.Dir(configPath)
+	dirInfo, err := os.Stat(dirPath)
+	if err != nil {
+		t.Fatalf("failed to stat directory: %v", err)
+	}
+
+	dirMode := dirInfo.Mode().Perm()
+	expectedDirMode := os.FileMode(0700)
+	if dirMode != expectedDirMode {
+		t.Errorf("expected directory permissions %v, got %v", expectedDirMode, dirMode)
+	}
+
+	// Verify file permissions (should be 0600)
+	fileInfo, err := os.Stat(configPath)
+	if err != nil {
+		t.Fatalf("failed to stat config file: %v", err)
+	}
+
+	fileMode := fileInfo.Mode().Perm()
+	expectedFileMode := os.FileMode(0600)
+	if fileMode != expectedFileMode {
+		t.Errorf("expected file permissions %v, got %v", expectedFileMode, fileMode)
+	}
+}
+
+func TestLoad_NonYAMLFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.yaml")
+
+	// Write invalid YAML content (should trigger parse error)
+	invalidContent := []byte("not: valid: yaml: content: [unclosed")
+	if err := os.WriteFile(configPath, invalidContent, 0644); err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	// Load config
+	_, err := Load(configPath)
+	if err == nil {
+		t.Fatal("expected error for invalid YAML, got nil")
+	}
+
+	// Verify it's a parse error (not just "not found")
+	expectedErrSubstring := "failed to read config file"
+	if err.Error()[:len(expectedErrSubstring)] != expectedErrSubstring {
+		t.Errorf("expected error containing '%s', got '%v'", expectedErrSubstring, err)
+	}
+}
+
+func TestLoad_EnvVarsOnly(t *testing.T) {
+	tmpDir := t.TempDir()
+	// Point to a non-existent config file
+	configPath := filepath.Join(tmpDir, "nonexistent.yaml")
+
+	// Set environment variables
+	os.Setenv("LINKDING_URL", "https://envonly.example.com")
+	os.Setenv("LINKDING_TOKEN", "envonly-token")
+	defer func() {
+		os.Unsetenv("LINKDING_URL")
+		os.Unsetenv("LINKDING_TOKEN")
+	}()
+
+	// Load config (should succeed with env vars only)
+	cfg, err := Load(configPath)
+	if err != nil {
+		t.Fatalf("Load() failed with env vars only: %v", err)
+	}
+
+	// Verify values from env
+	if cfg.URL != "https://envonly.example.com" {
+		t.Errorf("expected URL from env 'https://envonly.example.com', got '%s'", cfg.URL)
+	}
+	if cfg.Token != "envonly-token" {
+		t.Errorf("expected Token from env 'envonly-token', got '%s'", cfg.Token)
+	}
+}

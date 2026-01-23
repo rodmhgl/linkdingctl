@@ -39,7 +39,7 @@ internal/export      59.3%     70%      FAIL (-10.7%)
 
 ### Phase 2: Test Coverage — config package (spec 07)
 
-- [ ] **P1** | Increase `internal/config` coverage to 70%+ | ~small
+- [x] **P1** | Increase `internal/config` coverage to 70%+ | ~small
   - Acceptance: `go test -cover ./internal/config/` reports >= 70%
   - Files: `internal/config/config_test.go`
   - Details: Current gap is 2.4%. Add tests for:
