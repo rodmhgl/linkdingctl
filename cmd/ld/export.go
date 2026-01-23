@@ -51,10 +51,8 @@ func runExport(cmd *cobra.Command, args []string) error {
 
 	// Validate format
 	switch exportFormat {
-	case "json", "html":
-		// JSON and HTML export are implemented
-	case "csv":
-		return fmt.Errorf("export format '%s' is not yet implemented", exportFormat)
+	case "json", "html", "csv":
+		// All export formats are implemented
 	default:
 		return fmt.Errorf("invalid export format '%s'. Valid formats: json, html, csv", exportFormat)
 	}
@@ -86,6 +84,10 @@ func runExport(cmd *cobra.Command, args []string) error {
 		}
 	case "html":
 		if err := export.ExportHTML(client, writer, options); err != nil {
+			return err
+		}
+	case "csv":
+		if err := export.ExportCSV(client, writer, options); err != nil {
 			return err
 		}
 	}

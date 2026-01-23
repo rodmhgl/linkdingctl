@@ -70,7 +70,7 @@
   - Acceptance: `ld export -f html` produces Netscape format
   - Files: internal/export/html.go
 
-- [ ] **P2** | Export CSV | ~small
+- [x] **P2** | Export CSV | ~small
   - Acceptance: `ld export -f csv` produces valid CSV
   - Files: internal/export/csv.go
 
