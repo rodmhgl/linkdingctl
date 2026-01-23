@@ -86,7 +86,7 @@
   - Acceptance: `ld import file.csv` with proper parsing
   - Files: internal/export/import.go (extend)
 
-- [ ] **P2** | Backup command | ~small
+- [x] **P2** | Backup command | ~small
   - Acceptance: `ld backup` creates timestamped file
   - Files: cmd/ld/backup.go
 
