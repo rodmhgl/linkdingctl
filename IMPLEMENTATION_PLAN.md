@@ -23,7 +23,7 @@
 
 ```
 Package              Current   Target   Status
-cmd/ld               55.5%     70%      BELOW THRESHOLD (-14.5%)
+cmd/ld               78.1%     70%      PASS (+8.1%)
 internal/api         80.1%     70%      PASS
 internal/config      70.3%     70%      PASS
 internal/export      78.4%     70%      PASS
@@ -68,16 +68,17 @@ internal/export      78.4%     70%      PASS
 
 ### Phase 4: cmd/ld Test Coverage to 70% (spec 07)
 
-- [ ] **P2** | Increase `cmd/ld` coverage from 55.5% to 70%+ | ~large
+- [x] **P2** | Increase `cmd/ld` coverage from 55.5% to 70%+ | ~large
   - Acceptance: `go test -cover ./cmd/ld/` reports >= 70%; `make cover` passes the 70% gate for all packages
   - Files: `cmd/ld/commands_test.go`
-  - Details: The remaining 14.5% gap is in complex interactive/multi-step commands. Areas needing coverage:
-    - `import` command: test actual import from each format file (JSON, HTML, CSV) with mock server handling create/update; test `--dry-run`, `--skip-duplicates`, `--add-tags`, error paths
-    - `restore` command: test `--wipe` path with piped "yes\n" confirmation; test `--wipe` with bookmarks present; test `--dry-run` + `--wipe` combination
-    - `tags rename` command: test with multiple bookmarks (progress output); test error during update (partial failure); test abort on "n" confirmation
-    - `tags delete` command: test `--force` with bookmarks needing removal; test force with update errors; test confirmation abort
-    - `backup` command: test `--prefix` flag changes filename; test error on invalid output directory
-    - Error handling paths: test API error responses (401, 404, 500) for each command
+  - Result: Coverage increased to 78.1% (8.1% above target). All packages pass `make cover` validation.
+  - Tests added:
+    - `import` command: JSON/HTML/CSV format tests, `--dry-run`, `--skip-duplicates`, `--add-tags`, JSON output
+    - `restore` command: basic restore, `--wipe` with confirmation, `--dry-run`, `--dry-run` + `--wipe`, JSON output
+    - `tags rename` command: force flag, confirmation (yes/no), multiple bookmarks, update errors, no bookmarks found
+    - `tags delete` command: force flag with confirmation, update errors, no bookmarks, without force, confirmation abort
+    - `backup` command: custom `--prefix`, invalid output directory
+    - API errors: 401 Unauthorized, 404 Not Found, 500 Internal Server Error
 
 ---
 
