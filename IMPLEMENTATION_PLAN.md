@@ -34,7 +34,7 @@
   - Acceptance: `ld list` with filters, table output, JSON output
   - Files: cmd/ld/list.go
 
-- [ ] **P1** | Get bookmark command | ~small
+- [x] **P1** | Get bookmark command | ~small
   - Acceptance: `ld get <id>` shows full details
   - Files: cmd/ld/get.go
 
