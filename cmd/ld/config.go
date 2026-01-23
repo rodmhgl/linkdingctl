@@ -43,7 +43,7 @@ var configInitCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("failed to read token: %w", err)
 			}
-			token = string(tokenBytes)
+			token = strings.TrimSpace(string(tokenBytes))
 			fmt.Println() // Print newline after password input
 		} else {
 			// Non-TTY: Fall back to regular reading (for piped input)
@@ -53,7 +53,6 @@ var configInitCmd = &cobra.Command{
 			}
 			token = strings.TrimSpace(tokenInput)
 		}
-		token = strings.TrimSpace(token)
 
 		// Validate inputs
 		if url == "" || token == "" {

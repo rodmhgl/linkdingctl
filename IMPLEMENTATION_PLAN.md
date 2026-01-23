@@ -42,7 +42,7 @@ internal/export      78.4%     70%      PASS
 
 ### Phase 2: Config Token Trim Cleanup (spec 10)
 
-- [ ] **P1** | Remove redundant `strings.TrimSpace(token)` | ~small
+- [x] **P1** | Remove redundant `strings.TrimSpace(token)` | ~small
   - Acceptance: Token trimmed exactly once per code path; no redundant `TrimSpace` call; TTY and non-TTY input still work; existing tests pass
   - Files: `cmd/ld/config.go` (line 56)
   - Details: The final `token = strings.TrimSpace(token)` on line 56 is redundant — the TTY branch (`term.ReadPassword`) never includes a trailing newline, and the non-TTY branch already calls `TrimSpace` on line 54. Remove line 56 and add `strings.TrimSpace()` around `string(tokenBytes)` on line 46 for defensive clarity in the TTY branch.
