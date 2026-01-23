@@ -74,7 +74,7 @@
   - Acceptance: `ld export -f csv` produces valid CSV
   - Files: internal/export/csv.go
 
-- [ ] **P2** | Import JSON | ~medium
+- [x] **P2** | Import JSON | ~medium
   - Acceptance: `ld import file.json` with dry-run, progress
   - Files: cmd/ld/import.go, internal/export/import.go
 
