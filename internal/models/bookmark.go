@@ -65,3 +65,9 @@ type TagList struct {
 	Previous *string `json:"previous"`
 	Results  []Tag   `json:"results"`
 }
+
+// TagWithCount represents a tag with its bookmark count
+type TagWithCount struct {
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}

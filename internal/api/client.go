@@ -230,3 +230,36 @@ func (c *Client) DeleteBookmark(id int) error {
 
 	return nil
 }
+
+// GetTags retrieves a list of all tags with optional filters
+func (c *Client) GetTags(limit, offset int) (*models.TagList, error) {
+	params := url.Values{}
+	if limit > 0 {
+		params.Set("limit", fmt.Sprintf("%d", limit))
+	}
+	if offset > 0 {
+		params.Set("offset", fmt.Sprintf("%d", offset))
+	}
+
+	path := "/api/tags/"
+	if len(params) > 0 {
+		path += "?" + params.Encode()
+	}
+
+	resp, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.handleErrorResponse(resp)
+	}
+
+	var tagList models.TagList
+	if err := json.NewDecoder(resp.Body).Decode(&tagList); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &tagList, nil
+}

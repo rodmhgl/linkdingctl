@@ -48,7 +48,7 @@
 
 ## Phase 2: Tags
 
-- [ ] **P2** | List tags command | ~small
+- [x] **P2** | List tags command | ~small
   - Acceptance: `ld tags` lists with counts, sorting
   - Files: cmd/ld/tags.go, internal/api/tags.go
 
