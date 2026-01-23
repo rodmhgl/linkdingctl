@@ -8,7 +8,7 @@
   - Acceptance: `go mod init`, directory structure created, main.go compiles
   - Files: go.mod, cmd/ld/main.go, internal/ directories
 
-- [ ] **P0** | Configuration system | ~medium
+- [x] **P0** | Configuration system | ~medium
   - Acceptance: Loads from file and env vars, viper configured
   - Files: internal/config/config.go, internal/config/config_test.go
 
