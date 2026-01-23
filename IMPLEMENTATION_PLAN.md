@@ -63,7 +63,7 @@ internal/export            78.4%     70%      PASS
 
 ### Phase 3: Verification
 
-- [ ] **P2** | Validate workflow YAML syntax | ~small
+- [x] **P2** | Validate workflow YAML syntax | ~small
   - Acceptance: `python -c "import yaml; yaml.safe_load(open('.github/workflows/release.yaml'))"` or equivalent linting passes; no YAML syntax errors; all action version references are valid (checkout@v4, setup-go@v5, golangci-lint-action@v6, go-semantic-release/action@v1)
   - Files: `.github/workflows/release.yaml`
 
