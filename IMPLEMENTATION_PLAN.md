@@ -59,9 +59,9 @@
 
 ## Phase 8: Test Coverage (spec 07)
 
-- [ ] **P1** | API client pagination tests | ~medium
+- [x] **P1** | API client pagination tests | ~medium
   - Acceptance: Tests cover multi-page `GetBookmarks` fetch, `GetTags` pagination, `FetchAllBookmarks` with multiple pages
-  - Files: internal/api/client_test.go
+  - Files: internal/api/pagination_test.go
   - Details: Mock multi-page responses with `Next` pointer set; verify all pages are fetched and combined
 
 - [ ] **P1** | HTML export tests | ~medium
