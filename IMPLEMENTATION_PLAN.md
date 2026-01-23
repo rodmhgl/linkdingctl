@@ -9,18 +9,18 @@
 |------|--------|-------|
 | 01 - Core CLI | Complete | Config init/show/test, env overrides, --json, --debug all work |
 | 02 - Bookmark CRUD | Complete | add/list/get/update/delete all implemented with --json |
-| 03 - Tags | **Defect** | `tags show` uses hardcoded 1000 limit (spec 08) |
+| 03 - Tags | Complete | `tags show` now uses FetchAllBookmarks (spec 08 fixed) |
 | 04 - Import/Export | Complete | JSON/HTML/CSV export+import, backup, restore with --wipe |
 | 05 - Security | Complete | 0700/0600 perms, token masking, safe JSON backup output |
 | 06 - Tags Performance | Complete | FetchAllBookmarks on Client, client-side counting, paginated rename/delete |
-| 07 - Test Coverage | **Partial** | config=70.3%, export=78.4% (PASS), cmd/ld=48.3% (need 70%+) |
-| 08 - Tags Show Pagination | **Not Implemented** | Still calls `GetBookmarks(..., 1000, 0)` |
+| 07 - Test Coverage | **Partial** | config=70.3%, export=78.4%, cmd/ld=55.5% (target 70%, gate enforced) |
+| 08 - Tags Show Pagination | Complete | Now calls FetchAllBookmarks to retrieve all bookmarks |
 
 ## Coverage Status
 
 ```
 Package              Current   Target   Status
-cmd/ld               48.3%     70%      FAIL (exempted by Makefile, but spec 07 wants coverage)
+cmd/ld               55.5%     70%      PARTIAL (+7.3%, gate enforced in Makefile)
 internal/api         80.1%     70%      PASS
 internal/config      70.3%     70%      PASS (+0.3%)
 internal/export      78.4%     70%      PASS (+8.4%)
