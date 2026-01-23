@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -86,8 +87,10 @@ func runBackup(cmd *cobra.Command, args []string) error {
 	if !jsonOutput {
 		fmt.Fprintf(os.Stderr, "Backup created: %s\n", fullPath)
 	} else {
-		// JSON output
-		fmt.Printf("{\"file\": \"%s\"}\n", fullPath)
+		// JSON output with proper escaping
+		if err := json.NewEncoder(os.Stdout).Encode(map[string]string{"file": fullPath}); err != nil {
+			return fmt.Errorf("failed to encode JSON output: %w", err)
+		}
 	}
 
 	return nil

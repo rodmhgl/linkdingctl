@@ -15,7 +15,7 @@
   - Files: cmd/ld/config.go, go.mod (add `golang.org/x/term`)
   - Details: Use `term.ReadPassword(int(os.Stdin.Fd()))` for token prompt; detect non-TTY with `term.IsTerminal()` and fall back to `bufio.Reader`
 
-- [ ] **P1** | Safe JSON output in backup command | ~small
+- [x] **P1** | Safe JSON output in backup command | ~small
   - Acceptance: `ld backup --json` produces valid JSON regardless of output path characters (quotes, backslashes)
   - Files: cmd/ld/backup.go
   - Details: Replace `fmt.Printf("{\"file\": \"%s\"}\n", fullPath)` with `json.NewEncoder(os.Stdout).Encode(map[string]string{"file": fullPath})`
