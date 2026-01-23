@@ -40,9 +40,9 @@ internal/export      78.4%     70%      PASS
 
 ### Phase 5: Notes Field (spec 15)
 
-- [ ] **P1** | Add `--notes` flag to `add` command | ~small
-  - Acceptance: `ld add --notes "..."` sets the notes field on creation; `-n` shorthand works; notes field included in API request body
-  - Files: `cmd/ld/add.go`
+- [x] **P1** | Add `--notes` flag to `add` command | ~small
+  - Acceptance: `linkdingctl add --notes "..."` sets the notes field on creation; `-n` shorthand works; notes field included in API request body
+  - Files: `cmd/linkdingctl/add.go`
   - Details: Add `addNotes string` var; register `-n`/`--notes` flag; map to `BookmarkCreate.Notes` field; update `--description` help text from "Description/notes" to "Description"
 
 - [ ] **P1** | Add `--notes` flag to `update` command | ~small

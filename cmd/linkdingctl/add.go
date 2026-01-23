@@ -14,6 +14,7 @@ import (
 var (
 	addTitle       string
 	addDescription string
+	addNotes       string
 	addTags        []string
 	addUnread      bool
 	addShared      bool
@@ -41,6 +42,7 @@ var addCmd = &cobra.Command{
 			URL:         url,
 			Title:       addTitle,
 			Description: addDescription,
+			Notes:       addNotes,
 			TagNames:    addTags,
 			Unread:      addUnread,
 			Shared:      addShared,
@@ -71,7 +73,8 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 
 	addCmd.Flags().StringVarP(&addTitle, "title", "t", "", "Custom title (default: auto-fetch)")
-	addCmd.Flags().StringVarP(&addDescription, "description", "d", "", "Description/notes")
+	addCmd.Flags().StringVarP(&addDescription, "description", "d", "", "Description")
+	addCmd.Flags().StringVarP(&addNotes, "notes", "n", "", "Notes")
 	addCmd.Flags().StringSliceVarP(&addTags, "tags", "T", nil, "Comma-separated tags")
 	addCmd.Flags().BoolVarP(&addUnread, "unread", "u", false, "Mark as unread")
 	addCmd.Flags().BoolVarP(&addShared, "shared", "s", false, "Make publicly shared")
