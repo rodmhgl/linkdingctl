@@ -81,6 +81,10 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	updateDescription = ""
 	tagsSort = "name"
 	tagsUnused = false
+	backupOutput = "."
+	backupPrefix = "linkding-backup"
+	tagsRenameForce = false
+	tagsDeleteForce = false
 
 	return output, cmdErr
 }

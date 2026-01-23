@@ -54,7 +54,7 @@ internal/export      78.4%     70%      PASS
   - Files: `internal/config/config_test.go` (line 251)
   - Details: Replace `err.Error()[:len(expectedErrSubstring)] != expectedErrSubstring` with `!strings.Contains(err.Error(), expectedErrSubstring)` — the current code panics with index-out-of-range if the error is shorter than the expected substring
 
-- [ ] **P1** | Add missing flag resets to `executeCommand` helper | ~small
+- [x] **P1** | Add missing flag resets to `executeCommand` helper | ~small
   - Acceptance: `executeCommand` resets `backupOutput`, `backupPrefix`, `tagsRenameForce`, `tagsDeleteForce`; no test pollution between runs; all existing tests pass
   - Files: `cmd/ld/commands_test.go` (after line 83)
   - Details: Add the following resets to the `executeCommand` function after the existing flag resets:
