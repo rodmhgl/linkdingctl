@@ -56,11 +56,11 @@ internal/export      78.4%     70%      PASS
 
 ### Phase 6: Tags CRUD Enhancements (spec 13)
 
-- [ ] **P1** | Add `CreateTag` API method | ~small
+- [x] **P1** | Add `CreateTag` API method | ~small
   - Acceptance: `CreateTag(name)` sends POST to `/api/tags/` with `{"name": "..."}` body; returns created Tag model; handles 400 (duplicate) with clear error
   - Files: `internal/api/client.go`
 
-- [ ] **P1** | Add `GetTag` API method | ~small
+- [x] **P1** | Add `GetTag` API method | ~small
   - Acceptance: `GetTag(id)` sends GET to `/api/tags/{id}/`; returns Tag model; handles 404 with "Tag with ID X not found"
   - Files: `internal/api/client.go`
 
