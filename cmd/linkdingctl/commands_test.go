@@ -2767,3 +2767,252 @@ func TestUpdateWithNotes(t *testing.T) {
 		}
 	})
 }
+
+// TestTagsCreateCommand tests the 'linkdingctl tags create' command
+func TestTagsCreateCommand(t *testing.T) {
+	t.Run("create tag success", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
+				var req map[string]string
+				json.NewDecoder(r.Body).Decode(&req)
+				
+				tag := models.Tag{
+					ID:        42,
+					Name:      req["name"],
+					DateAdded: time.Now(),
+				}
+				w.WriteHeader(http.StatusCreated)
+				json.NewEncoder(w).Encode(tag)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "tags", "create", "mytag")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "✓ Tag created:") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !strings.Contains(output, "mytag") {
+			t.Errorf("Expected tag name in output, got: %s", output)
+		}
+		if !strings.Contains(output, "ID: 42") {
+			t.Errorf("Expected tag ID in output, got: %s", output)
+		}
+	})
+
+	t.Run("create tag with json output", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
+				var req map[string]string
+				json.NewDecoder(r.Body).Decode(&req)
+				
+				tag := models.Tag{
+					ID:        99,
+					Name:      req["name"],
+					DateAdded: time.Now(),
+				}
+				w.WriteHeader(http.StatusCreated)
+				json.NewEncoder(w).Encode(tag)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "tags", "create", "jsontag", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		var tag models.Tag
+		if err := json.Unmarshal([]byte(output), &tag); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
+		}
+		if tag.ID != 99 {
+			t.Errorf("Expected tag ID 99, got: %d", tag.ID)
+		}
+		if tag.Name != "jsontag" {
+			t.Errorf("Expected tag name 'jsontag', got: %s", tag.Name)
+		}
+	})
+
+	t.Run("create duplicate tag", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"name":["Tag with this name already exists"]}`))
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "create", "duplicate")
+		if err == nil {
+			t.Fatal("Expected error for duplicate tag, got nil")
+		}
+		if !strings.Contains(err.Error(), "already exists") {
+			t.Errorf("Expected 'already exists' in error, got: %v", err)
+		}
+	})
+
+	t.Run("create tag with empty name", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "create", "")
+		if err == nil {
+			t.Fatal("Expected error for empty tag name, got nil")
+		}
+		// Cobra will complain about missing required argument
+		if !strings.Contains(err.Error(), "requires") && !strings.Contains(err.Error(), "arg") {
+			t.Logf("Note: Got error but message may differ from expected: %v", err)
+		}
+	})
+
+	t.Run("create tag no args", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "create")
+		if err == nil {
+			t.Fatal("Expected error when no tag name provided, got nil")
+		}
+	})
+}
+
+// TestTagsGetCommand tests the 'linkdingctl tags get' command
+func TestTagsGetCommand(t *testing.T) {
+	t.Run("get tag success", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/tags/42/" && r.Method == "GET" {
+				tag := models.Tag{
+					ID:        42,
+					Name:      "kubernetes",
+					DateAdded: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+				}
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(tag)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "tags", "get", "42")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "Tag: kubernetes") {
+			t.Errorf("Expected tag name in output, got: %s", output)
+		}
+		if !strings.Contains(output, "ID: 42") {
+			t.Errorf("Expected tag ID in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Date Added:") {
+			t.Errorf("Expected date added in output, got: %s", output)
+		}
+	})
+
+	t.Run("get tag with json output", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/tags/100/" && r.Method == "GET" {
+				tag := models.Tag{
+					ID:        100,
+					Name:      "golang",
+					DateAdded: time.Date(2024, 6, 20, 14, 0, 0, 0, time.UTC),
+				}
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(tag)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "tags", "get", "100", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		var tag models.Tag
+		if err := json.Unmarshal([]byte(output), &tag); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
+		}
+		if tag.ID != 100 {
+			t.Errorf("Expected tag ID 100, got: %d", tag.ID)
+		}
+		if tag.Name != "golang" {
+			t.Errorf("Expected tag name 'golang', got: %s", tag.Name)
+		}
+	})
+
+	t.Run("get tag not found", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/api/tags/") && r.Method == "GET" {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "get", "999")
+		if err == nil {
+			t.Fatal("Expected error for non-existent tag, got nil")
+		}
+		if !strings.Contains(err.Error(), "not found") {
+			t.Errorf("Expected 'not found' in error, got: %v", err)
+		}
+		if !strings.Contains(err.Error(), "999") {
+			t.Errorf("Expected tag ID in error message, got: %v", err)
+		}
+	})
+
+	t.Run("get tag invalid id", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "get", "notanumber")
+		if err == nil {
+			t.Fatal("Expected error for invalid tag ID, got nil")
+		}
+		if !strings.Contains(err.Error(), "invalid") {
+			t.Errorf("Expected 'invalid' in error message, got: %v", err)
+		}
+	})
+
+	t.Run("get tag no args", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "tags", "get")
+		if err == nil {
+			t.Fatal("Expected error when no tag ID provided, got nil")
+		}
+	})
+}

@@ -74,7 +74,7 @@ internal/export      78.4%     70%      PASS
   - Files: `cmd/linkdingctl/tags.go`
   - Details: Add `tagsGetCmd` cobra command; parse int arg; call `client.GetTag(id)`; output human/JSON based on flag
 
-- [ ] **P2** | Add tests for tags create and get | ~medium
+- [x] **P2** | Add tests for tags create and get | ~medium
   - Acceptance: Tests for create success, create duplicate, create empty name, get success, get not found; all with human and JSON output; coverage maintained ≥70%
   - Files: `cmd/ld/commands_test.go`, `internal/api/client_test.go`
 
