@@ -45,9 +45,9 @@ internal/export      78.4%     70%      PASS
   - Files: `cmd/linkdingctl/add.go`
   - Details: Add `addNotes string` var; register `-n`/`--notes` flag; map to `BookmarkCreate.Notes` field; update `--description` help text from "Description/notes" to "Description"
 
-- [ ] **P1** | Add `--notes` flag to `update` command | ~small
-  - Acceptance: `ld update <id> --notes "..."` updates notes; `ld update <id> --notes ""` clears notes; notes and description settable independently and together
-  - Files: `cmd/ld/update.go`
+- [x] **P1** | Add `--notes` flag to `update` command | ~small
+  - Acceptance: `linkdingctl update <id> --notes "..."` updates notes; `linkdingctl update <id> --notes ""` clears notes; notes and description settable independently and together
+  - Files: `cmd/linkdingctl/update.go`
   - Details: Add `updateNotes string` var; register `-n`/`--notes` flag; use `cmd.Flags().Changed("notes")` to detect explicit set; map to `BookmarkUpdate.Notes` pointer field
 
 - [ ] **P2** | Add tests for `--notes` flag | ~small
