@@ -69,7 +69,7 @@
   - Files: internal/export/html_test.go (new)
   - Details: Use mock `httptest.Server` or refactor to accept `[]models.Bookmark` directly for testability
 
-- [ ] **P1** | Import tests (all formats) | ~large
+- [x] **P1** | Import tests (all formats) | ~large
   - Acceptance: Round-trip tests for JSON/CSV; HTML import parses correctly; `DetectFormat` works; duplicate handling works; `--add-tags` appends correctly
   - Files: internal/export/import_test.go (new)
   - Details: Test `importJSON`, `importHTML`, `importCSV` with fixture data; test `DetectFormat` for all extensions and unknown; test skip-duplicates vs update behavior
