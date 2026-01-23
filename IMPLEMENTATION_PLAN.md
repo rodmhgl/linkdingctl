@@ -88,7 +88,7 @@ internal/export      78.4%     70%      PASS
   - Acceptance: `GetUserProfile()` sends GET to `/api/user/profile/`; returns `*UserProfile`; handles 401/403 errors with clear messages
   - Files: `internal/api/client.go`
 
-- [ ] **P1** | Add `user profile` command | ~medium
+- [x] **P1** | Add `user profile` command | ~medium
   - Acceptance: `ld user profile` displays Username, DisplayName, Theme, BookmarkCount; `--json` outputs full JSON; HTTP 401 shows auth error; HTTP 403 shows permission error; `ld user --help` lists subcommands
   - Files: `cmd/ld/user.go` (new)
   - Details: Create `userCmd` (parent, help-only), `userProfileCmd` (subcommand); register on rootCmd; load config, create client, call `GetUserProfile()`; format human/JSON output
