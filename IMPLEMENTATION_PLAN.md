@@ -5,7 +5,7 @@
 
 ## Phase 5: Security Hardening (spec 05)
 
-- [ ] **P1** | Config file permissions hardening | ~small
+- [x] **P1** | Config file permissions hardening | ~small
   - Acceptance: `Save()` creates directory with `0700`, file with `0600`; existing configs not re-permissioned on read
   - Files: internal/config/config.go
   - Details: Change `os.MkdirAll(dir, 0755)` to `0700`; add `os.Chmod(configPath, 0600)` after `v.WriteConfig()`
