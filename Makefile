@@ -1,4 +1,4 @@
-.PHONY: help build test install clean lint vet fmt
+.PHONY: help build test install clean lint vet fmt cover
 
 # Variables
 BINARY_NAME=ld
@@ -51,5 +51,40 @@ fmt: ## Format code with gofmt
 	$(GO) fmt ./...
 
 check: fmt vet test ## Run format, vet, and tests
+
+cover: ## Run tests with coverage validation (min 70% per package)
+	@echo "Running tests with coverage validation..."
+	@$(GO) test -cover ./... 2>&1 | tee /tmp/coverage.txt
+	@echo ""
+	@echo "Validating coverage thresholds (minimum 70%)..."
+	@failed=0 && \
+	while read -r line; do \
+		if echo "$$line" | grep -q "coverage:"; then \
+			pkg=$$(echo "$$line" | awk '{print $$2}'); \
+			cov=$$(echo "$$line" | grep -oP '\d+\.\d+(?=% of statements)'); \
+			if [ -n "$$cov" ]; then \
+				if echo "$$pkg" | grep -q "cmd/"; then \
+					echo "⏭️  SKIP: $$pkg (no test files)"; \
+				else \
+					result=$$(echo "$$cov < 70" | bc -l); \
+					if [ "$$result" -eq 1 ]; then \
+						echo "❌ FAIL: $$pkg has $$cov% coverage (below 70%)"; \
+						failed=1; \
+					else \
+						echo "✅ PASS: $$pkg has $$cov% coverage"; \
+					fi; \
+				fi; \
+			fi; \
+		fi; \
+	done < /tmp/coverage.txt && \
+	rm -f /tmp/coverage.txt && \
+	if [ $$failed -eq 1 ]; then \
+		echo "" && \
+		echo "Coverage validation failed. Some packages are below 70% threshold." && \
+		exit 1; \
+	else \
+		echo "" && \
+		echo "All tested packages meet the 70% coverage threshold!"; \
+	fi
 
 .DEFAULT_GOAL := help
