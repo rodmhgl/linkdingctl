@@ -58,6 +58,9 @@ func loadConfig() (*config.Config, error) {
 				URL:   flagURL,
 				Token: flagToken,
 			}
+			if debugMode {
+				fmt.Fprintf(os.Stderr, "[DEBUG] Using config from CLI flags: URL=%s Token=<redacted>\n", cfg.URL)
+			}
 			return cfg, nil
 		}
 		return nil, err
@@ -69,6 +72,10 @@ func loadConfig() (*config.Config, error) {
 	}
 	if flagToken != "" {
 		cfg.Token = flagToken
+	}
+
+	if debugMode {
+		fmt.Fprintf(os.Stderr, "[DEBUG] Loaded config: URL=%s Token=<redacted>\n", cfg.URL)
 	}
 
 	return cfg, nil

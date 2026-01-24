@@ -84,7 +84,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
 
 ### Debug & Config UX (Spec 14 — partial gaps)
 
-- [ ] **P3** | Ensure `--token` value is never printed in debug output | ~small
+- [x] **P3** | Ensure `--token` value is never printed in debug output | ~small
   - Acceptance: With `--debug`, token is redacted; URL is shown normally
   - Files: `cmd/linkdingctl/root.go`
 
