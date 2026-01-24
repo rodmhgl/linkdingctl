@@ -1,7 +1,7 @@
 # Implementation Plan
 
-> Gap analysis: specs 01–19 vs current codebase (2026-01-24).
-> Specs 01–18 are **fully implemented and passing**. Only Spec 19 (Errcheck Lint Fixes) remains.
+> Gap analysis: specs 01–21 vs current codebase (2026-01-24).
+> Specs 01–19 are **fully implemented and passing**. Specs 20–21 (pre-commit hooks) remain.
 
 ## Status Summary
 
@@ -25,62 +25,34 @@
 | 16 – Rename | ✅ Complete | All references updated to linkdingctl |
 | 17 – Fix User Profile | ✅ Complete | Correct API model, all fields rendered |
 | 18 – CI/Release Workflow | ✅ Complete | release.yaml with lint-test, release, build-binaries |
-| 19 – Errcheck Lint Fixes | ❌ Not done | Unchecked error returns in prod + test code |
+| 19 – Errcheck Lint Fixes | ✅ Complete | All errcheck violations resolved |
+| 20 – Pre-Commit go vet | ❌ Not done | Lefthook + go vet hook |
+| 21 – Pre-Commit golangci-lint | ❌ Not done | Lefthook + golangci-lint hook |
 
 ---
 
-## Remaining Tasks (Spec 19)
+## Remaining Tasks
 
-### Production Code
+### Spec 20: Pre-Commit Hook — go vet
 
-- [x] **P0** | Fix unchecked `v.BindEnv` calls in config loader | ~small
-  - Acceptance: `internal/config/config.go` wraps both `v.BindEnv("url")` and `v.BindEnv("token")` with error checks; returns `(nil, error)` if either fails; existing config tests still pass
-  - Files: `internal/config/config.go` (lines 89–90)
+- [x] **P0** | Create `lefthook.yml` with go vet and beads hook | ~small
+  - Acceptance: `lefthook.yml` exists at repo root; defines `pre-commit` section with `beads-sync` command (skip if `bd` not installed) and `go-vet` command running `go vet ./...`; file is valid YAML
+  - Files: `lefthook.yml` (new)
 
-### Test Code — API Client
+- [ ] **P1** | Add `hooks` Makefile target | ~small
+  - Acceptance: `make hooks` checks for lefthook availability, prints install instructions if missing, runs `lefthook install` if found; target is listed in `make help` output
+  - Files: `Makefile`
 
-- [x] **P1** | Fix unchecked `w.Write` in `TestCreateTag_Duplicate` | ~small
-  - Acceptance: Mock handler checks `w.Write` return value; calls `t.Errorf` and returns on failure
-  - Files: `internal/api/client_test.go` (line 351)
+### Spec 21: Pre-Commit Hook — golangci-lint
 
-### Test Code — Import Tests
-
-- [x] **P1** | Fix unchecked `json.NewDecoder().Decode()` in import test handlers | ~medium
-  - Acceptance: All `json.NewDecoder(r.Body).Decode(...)` calls in mock handlers check error, call `t.Errorf`, respond with HTTP 400, and return on failure
-  - Files: `internal/export/import_test.go` (lines 91, 259, 308, 381, 530, 622, 724)
-
-### Test Code — Export Tests (Encode)
-
-- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in HTML test handlers | ~medium
-  - Acceptance: All `json.NewEncoder(w).Encode(...)` calls in mock handlers check error and call `t.Errorf` on failure
-  - Files: `internal/export/html_test.go` (lines 38, 106, 191, 259, 329, 389, 427)
-
-- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in CSV test handlers | ~small
-  - Acceptance: Both `json.NewEncoder(w).Encode(...)` calls in mock handlers check error and call `t.Errorf` on failure
-  - Files: `internal/export/csv_test.go` (lines 236, 316)
-
-- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in JSON test handlers | ~small
-  - Acceptance: Both `json.NewEncoder(w).Encode(...)` calls in mock handlers check error and call `t.Errorf` on failure
-  - Files: `internal/export/json_test.go` (lines 170, 255)
-
-- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in import test non-handler code | ~medium
-  - Acceptance: All `json.NewEncoder(...).Encode(...)` calls outside of the decode handlers (buffer writes, mock responses) check error and call `t.Fatalf`/`t.Errorf` on failure
-  - Files: `internal/export/import_test.go` (numerous lines — buffer encodes + handler encodes)
-
-### Test Code — CSV Writer
-
-- [x] **P1** | Fix unchecked `csvWriter.Write` in CSV test helper | ~small
-  - Acceptance: `csvWriter.Write(header)` and `csvWriter.Write(row)` (lines 165, 179) check error; test calls `t.Fatalf` on failure
-  - Files: `internal/export/csv_test.go`
+- [ ] **P1** | Add golangci-lint command to `lefthook.yml` | ~small
+  - Acceptance: `lefthook.yml` includes `golangci-lint` command in `pre-commit` section; command warns and exits 0 if `golangci-lint` not installed; runs `golangci-lint run` if installed; all three hooks run in parallel
+  - Files: `lefthook.yml`
 
 ### Validation
 
-- [x] **P2** | Run `golangci-lint` and verify zero errcheck violations | ~small
-  - Acceptance: `golangci-lint run ./...` passes with no `errcheck` findings
-  - Files: (validation only)
-
-- [x] **P2** | Verify all tests pass and coverage holds | ~small
-  - Acceptance: `go test ./...` passes; `make cover` meets 70% per-package threshold
+- [ ] **P2** | Verify hooks work end-to-end | ~small
+  - Acceptance: After `lefthook install`, committing code with a `go vet` violation is blocked; committing code with a lint violation is blocked; committing clean code succeeds; `bd hook pre-commit` is still invoked when `bd` is available
   - Files: (validation only)
 
 ---
@@ -88,19 +60,21 @@
 ## Dependency Graph
 
 ```
-P0 (production code fix) ─── should be first (actual runtime risk)
+P0 (lefthook.yml with go vet + beads) ─── creates the hook infrastructure
         │
-        ▼
-P1 (test code fixes) ──────── independent of each other, can be done in any order
+        ├──▶ P1 (Makefile hooks target) ────── developer convenience for installing hooks
         │
-        ▼
-P2 (validation) ────────────── run after all fixes applied
+        └──▶ P1 (golangci-lint hook) ──────── extends lefthook.yml with lint check
+                │
+                ▼
+        P2 (end-to-end validation) ─────────── verify all hooks work together
 ```
 
 ## Implementation Notes
 
-- The `v.BindEnv` fix is the only production code change. It's unlikely to fail in practice (BindEnv only errors when called with 0 args), but checking it satisfies errcheck and establishes good precedent.
-- All test fixes follow the same pattern: check the error return, call `t.Errorf`/`t.Fatalf`, and short-circuit the handler. This prevents tests from silently operating on zero-value data.
-- The scope of unchecked `json.NewEncoder().Encode()` in import_test.go is larger than spec 19 originally listed — there are ~40+ occurrences across buffer writes and mock handlers.
-- No new test files need to be created. All changes are edits to existing files.
-- The fixes should not change test behavior when everything works correctly — they only add safety nets for failure scenarios.
+- Lefthook is a Go-based git hook manager (single binary, no runtime deps). It replaces `.git/hooks/pre-commit` with its own dispatcher that runs configured commands.
+- The existing `.git/hooks/pre-commit` delegates to `bd hook pre-commit`. Lefthook will replace it, so `bd` must be chained as a command in `lefthook.yml` with a skip condition for environments where `bd` is not installed.
+- Both `go vet` and `golangci-lint` run against the full module (`./...` scope) to match CI behavior in `.github/workflows/release.yaml`.
+- `golangci-lint` uses a soft-fail pattern: if the tool is not installed, the hook prints a warning and exits 0 (non-blocking). This prevents blocking commits for developers who haven't installed it yet.
+- All pre-commit commands run in parallel by default (Lefthook's default behavior), which reduces wall-clock time since both checks are read-only.
+- No changes to existing source code are required — these specs only add tooling configuration.

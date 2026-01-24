@@ -1,0 +1,15 @@
+# Lefthook configuration for linkdingctl
+# See https://github.com/evilmartians/lefthook for documentation
+
+pre-commit:
+  parallel: true
+
+  commands:
+    beads-sync:
+      run: bd hook pre-commit
+      skip:
+        - run: command -v bd > /dev/null
+          exit_status: 1
+
+    go-vet:
+      run: go vet ./...
