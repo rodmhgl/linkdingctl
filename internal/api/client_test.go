@@ -348,7 +348,10 @@ func TestCreateTag_Success(t *testing.T) {
 func TestCreateTag_Duplicate(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"name":["Tag with this name already exists"]}`))
+		if _, err := w.Write([]byte(`{"name":["Tag with this name already exists"]}`)); err != nil {
+			t.Errorf("failed to write response: %v", err)
+			return
+		}
 	}))
 	defer server.Close()
 

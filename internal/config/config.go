@@ -86,8 +86,12 @@ func Load(configPath string) (*Config, error) {
 
 	// Environment variable bindings (higher priority)
 	v.SetEnvPrefix("LINKDING")
-	v.BindEnv("url")
-	v.BindEnv("token")
+	if err := v.BindEnv("url"); err != nil {
+		return nil, fmt.Errorf("failed to bind LINKDING_URL environment variable: %w", err)
+	}
+	if err := v.BindEnv("token"); err != nil {
+		return nil, fmt.Errorf("failed to bind LINKDING_TOKEN environment variable: %w", err)
+	}
 
 	// Read config file (ignore if not found)
 	if err := v.ReadInConfig(); err != nil {
