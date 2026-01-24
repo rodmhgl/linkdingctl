@@ -65,16 +65,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: linux
-            arch: amd64
-          - os: linux
-            arch: arm64
-          - os: darwin
-            arch: amd64
-          - os: darwin
-            arch: arm64
-          - os: windows
-            arch: amd64
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
     steps:
       - name: Checkout tagged commit
         uses: actions/checkout@v4
@@ -88,22 +88,24 @@ jobs:
 
       - name: Build binary
         env:
-          GOOS: ${{ matrix.os }}
-          GOARCH: ${{ matrix.arch }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
           VERSION: ${{ needs.release.outputs.version }}
         run: |
-          BINARY_NAME="linkdingctl-${{ matrix.os }}-${{ matrix.arch }}"
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            BINARY_NAME="${BINARY_NAME}.exe"
-          fi
-          go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o "${BINARY_NAME}" ./cmd/linkdingctl
+          EXT=""
+          if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
+          OUTNAME="linkdingctl-${GOOS}-${GOARCH}${EXT}"
+          go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" \
+            -o "${OUTNAME}" ./cmd/linkdingctl
 
-      - name: Upload binary to release
+      - name: Upload release asset
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.release.outputs.version }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
         run: |
-          BINARY_NAME="linkdingctl-${{ matrix.os }}-${{ matrix.arch }}"
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            BINARY_NAME="${BINARY_NAME}.exe"
-          fi
-          gh release upload "v${{ needs.release.outputs.version }}" "${BINARY_NAME}" --clobber
+          EXT=""
+          if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
+          OUTNAME="linkdingctl-${GOOS}-${GOARCH}${EXT}"
+          gh release upload "v${VERSION}" "${OUTNAME}" --clobber
