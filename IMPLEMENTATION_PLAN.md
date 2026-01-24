@@ -1,81 +1,156 @@
 # Implementation Plan
 
-> Gap analysis: specs 01–21 vs current codebase (2026-01-24).
-> Specs 01–19 are **fully implemented and passing**. Specs 20–21 (pre-commit hooks) remain.
-
-## Status Summary
-
-| Spec | Status | Notes |
-|------|--------|-------|
-| 01 – Core CLI | ✅ Complete | Config init/show/test, env overrides, --json, --debug |
-| 02 – Bookmark CRUD | ✅ Complete | add/list/get/update/delete with --json support |
-| 03 – Tags | ✅ Complete | tags list/show/rename/delete |
-| 04 – Import/Export | ✅ Complete | JSON/HTML/CSV export+import, backup, restore |
-| 05 – Security | ✅ Complete | 0700/0600 perms, token masking, safe JSON output |
-| 06 – Tags Performance | ✅ Complete | FetchAllBookmarks/FetchAllTags, client-side counting |
-| 07 – Test Coverage | ✅ Complete | All packages >70% threshold |
-| 08 – Tags Show Pagination | ✅ Complete | Uses FetchAllBookmarks |
-| 09 – Makefile Portability | ✅ Complete | awk-based coverage, no cmd/ skip |
-| 10 – Config Token Trim | ✅ Complete | Clean per-branch trim |
-| 11 – Test Robustness | ✅ Complete | strings.Contains, full flag reset |
-| 12 – User Profile | ✅ Complete | Superseded by spec 17 |
-| 13 – Tags CRUD | ✅ Complete | tags create/get subcommands |
-| 14 – Per-Command Overrides | ✅ Complete | --url/--token global flags |
-| 15 – Notes Field | ✅ Complete | --notes on add/update commands |
-| 16 – Rename | ✅ Complete | All references updated to linkdingctl |
-| 17 – Fix User Profile | ✅ Complete | Correct API model, all fields rendered |
-| 18 – CI/Release Workflow | ✅ Complete | release.yaml with lint-test, release, build-binaries |
-| 19 – Errcheck Lint Fixes | ✅ Complete | All errcheck violations resolved |
-| 20 – Pre-Commit go vet | ✅ Complete | Lefthook + go vet hook |
-| 21 – Pre-Commit golangci-lint | ✅ Complete | Lefthook + golangci-lint hook |
+Gap analysis between specifications (`specs/01`–`specs/22`) and the current codebase.
 
 ---
 
-## Remaining Tasks
+## P0 — Foundational / Already Implemented
 
-### Spec 20: Pre-Commit Hook — go vet
-
-- [x] **P0** | Create `lefthook.yml` with go vet and beads hook | ~small
-  - Acceptance: `lefthook.yml` exists at repo root; defines `pre-commit` section with `beads-sync` command (skip if `bd` not installed) and `go-vet` command running `go vet ./...`; file is valid YAML
-  - Files: `lefthook.yml` (new)
-
-- [x] **P1** | Add `hooks` Makefile target | ~small
-  - Acceptance: `make hooks` checks for lefthook availability, prints install instructions if missing, runs `lefthook install` if found; target is listed in `make help` output
-  - Files: `Makefile`
-
-### Spec 21: Pre-Commit Hook — golangci-lint
-
-- [x] **P1** | Add golangci-lint command to `lefthook.yml` | ~small
-  - Acceptance: `lefthook.yml` includes `golangci-lint` command in `pre-commit` section; command warns and exits 0 if `golangci-lint` not installed; runs `golangci-lint run` if installed; all three hooks run in parallel
-  - Files: `lefthook.yml`
-
-### Validation
-
-- [x] **P2** | Verify hooks work end-to-end | ~small
-  - Acceptance: After `lefthook install`, committing code with a `go vet` violation is blocked; committing code with a lint violation is blocked; committing clean code succeeds; `bd hook pre-commit` is still invoked when `bd` is available
-  - Files: (validation only)
-  - Note: Validation guide created at docs/HOOK_VALIDATION.md; lefthook not installed on system, manual validation required
+All P0 (foundational/blocking) items are complete. No new features need to be built from scratch.
 
 ---
 
-## Dependency Graph
+## P1 — Staticcheck SA9003 (Spec 22)
 
-```
-P0 (lefthook.yml with go vet + beads) ─── creates the hook infrastructure
-        │
-        ├──▶ P1 (Makefile hooks target) ────── developer convenience for installing hooks
-        │
-        └──▶ P1 (golangci-lint hook) ──────── extends lefthook.yml with lint check
-                │
-                ▼
-        P2 (end-to-end validation) ─────────── verify all hooks work together
-```
+- [x] **P1** | Fix SA9003: Remove error return from `processHTMLBookmark` | ~small
+  - Acceptance: `processHTMLBookmark` has no `error` return type; all three call sites in `importHTML` invoke it as a bare statement (no `if err != nil {}` wrapper); `golangci-lint run ./...` reports no SA9003 in `internal/export/import.go`; all tests pass (`go test ./...`); coverage gate passes (`make cover`)
+  - Files: `internal/export/import.go`
 
-## Implementation Notes
+---
 
-- Lefthook is a Go-based git hook manager (single binary, no runtime deps). It replaces `.git/hooks/pre-commit` with its own dispatcher that runs configured commands.
-- The existing `.git/hooks/pre-commit` delegates to `bd hook pre-commit`. Lefthook will replace it, so `bd` must be chained as a command in `lefthook.yml` with a skip condition for environments where `bd` is not installed.
-- Both `go vet` and `golangci-lint` run against the full module (`./...` scope) to match CI behavior in `.github/workflows/release.yaml`.
-- `golangci-lint` uses a soft-fail pattern: if the tool is not installed, the hook prints a warning and exits 0 (non-blocking). This prevents blocking commits for developers who haven't installed it yet.
-- All pre-commit commands run in parallel by default (Lefthook's default behavior), which reduces wall-clock time since both checks are read-only.
-- No changes to existing source code are required — these specs only add tooling configuration.
+## P2 — Lint & Code Quality
+
+### Uncommitted Changes (on `review` branch, need validation + commit)
+
+- [ ] **P2** | Validate and commit `//nolint:unused` on version var | ~small
+  - Acceptance: `golangci-lint run` passes with no `unused` violation on `version` var
+  - Files: `cmd/linkdingctl/main.go`
+
+- [ ] **P2** | Validate and commit removal of unused `updateUnread`/`updateShared` vars | ~small
+  - Acceptance: No unused variable warnings; `go build ./...` and all tests pass
+  - Files: `cmd/linkdingctl/update.go`
+
+- [ ] **P2** | Validate and commit error message lowercase fix in `GetUserProfile` | ~small
+  - Acceptance: Error message starts lowercase per Go conventions; tests pass
+  - Files: `internal/api/client.go`
+
+- [ ] **P2** | Validate and commit package-level doc comments | ~small
+  - Acceptance: `golangci-lint run` reports no missing package comments for `api`, `config`, `export`, `models`
+  - Files: `internal/api/client.go`, `internal/config/config.go`, `internal/export/import.go`, `internal/models/bookmark.go`
+
+### Config Token Trim (Spec 10)
+
+- [ ] **P2** | Remove redundant `strings.TrimSpace(token)` in config init | ~small
+  - Acceptance: Token is trimmed exactly once per branch (TTY and non-TTY); no redundant trim calls; existing tests pass
+  - Files: `cmd/linkdingctl/config.go`
+
+### Test Robustness (Spec 11)
+
+- [ ] **P2** | Replace unsafe string slicing with `strings.Contains` in config test | ~small
+  - Acceptance: `TestLoad_NonYAMLFile` uses `strings.Contains` (no panic risk from index out-of-range); test passes
+  - Files: `internal/config/config_test.go`
+
+- [ ] **P2** | Add missing flag resets to `executeCommand` test helper | ~small
+  - Acceptance: `executeCommand` resets `backupOutput`, `backupPrefix`, `tagsRenameForce`, `tagsDeleteForce`; no test pollution
+  - Files: `cmd/linkdingctl/commands_test.go`
+
+### Errcheck Violations (Spec 19 — remaining items)
+
+- [ ] **P2** | Fix unchecked `w.Write` in `TestCreateTag_Duplicate` | ~small
+  - Acceptance: `w.Write` error is checked with `t.Errorf`
+  - Files: `internal/api/client_test.go`
+
+- [ ] **P2** | Fix unchecked `json.Decode` in import test mock handlers | ~small
+  - Acceptance: All three `json.NewDecoder().Decode()` calls in mock handlers check errors
+  - Files: `internal/export/import_test.go`
+
+- [ ] **P2** | Fix unchecked `json.Encode` in html_test and csv_test mock handlers | ~small
+  - Acceptance: `json.NewEncoder().Encode()` calls check errors with `t.Errorf`
+  - Files: `internal/export/html_test.go`, `internal/export/csv_test.go`
+
+- [ ] **P2** | Fix unchecked `csvWriter.Write` in csv_test helper | ~small
+  - Acceptance: Both `csvWriter.Write` calls check errors with `t.Fatalf`
+  - Files: `internal/export/csv_test.go`
+
+### golangci-lint Config
+
+- [ ] **P2** | Verify `.golangci.yml` passes cleanly after all fixes | ~small
+  - Acceptance: `golangci-lint run ./...` exits 0 with no violations
+  - Files: `.golangci.yml`
+
+---
+
+## P3 — Polish / Optional
+
+### Debug & Config UX (Spec 14 — partial gaps)
+
+- [ ] **P3** | Ensure `--token` value is never printed in debug output | ~small
+  - Acceptance: With `--debug`, token is redacted; URL is shown normally
+  - Files: `cmd/linkdingctl/root.go`
+
+- [ ] **P3** | `config show` indicates active CLI flag overrides | ~small
+  - Acceptance: When `--url` or `--token` is provided, `config show` output marks them as overrides
+  - Files: `cmd/linkdingctl/config.go`
+
+### Additional Test Coverage (Spec 07 — gaps)
+
+- [ ] **P3** | Add multi-page pagination test for `GetBookmarks` | ~medium
+  - Acceptance: Mock server returns paginated responses; test verifies all pages are collected
+  - Files: `internal/api/client_test.go` or `internal/api/pagination_test.go`
+
+- [ ] **P3** | Add multi-page pagination test for `FetchAllTags` | ~small
+  - Acceptance: Mock server returns paginated tag responses; test verifies all pages collected
+  - Files: `internal/api/client_test.go` or `internal/api/pagination_test.go`
+
+- [ ] **P3** | Add `doRequest` timeout behavior test | ~small
+  - Acceptance: Test verifies error is returned when server exceeds 30s timeout
+  - Files: `internal/api/client_test.go`
+
+- [ ] **P3** | Add JSON export→import round-trip test | ~small
+  - Acceptance: Exported JSON can be re-imported with identical bookmark data
+  - Files: `internal/export/json_test.go` or `internal/export/import_test.go`
+
+- [ ] **P3** | Add CSV export→import round-trip test | ~small
+  - Acceptance: Exported CSV can be re-imported with identical bookmark data
+  - Files: `internal/export/csv_test.go` or `internal/export/import_test.go`
+
+---
+
+## Already Complete (No Action Needed)
+
+| Spec | Feature | Status |
+|------|---------|--------|
+| 01 | Core CLI, config, env vars | Done |
+| 02 | Bookmark CRUD (add, list, get, update, delete) | Done |
+| 03 | Tags (list, show, rename, delete) | Done |
+| 04 | Import/Export (JSON, HTML, CSV, backup, restore) | Done |
+| 05 | Security hardening (0700/0600, token masking, safe JSON) | Done |
+| 06 | Tags performance (client-side counting, full pagination) | Done |
+| 07 | Test coverage (>70% threshold per package) | Done (partial gaps in P3) |
+| 08 | Tags show pagination | Done |
+| 09 | Makefile portability (awk, no cmd/ skip) | Done |
+| 10 | Config token trim | Done (see P2 for verification) |
+| 11 | Test robustness | Done (see P2 for remaining items) |
+| 12 | User profile command | Done (superseded by spec 17) |
+| 13 | Tags CRUD (create, get) | Done |
+| 14 | Per-command `--url`/`--token` overrides | Done (partial gaps in P3) |
+| 15 | Notes field (`--notes`/`-n` on add and update) | Done |
+| 16 | Rename to `linkdingctl` | Done |
+| 17 | Fix user profile to match real API | Done |
+| 18 | CI/Release workflow | Done |
+| 19 | Errcheck lint fixes | Done (remaining items in P2) |
+| 20 | Pre-commit: go vet via lefthook | Done |
+| 21 | Pre-commit: golangci-lint via lefthook | Done |
+
+---
+
+## Summary
+
+| Priority | Count | Focus |
+|----------|-------|-------|
+| P1 | 1 | SA9003 staticcheck fix |
+| P2 | 12 | Lint fixes, test robustness, errcheck |
+| P3 | 7 | Debug redaction, config UX, test coverage |
+| **Total** | **20** | |
+
+The codebase is feature-complete. Remaining work is lint compliance, test robustness, and minor UX polish.

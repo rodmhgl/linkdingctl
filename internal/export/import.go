@@ -226,9 +226,7 @@ func importHTML(client *api.Client, reader io.Reader, options ImportOptions) (*I
 		if matches := linkPattern.FindStringSubmatch(line); matches != nil {
 			// Process previous bookmark if we found a new one
 			if lastURL != "" {
-				if err := processHTMLBookmark(client, result, existingURLs, lastURL, lastTitle, lastTags, "", lineNum-1, options); err != nil {
-					// Error already recorded in result
-				}
+				processHTMLBookmark(client, result, existingURLs, lastURL, lastTitle, lastTags, "", lineNum-1, options)
 			}
 
 			// Extract new bookmark data
@@ -245,9 +243,7 @@ func importHTML(client *api.Client, reader io.Reader, options ImportOptions) (*I
 		} else if matches := descPattern.FindStringSubmatch(line); matches != nil && lastURL != "" {
 			// Found description for current bookmark
 			description := matches[1]
-			if err := processHTMLBookmark(client, result, existingURLs, lastURL, lastTitle, lastTags, description, lineNum, options); err != nil {
-				// Error already recorded in result
-			}
+			processHTMLBookmark(client, result, existingURLs, lastURL, lastTitle, lastTags, description, lineNum, options)
 			lastURL = ""
 			lastTitle = ""
 			lastTags = ""
@@ -256,9 +252,7 @@ func importHTML(client *api.Client, reader io.Reader, options ImportOptions) (*I
 
 	// Process last bookmark if it didn't have a description
 	if lastURL != "" {
-		if err := processHTMLBookmark(client, result, existingURLs, lastURL, lastTitle, lastTags, "", lineNum, options); err != nil {
-			// Error already recorded in result
-		}
+		processHTMLBookmark(client, result, existingURLs, lastURL, lastTitle, lastTags, "", lineNum, options)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -270,7 +264,7 @@ func importHTML(client *api.Client, reader io.Reader, options ImportOptions) (*I
 
 // processHTMLBookmark processes a single bookmark from HTML import
 func processHTMLBookmark(client *api.Client, result *ImportResult, existingURLs map[string]int,
-	url, title, tagsStr, description string, lineNum int, options ImportOptions) error {
+	url, title, tagsStr, description string, lineNum int, options ImportOptions) {
 
 	// Parse tags
 	var tags []string
@@ -298,7 +292,7 @@ func processHTMLBookmark(client *api.Client, result *ImportResult, existingURLs 
 
 	if exists && options.SkipDuplicates {
 		result.Skipped++
-		return nil
+		return
 	}
 
 	if options.DryRun {
@@ -307,7 +301,7 @@ func processHTMLBookmark(client *api.Client, result *ImportResult, existingURLs 
 		} else {
 			result.Added++
 		}
-		return nil
+		return
 	}
 
 	// Create or update bookmark
@@ -325,7 +319,7 @@ func processHTMLBookmark(client *api.Client, result *ImportResult, existingURLs 
 				Line:    lineNum,
 				Message: fmt.Sprintf("Failed to update: %v", err),
 			})
-			return err
+			return
 		}
 		result.Updated++
 	} else {
@@ -336,12 +330,10 @@ func processHTMLBookmark(client *api.Client, result *ImportResult, existingURLs 
 				Line:    lineNum,
 				Message: fmt.Sprintf("Failed to create: %v", err),
 			})
-			return err
+			return
 		}
 		result.Added++
 	}
-
-	return nil
 }
 
 // importCSV imports bookmarks from CSV format
