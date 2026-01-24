@@ -1,3 +1,4 @@
+// Package api provides a client for the LinkDing API.
 package api
 
 import (
@@ -399,7 +400,7 @@ func (c *Client) GetUserProfile() (*models.UserProfile, error) {
 	}
 
 	if resp.StatusCode == http.StatusForbidden {
-		return nil, fmt.Errorf("Insufficient permissions for this operation.")
+		return nil, fmt.Errorf("insufficient permissions for this operation")
 	}
 
 	if resp.StatusCode != http.StatusOK {

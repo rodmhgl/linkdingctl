@@ -1,3 +1,4 @@
+// Package export handles importing and exporting bookmarks in various formats.
 package export
 
 import (
