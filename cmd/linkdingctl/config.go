@@ -152,7 +152,7 @@ var configTestCmd = &cobra.Command{
 					"status": "failed",
 					"error":  err.Error(),
 				}
-				json.NewEncoder(os.Stdout).Encode(output)
+				_ = json.NewEncoder(os.Stdout).Encode(output)
 				return err
 			}
 			return fmt.Errorf("✗ Connection failed: %w", err)

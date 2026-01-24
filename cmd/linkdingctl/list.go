@@ -93,11 +93,11 @@ func outputTable(bookmarkList *models.BookmarkList) error {
 
 	// Create tabwriter for aligned columns
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	defer w.Flush()
+	defer func() { _ = w.Flush() }()
 
 	// Header
-	fmt.Fprintln(w, "ID\tTITLE\tTAGS\tDATE")
-	fmt.Fprintln(w, "--\t-----\t----\t----")
+	_, _ = fmt.Fprintln(w, "ID\tTITLE\tTAGS\tDATE")
+	_, _ = fmt.Fprintln(w, "--\t-----\t----\t----")
 
 	// Rows
 	for _, bookmark := range bookmarkList.Results {
@@ -109,10 +109,10 @@ func outputTable(bookmarkList *models.BookmarkList) error {
 		tags = truncate(tags, 30)
 		date := bookmark.DateAdded.Format("2006-01-02")
 
-		fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", bookmark.ID, title, tags, date)
+		_, _ = fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", bookmark.ID, title, tags, date)
 	}
 
-	w.Flush()
+	_ = w.Flush()
 
 	// Show pagination info
 	fmt.Printf("\nShowing %d of %d total bookmarks\n", len(bookmarkList.Results), bookmarkList.Count)

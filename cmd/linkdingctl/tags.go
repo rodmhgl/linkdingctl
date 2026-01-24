@@ -234,18 +234,18 @@ func outputTagsTable(tags []models.TagWithCount) error {
 
 	// Create tabwriter for aligned columns
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	defer w.Flush()
+	defer func() { _ = w.Flush() }()
 
 	// Header
-	fmt.Fprintln(w, "TAG\tCOUNT")
-	fmt.Fprintln(w, "---\t-----")
+	_, _ = fmt.Fprintln(w, "TAG\tCOUNT")
+	_, _ = fmt.Fprintln(w, "---\t-----")
 
 	// Rows
 	for _, tag := range tags {
-		fmt.Fprintf(w, "%s\t%d\n", tag.Name, tag.Count)
+		_, _ = fmt.Fprintf(w, "%s\t%d\n", tag.Name, tag.Count)
 	}
 
-	w.Flush()
+	_ = w.Flush()
 
 	// Show summary
 	fmt.Printf("\nTotal: %d tags\n", len(tags))
@@ -300,8 +300,7 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 		fmt.Print("Continue? (y/N): ")
 
 		var response string
-		fmt.Scanln(&response)
-		if response != "y" && response != "Y" {
+		if _, err := fmt.Scanln(&response); err != nil || (response != "y" && response != "Y") {
 			fmt.Println("Aborted")
 			return nil
 		}
@@ -403,8 +402,7 @@ func runTagsDelete(cmd *cobra.Command, args []string) error {
 	fmt.Print("Continue? (y/N): ")
 
 	var response string
-	fmt.Scanln(&response)
-	if response != "y" && response != "Y" {
+	if _, err := fmt.Scanln(&response); err != nil || (response != "y" && response != "Y") {
 		fmt.Println("Aborted")
 		return nil
 	}

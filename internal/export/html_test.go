@@ -35,7 +35,9 @@ func TestExportHTML_ValidNetscapeFormat(t *testing.T) {
 			Results: bookmarks,
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -103,7 +105,9 @@ func TestExportHTML_HTMLEscaping(t *testing.T) {
 			Results: bookmarks,
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -188,7 +192,9 @@ func TestExportHTML_TagsAttribute(t *testing.T) {
 					Results: bookmarks,
 				}
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(response)
+				if err := json.NewEncoder(w).Encode(response); err != nil {
+					t.Errorf("Failed to encode response: %v", err)
+				}
 			}))
 			defer server.Close()
 
@@ -256,7 +262,9 @@ func TestExportHTML_OmitsDescriptionWhenEmpty(t *testing.T) {
 					Results: bookmarks,
 				}
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(response)
+				if err := json.NewEncoder(w).Encode(response); err != nil {
+					t.Errorf("Failed to encode response: %v", err)
+				}
 			}))
 			defer server.Close()
 
@@ -326,7 +334,9 @@ func TestExportHTML_MultipleBookmarks(t *testing.T) {
 			Results: bookmarks,
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -386,7 +396,9 @@ func TestExportHTML_WithFilters(t *testing.T) {
 				Results: bookmarks,
 			}
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}))
 		defer server.Close()
 
@@ -424,7 +436,9 @@ func TestExportHTML_WithFilters(t *testing.T) {
 				Results: bookmarks,
 			}
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}))
 		defer server.Close()
 

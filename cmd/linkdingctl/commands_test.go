@@ -41,12 +41,12 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	errC := make(chan string)
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, rOut)
+		_, _ = io.Copy(&buf, rOut)
 		outC <- buf.String()
 	}()
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, rErr)
+		_, _ = io.Copy(&buf, rErr)
 		errC <- buf.String()
 	}()
 
@@ -57,8 +57,8 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	cmdErr := rootCmd.Execute()
 
 	// Restore stdout/stderr and close the writers
-	wOut.Close()
-	wErr.Close()
+	_ = wOut.Close()
+	_ = wErr.Close()
 	os.Stdout = oldStdout
 	os.Stderr = oldStderr
 
@@ -117,11 +117,11 @@ func setupMockServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 // setTestEnv sets up environment variables for testing
 func setTestEnv(t *testing.T, url, token string) {
 	t.Helper()
-	os.Setenv("LINKDING_URL", url)
-	os.Setenv("LINKDING_TOKEN", token)
+	_ = os.Setenv("LINKDING_URL", url)
+	_ = os.Setenv("LINKDING_TOKEN", token)
 	t.Cleanup(func() {
-		os.Unsetenv("LINKDING_URL")
-		os.Unsetenv("LINKDING_TOKEN")
+		_ = os.Unsetenv("LINKDING_URL")
+		_ = os.Unsetenv("LINKDING_TOKEN")
 	})
 }
 
@@ -160,7 +160,7 @@ func TestAddCommand(t *testing.T) {
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated) // 201 for CREATE operations
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		http.NotFound(w, r)
@@ -232,7 +232,7 @@ func TestListCommand(t *testing.T) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -283,7 +283,7 @@ func TestGetCommand(t *testing.T) {
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "GET" {
 			bookmark := mockBookmark(1, "https://example.com", "Example Site", []string{"example", "test"})
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		http.NotFound(w, r)
@@ -332,7 +332,7 @@ func TestUpdateCommand(t *testing.T) {
 				// Return existing bookmark for merge operations
 				bookmark := mockBookmark(1, "https://example.com", "Example Site", []string{"existing"})
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			} else if r.Method == "PATCH" {
 				// Parse update request
@@ -348,7 +348,7 @@ func TestUpdateCommand(t *testing.T) {
 				}
 
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			}
 		}
@@ -409,7 +409,7 @@ func TestExportCommand(t *testing.T) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -449,7 +449,7 @@ func TestBackupCommand(t *testing.T) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -525,7 +525,7 @@ func TestTagsCommand(t *testing.T) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 
@@ -545,7 +545,7 @@ func TestTagsCommand(t *testing.T) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -618,8 +618,8 @@ func TestConfigCommand(t *testing.T) {
 // TestMissingConfig tests commands when config is not set
 func TestMissingConfig(t *testing.T) {
 	// Ensure no config environment variables are set
-	os.Unsetenv("LINKDING_URL")
-	os.Unsetenv("LINKDING_TOKEN")
+	_ = os.Unsetenv("LINKDING_URL")
+	_ = os.Unsetenv("LINKDING_TOKEN")
 
 	// Also ensure no config file is found by using a non-existent path
 	tmpDir := t.TempDir()
@@ -641,7 +641,7 @@ func TestDeleteWithConfirmation(t *testing.T) {
 				// Return bookmark for confirmation display
 				bookmark := mockBookmark(1, "https://example.com", "Example Site", []string{"test"})
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			} else if r.Method == "DELETE" {
 				w.WriteHeader(http.StatusNoContent)
@@ -667,8 +667,8 @@ func TestDeleteWithConfirmation(t *testing.T) {
 
 		// Write confirmation input
 		go func() {
-			w.WriteString("y\n")
-			w.Close()
+			_, _ = w.WriteString("y\n")
+			_ = w.Close()
 		}()
 
 		output, err := executeCommand(t, "delete", "1")
@@ -698,8 +698,8 @@ func TestDeleteWithConfirmation(t *testing.T) {
 
 		// Write rejection input
 		go func() {
-			w.WriteString("n\n")
-			w.Close()
+			_, _ = w.WriteString("n\n")
+			_ = w.Close()
 		}()
 
 		output, err := executeCommand(t, "delete", "1")
@@ -735,9 +735,9 @@ func TestConfigInitWithStdin(t *testing.T) {
 
 		// Write config inputs
 		go func() {
-			w.WriteString("https://linkding.example.com\n")
-			w.WriteString("test-token-12345\n")
-			w.Close()
+			_, _ = w.WriteString("https://linkding.example.com\n")
+			_, _ = w.WriteString("test-token-12345\n")
+			_ = w.Close()
 		}()
 
 		// Use a temporary config file
@@ -773,9 +773,9 @@ func TestConfigInitWithStdin(t *testing.T) {
 
 		// Write config inputs
 		go func() {
-			w.WriteString("https://linkding.example.com\n")
-			w.WriteString("test-token-json\n")
-			w.Close()
+			_, _ = w.WriteString("https://linkding.example.com\n")
+			_, _ = w.WriteString("test-token-json\n")
+			_ = w.Close()
 		}()
 
 		// Use a temporary config file
@@ -821,9 +821,9 @@ func TestConfigInitWithStdin(t *testing.T) {
 
 		// Write empty inputs
 		go func() {
-			w.WriteString("\n")
-			w.WriteString("\n")
-			w.Close()
+			_, _ = w.WriteString("\n")
+			_, _ = w.WriteString("\n")
+			_ = w.Close()
 		}()
 
 		// Use a temporary config file
@@ -851,7 +851,7 @@ func TestExportFormatsExtended(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -896,7 +896,7 @@ func TestListCommandFilters(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -947,12 +947,12 @@ func TestUpdateCommandFlags(t *testing.T) {
 			if r.Method == "GET" {
 				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			} else if r.Method == "PATCH" {
 				bookmark := mockBookmark(1, "https://example.com", "Updated", []string{"new"})
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			}
 		}
@@ -1004,7 +1004,7 @@ func TestAddCommandFlags(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "POST" {
 			var create models.BookmarkCreate
-			json.NewDecoder(r.Body).Decode(&create)
+			_ = json.NewDecoder(r.Body).Decode(&create)
 			bookmark := mockBookmark(1, create.URL, create.Title, create.TagNames)
 			bookmark.Unread = create.Unread
 			bookmark.Shared = create.Shared
@@ -1013,7 +1013,7 @@ func TestAddCommandFlags(t *testing.T) {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		http.NotFound(w, r)
@@ -1099,7 +1099,7 @@ func TestConfigTestCommand(t *testing.T) {
 			if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 				response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}}
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(response)
+				_ = json.NewEncoder(w).Encode(response)
 				return
 			}
 			http.NotFound(w, r)
@@ -1139,7 +1139,7 @@ func TestTagsShowCommand(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1186,7 +1186,7 @@ func TestListEmptyResults(t *testing.T) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1212,7 +1212,7 @@ func TestBackupJSONOutput(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1243,13 +1243,13 @@ func TestUpdateUnarchive(t *testing.T) {
 				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
 				bookmark.IsArchived = true
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			} else if r.Method == "PATCH" {
 				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
 				bookmark.IsArchived = false
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			}
 		}
@@ -1276,7 +1276,7 @@ func TestGetBookmarkDetails(t *testing.T) {
 			bookmark.Unread = true
 			bookmark.IsArchived = true
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		http.NotFound(w, r)
@@ -1306,13 +1306,13 @@ func TestUpdateDescription(t *testing.T) {
 			if r.Method == "GET" {
 				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			} else if r.Method == "PATCH" {
 				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
 				bookmark.Description = "New description"
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			}
 		}
@@ -1337,12 +1337,12 @@ func TestUpdateJSONOutput(t *testing.T) {
 			if r.Method == "GET" {
 				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			} else if r.Method == "PATCH" {
 				bookmark := mockBookmark(1, "https://example.com", "Updated", []string{"new"})
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			}
 		}
@@ -1371,7 +1371,7 @@ func TestTagsWithUnusedFilter(t *testing.T) {
 			}
 			response := models.TagList{Count: 2, Results: tags}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
@@ -1380,7 +1380,7 @@ func TestTagsWithUnusedFilter(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1407,7 +1407,7 @@ func TestTagsSortByCount(t *testing.T) {
 			}
 			response := models.TagList{Count: 2, Results: tags}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
@@ -1418,7 +1418,7 @@ func TestTagsSortByCount(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 3, Results: bookmarks}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1444,7 +1444,7 @@ func TestExportWithOutputFile(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1472,8 +1472,8 @@ func TestExportWithOutputFile(t *testing.T) {
 // TestLoadConfigError tests config loading error
 func TestLoadConfigError(t *testing.T) {
 	// Clear environment variables
-	os.Unsetenv("LINKDING_URL")
-	os.Unsetenv("LINKDING_TOKEN")
+	_ = os.Unsetenv("LINKDING_URL")
+	_ = os.Unsetenv("LINKDING_TOKEN")
 
 	tmpDir := t.TempDir()
 	badConfigPath := filepath.Join(tmpDir, "nonexistent", "config.yaml")
@@ -1492,19 +1492,19 @@ func TestImportCommandJSON(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "POST" {
 			var create models.BookmarkCreate
-			json.NewDecoder(r.Body).Decode(&create)
+			_ = json.NewDecoder(r.Body).Decode(&create)
 			createdCount++
 			bookmark := mockBookmark(createdCount, create.URL, create.Title, create.TagNames)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			// Return empty list (no existing bookmarks)
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1557,13 +1557,13 @@ func TestImportCommandJSONOutput(t *testing.T) {
 			bookmark := mockBookmark(createdCount, "https://example.com", "Test", []string{})
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1574,7 +1574,7 @@ func TestImportCommandJSONOutput(t *testing.T) {
 	tmpDir := t.TempDir()
 	jsonFile := filepath.Join(tmpDir, "test.json")
 	jsonContent := `{"version": "1", "bookmarks": [{"url": "https://example.com", "title": "Test", "tag_names": []}]}`
-	os.WriteFile(jsonFile, []byte(jsonContent), 0600)
+	_ = os.WriteFile(jsonFile, []byte(jsonContent), 0600)
 
 	output, err := executeCommand(t, "import", jsonFile, "--json")
 	if err != nil {
@@ -1600,7 +1600,7 @@ func TestImportCommandDryRun(t *testing.T) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1611,7 +1611,7 @@ func TestImportCommandDryRun(t *testing.T) {
 	tmpDir := t.TempDir()
 	jsonFile := filepath.Join(tmpDir, "test.json")
 	jsonContent := `{"version": "1", "bookmarks": [{"url": "https://example.com", "title": "Test", "tag_names": []}]}`
-	os.WriteFile(jsonFile, []byte(jsonContent), 0600)
+	_ = os.WriteFile(jsonFile, []byte(jsonContent), 0600)
 
 	output, err := executeCommand(t, "import", jsonFile, "--dry-run")
 	if err != nil {
@@ -1635,7 +1635,7 @@ func TestImportCommandSkipDuplicates(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1646,7 +1646,7 @@ func TestImportCommandSkipDuplicates(t *testing.T) {
 	tmpDir := t.TempDir()
 	jsonFile := filepath.Join(tmpDir, "test.json")
 	jsonContent := `{"version": "1", "bookmarks": [{"url": "https://example.com", "title": "Test", "tag_names": []}]}`
-	os.WriteFile(jsonFile, []byte(jsonContent), 0600)
+	_ = os.WriteFile(jsonFile, []byte(jsonContent), 0600)
 
 	output, err := executeCommand(t, "import", jsonFile, "--skip-duplicates")
 	if err != nil {
@@ -1663,18 +1663,18 @@ func TestImportCommandAddTags(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "POST" {
 			var create models.BookmarkCreate
-			json.NewDecoder(r.Body).Decode(&create)
+			_ = json.NewDecoder(r.Body).Decode(&create)
 			receivedTags = create.TagNames
 			bookmark := mockBookmark(1, create.URL, create.Title, create.TagNames)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1685,7 +1685,7 @@ func TestImportCommandAddTags(t *testing.T) {
 	tmpDir := t.TempDir()
 	jsonFile := filepath.Join(tmpDir, "test.json")
 	jsonContent := `{"version": "1", "bookmarks": [{"url": "https://example.com", "title": "Test", "tag_names": ["original"]}]}`
-	os.WriteFile(jsonFile, []byte(jsonContent), 0600)
+	_ = os.WriteFile(jsonFile, []byte(jsonContent), 0600)
 
 	output, err := executeCommand(t, "import", jsonFile, "--add-tags", "imported,extra")
 	if err != nil {
@@ -1719,17 +1719,17 @@ func TestImportCommandHTMLFormat(t *testing.T) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "POST" {
 			createdCount++
 			var create models.BookmarkCreate
-			json.NewDecoder(r.Body).Decode(&create)
+			_ = json.NewDecoder(r.Body).Decode(&create)
 			bookmark := mockBookmark(createdCount, create.URL, create.Title, create.TagNames)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1745,7 +1745,7 @@ func TestImportCommandHTMLFormat(t *testing.T) {
 <DT><A HREF="https://example.com/1">Test Bookmark 1</A>
 <DT><A HREF="https://example.com/2">Test Bookmark 2</A>
 </DL></BODY></HTML>`
-	os.WriteFile(htmlFile, []byte(htmlContent), 0600)
+	_ = os.WriteFile(htmlFile, []byte(htmlContent), 0600)
 
 	_, err := executeCommand(t, "import", htmlFile)
 	// May fail on parsing but should not panic - this tests the HTML import path execution
@@ -1762,17 +1762,17 @@ func TestImportCommandCSVFormat(t *testing.T) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "POST" {
 			createdCount++
 			var create models.BookmarkCreate
-			json.NewDecoder(r.Body).Decode(&create)
+			_ = json.NewDecoder(r.Body).Decode(&create)
 			bookmark := mockBookmark(createdCount, create.URL, create.Title, create.TagNames)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1785,7 +1785,7 @@ func TestImportCommandCSVFormat(t *testing.T) {
 	csvContent := `url,title,description,tags
 https://example.com/1,Test 1,Description 1,tag1 tag2
 https://example.com/2,Test 2,Description 2,tag3`
-	os.WriteFile(csvFile, []byte(csvContent), 0600)
+	_ = os.WriteFile(csvFile, []byte(csvContent), 0600)
 
 	_, err := executeCommand(t, "import", csvFile)
 	// May fail on parsing but should not panic - this tests the CSV import path execution
@@ -1806,13 +1806,13 @@ func TestRestoreCommandBasic(t *testing.T) {
 			bookmark := mockBookmark(createdCount, "https://example.com", "Test", []string{})
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1823,7 +1823,7 @@ func TestRestoreCommandBasic(t *testing.T) {
 	tmpDir := t.TempDir()
 	backupFile := filepath.Join(tmpDir, "backup.json")
 	jsonContent := `{"version": "1", "bookmarks": [{"url": "https://example.com", "title": "Test", "tag_names": []}]}`
-	os.WriteFile(backupFile, []byte(jsonContent), 0600)
+	_ = os.WriteFile(backupFile, []byte(jsonContent), 0600)
 
 	output, err := executeCommand(t, "restore", backupFile)
 	if err != nil {
@@ -1844,7 +1844,7 @@ func TestRestoreCommandDryRun(t *testing.T) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1855,7 +1855,7 @@ func TestRestoreCommandDryRun(t *testing.T) {
 	tmpDir := t.TempDir()
 	backupFile := filepath.Join(tmpDir, "backup.json")
 	jsonContent := `{"version": "1", "bookmarks": [{"url": "https://example.com", "title": "Test", "tag_names": []}]}`
-	os.WriteFile(backupFile, []byte(jsonContent), 0600)
+	_ = os.WriteFile(backupFile, []byte(jsonContent), 0600)
 
 	output, err := executeCommand(t, "restore", backupFile, "--dry-run")
 	if err != nil {
@@ -1881,7 +1881,7 @@ func TestRestoreCommandWipeWithConfirmation(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 2, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "DELETE" {
@@ -1893,7 +1893,7 @@ func TestRestoreCommandWipeWithConfirmation(t *testing.T) {
 			bookmark := mockBookmark(3, "https://example.com", "Test", []string{})
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		http.NotFound(w, r)
@@ -1913,14 +1913,14 @@ func TestRestoreCommandWipeWithConfirmation(t *testing.T) {
 	os.Stdin = r
 
 	go func() {
-		w.WriteString("yes\n")
-		w.Close()
+		_, _ = w.WriteString("yes\n")
+		_ = w.Close()
 	}()
 
 	tmpDir := t.TempDir()
 	backupFile := filepath.Join(tmpDir, "backup.json")
 	jsonContent := `{"version": "1", "bookmarks": [{"url": "https://example.com", "title": "Test", "tag_names": []}]}`
-	os.WriteFile(backupFile, []byte(jsonContent), 0600)
+	_ = os.WriteFile(backupFile, []byte(jsonContent), 0600)
 
 	_, cmdErr := executeCommand(t, "restore", backupFile, "--wipe")
 	// The wipe confirmation path is tested; error is acceptable in test environment
@@ -1943,7 +1943,7 @@ func TestRestoreCommandWipeNoConfirmation(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -1961,14 +1961,14 @@ func TestRestoreCommandWipeNoConfirmation(t *testing.T) {
 	os.Stdin = r
 
 	go func() {
-		w.WriteString("no\n")
-		w.Close()
+		_, _ = w.WriteString("no\n")
+		_ = w.Close()
 	}()
 
 	tmpDir := t.TempDir()
 	backupFile := filepath.Join(tmpDir, "backup.json")
 	jsonContent := `{"version": "1", "bookmarks": [{"url": "https://example.com", "title": "Test", "tag_names": []}]}`
-	os.WriteFile(backupFile, []byte(jsonContent), 0600)
+	_ = os.WriteFile(backupFile, []byte(jsonContent), 0600)
 
 	_, cmdErr := executeCommand(t, "restore", backupFile, "--wipe")
 	// The wipe cancellation path should be tested; verify we get an error or cancelled message
@@ -1990,7 +1990,7 @@ func TestRestoreCommandWipeDryRun(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "DELETE" {
@@ -2004,7 +2004,7 @@ func TestRestoreCommandWipeDryRun(t *testing.T) {
 	tmpDir := t.TempDir()
 	backupFile := filepath.Join(tmpDir, "backup.json")
 	jsonContent := `{"version": "1", "bookmarks": [{"url": "https://example.com", "title": "Test", "tag_names": []}]}`
-	os.WriteFile(backupFile, []byte(jsonContent), 0600)
+	_ = os.WriteFile(backupFile, []byte(jsonContent), 0600)
 
 	output, err := executeCommand(t, "restore", backupFile, "--wipe", "--dry-run")
 	if err != nil {
@@ -2025,13 +2025,13 @@ func TestRestoreCommandJSONOutput(t *testing.T) {
 			bookmark := mockBookmark(1, "https://example.com", "Test", []string{})
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -2042,7 +2042,7 @@ func TestRestoreCommandJSONOutput(t *testing.T) {
 	tmpDir := t.TempDir()
 	backupFile := filepath.Join(tmpDir, "backup.json")
 	jsonContent := `{"version": "1", "bookmarks": [{"url": "https://example.com", "title": "Test", "tag_names": []}]}`
-	os.WriteFile(backupFile, []byte(jsonContent), 0600)
+	_ = os.WriteFile(backupFile, []byte(jsonContent), 0600)
 
 	output, err := executeCommand(t, "restore", backupFile, "--json")
 	if err != nil {
@@ -2068,14 +2068,14 @@ func TestTagsRenameWithForce(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 2, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "PATCH" {
 			updateCallCount++
 			bookmark := mockBookmark(1, "https://example.com", "Updated", []string{"newtag"})
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		http.NotFound(w, r)
@@ -2105,14 +2105,14 @@ func TestTagsRenameWithConfirmationYes(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "PATCH" {
 			updateCallCount++
 			bookmark := mockBookmark(1, "https://example.com", "Test", []string{"newtag"})
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		http.NotFound(w, r)
@@ -2130,8 +2130,8 @@ func TestTagsRenameWithConfirmationYes(t *testing.T) {
 	os.Stdin = r
 
 	go func() {
-		w.WriteString("y\n")
-		w.Close()
+		_, _ = w.WriteString("y\n")
+		_ = w.Close()
 	}()
 
 	output, err := executeCommand(t, "tags", "rename", "oldtag", "newtag")
@@ -2155,7 +2155,7 @@ func TestTagsRenameWithConfirmationNo(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -2173,8 +2173,8 @@ func TestTagsRenameWithConfirmationNo(t *testing.T) {
 	os.Stdin = r
 
 	go func() {
-		w.WriteString("n\n")
-		w.Close()
+		_, _ = w.WriteString("n\n")
+		_ = w.Close()
 	}()
 
 	output, err := executeCommand(t, "tags", "rename", "oldtag", "newtag")
@@ -2197,7 +2197,7 @@ func TestTagsRenameWithUpdateError(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 2, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "PATCH" {
@@ -2206,7 +2206,7 @@ func TestTagsRenameWithUpdateError(t *testing.T) {
 				// First update succeeds
 				bookmark := mockBookmark(1, "https://example.com/1", "Test 1", []string{"newtag"})
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 			} else {
 				// Second update fails
 				w.WriteHeader(http.StatusInternalServerError)
@@ -2230,7 +2230,7 @@ func TestTagsRenameNoBookmarks(t *testing.T) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -2260,14 +2260,14 @@ func TestTagsDeleteWithForce(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 2, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "PATCH" {
 			updateCallCount++
 			bookmark := mockBookmark(1, "https://example.com", "Updated", []string{"keep"})
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		http.NotFound(w, r)
@@ -2285,8 +2285,8 @@ func TestTagsDeleteWithForce(t *testing.T) {
 	os.Stdin = r
 
 	go func() {
-		w.WriteString("y\n")
-		w.Close()
+		_, _ = w.WriteString("y\n")
+		_ = w.Close()
 	}()
 
 	output, err := executeCommand(t, "tags", "delete", "removeme", "--force")
@@ -2312,7 +2312,7 @@ func TestTagsDeleteWithUpdateError(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 2, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") && r.Method == "PATCH" {
@@ -2320,7 +2320,7 @@ func TestTagsDeleteWithUpdateError(t *testing.T) {
 			if callCount == 1 {
 				bookmark := mockBookmark(1, "https://example.com/1", "Test 1", []string{})
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
@@ -2341,8 +2341,8 @@ func TestTagsDeleteWithUpdateError(t *testing.T) {
 	os.Stdin = r
 
 	go func() {
-		w.WriteString("y\n")
-		w.Close()
+		_, _ = w.WriteString("y\n")
+		_ = w.Close()
 	}()
 
 	_, err = executeCommand(t, "tags", "delete", "removeme", "--force")
@@ -2357,7 +2357,7 @@ func TestTagsDeleteNoBookmarks(t *testing.T) {
 		if r.URL.Path == "/api/bookmarks/" && r.Method == "GET" {
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -2383,7 +2383,7 @@ func TestTagsDeleteWithoutForce(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -2409,7 +2409,7 @@ func TestTagsDeleteConfirmationAbort(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks, Next: nil}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -2427,8 +2427,8 @@ func TestTagsDeleteConfirmationAbort(t *testing.T) {
 	os.Stdin = r
 
 	go func() {
-		w.WriteString("n\n")
-		w.Close()
+		_, _ = w.WriteString("n\n")
+		_ = w.Close()
 	}()
 
 	output, err := executeCommand(t, "tags", "delete", "removeme", "--force")
@@ -2451,7 +2451,7 @@ func TestBackupCommandWithPrefix(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -2491,7 +2491,7 @@ func TestBackupCommandInvalidOutputDir(t *testing.T) {
 			}
 			response := models.BookmarkList{Count: 1, Results: bookmarks}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.NotFound(w, r)
@@ -2511,7 +2511,7 @@ func TestBackupCommandInvalidOutputDir(t *testing.T) {
 func TestAPIError401(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"detail":"Invalid token"}`))
+		_, _ = w.Write([]byte(`{"detail":"Invalid token"}`))
 	})
 
 	setTestEnv(t, server.URL, "bad-token")
@@ -2540,7 +2540,7 @@ func TestAPIError404(t *testing.T) {
 func TestAPIError500(t *testing.T) {
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"detail":"Internal server error"}`))
+		_, _ = w.Write([]byte(`{"detail":"Internal server error"}`))
 	})
 
 	setTestEnv(t, server.URL, "test-token")
@@ -2566,7 +2566,7 @@ func TestAddWithNotes(t *testing.T) {
 			bookmark.Notes = create.Notes
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(bookmark)
+			_ = json.NewEncoder(w).Encode(bookmark)
 			return
 		}
 		http.NotFound(w, r)
@@ -2647,7 +2647,7 @@ func TestUpdateWithNotes(t *testing.T) {
 				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
 				bookmark.Notes = "Old notes"
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			} else if r.Method == "PATCH" {
 				// Parse update request
@@ -2666,7 +2666,7 @@ func TestUpdateWithNotes(t *testing.T) {
 					bookmark.Notes = *update.Notes
 				}
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(bookmark)
+				_ = json.NewEncoder(w).Encode(bookmark)
 				return
 			}
 		}
@@ -2777,7 +2777,7 @@ func TestTagsCreateCommand(t *testing.T) {
 		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
 				var req map[string]string
-				json.NewDecoder(r.Body).Decode(&req)
+				_ = json.NewDecoder(r.Body).Decode(&req)
 
 				tag := models.Tag{
 					ID:        42,
@@ -2785,7 +2785,7 @@ func TestTagsCreateCommand(t *testing.T) {
 					DateAdded: time.Now(),
 				}
 				w.WriteHeader(http.StatusCreated)
-				json.NewEncoder(w).Encode(tag)
+				_ = json.NewEncoder(w).Encode(tag)
 				return
 			}
 			http.NotFound(w, r)
@@ -2813,7 +2813,7 @@ func TestTagsCreateCommand(t *testing.T) {
 		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
 				var req map[string]string
-				json.NewDecoder(r.Body).Decode(&req)
+				_ = json.NewDecoder(r.Body).Decode(&req)
 
 				tag := models.Tag{
 					ID:        99,
@@ -2821,7 +2821,7 @@ func TestTagsCreateCommand(t *testing.T) {
 					DateAdded: time.Now(),
 				}
 				w.WriteHeader(http.StatusCreated)
-				json.NewEncoder(w).Encode(tag)
+				_ = json.NewEncoder(w).Encode(tag)
 				return
 			}
 			http.NotFound(w, r)
@@ -2850,7 +2850,7 @@ func TestTagsCreateCommand(t *testing.T) {
 		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
 				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(`{"name":["Tag with this name already exists"]}`))
+				_, _ = w.Write([]byte(`{"name":["Tag with this name already exists"]}`))
 				return
 			}
 			http.NotFound(w, r)
@@ -2909,7 +2909,7 @@ func TestTagsGetCommand(t *testing.T) {
 					DateAdded: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
 				}
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(tag)
+				_ = json.NewEncoder(w).Encode(tag)
 				return
 			}
 			http.NotFound(w, r)
@@ -2942,7 +2942,7 @@ func TestTagsGetCommand(t *testing.T) {
 					DateAdded: time.Date(2024, 6, 20, 14, 0, 0, 0, time.UTC),
 				}
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(tag)
+				_ = json.NewEncoder(w).Encode(tag)
 				return
 			}
 			http.NotFound(w, r)
@@ -3045,7 +3045,7 @@ func TestUserProfileCommand(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(profile)
+				_ = json.NewEncoder(w).Encode(profile)
 				return
 			}
 			http.NotFound(w, r)
@@ -3126,7 +3126,7 @@ func TestUserProfileCommand(t *testing.T) {
 					},
 				}
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(profile)
+				_ = json.NewEncoder(w).Encode(profile)
 				return
 			}
 			http.NotFound(w, r)
@@ -3286,7 +3286,7 @@ func TestConfigOverrides(t *testing.T) {
 				response := models.BookmarkList{
 					Results: []models.Bookmark{},
 				}
-				json.NewEncoder(w).Encode(response)
+				_ = json.NewEncoder(w).Encode(response)
 			}
 		})
 
@@ -3314,14 +3314,14 @@ func TestConfigOverrides(t *testing.T) {
 			expectedAuth := "Token " + correctToken
 			if auth != expectedAuth {
 				w.WriteHeader(http.StatusUnauthorized)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Invalid token"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "Invalid token"})
 				return
 			}
 			if r.URL.Path == "/api/bookmarks/" {
 				response := models.BookmarkList{
 					Results: []models.Bookmark{},
 				}
-				json.NewEncoder(w).Encode(response)
+				_ = json.NewEncoder(w).Encode(response)
 			}
 		})
 
@@ -3347,7 +3347,7 @@ func TestConfigOverrides(t *testing.T) {
 				response := models.BookmarkList{
 					Results: []models.Bookmark{},
 				}
-				json.NewEncoder(w).Encode(response)
+				_ = json.NewEncoder(w).Encode(response)
 			}
 		})
 
@@ -3373,7 +3373,7 @@ func TestConfigOverrides(t *testing.T) {
 				response := models.BookmarkList{
 					Results: []models.Bookmark{},
 				}
-				json.NewEncoder(w).Encode(response)
+				_ = json.NewEncoder(w).Encode(response)
 			}
 		})
 
@@ -3399,21 +3399,21 @@ func TestConfigOverrides(t *testing.T) {
 				response := models.BookmarkList{
 					Results: []models.Bookmark{},
 				}
-				json.NewEncoder(w).Encode(response)
+				_ = json.NewEncoder(w).Encode(response)
 			}
 		})
 
 		// Temporarily unset env vars and restore them after test
 		oldURL := os.Getenv("LINKDING_URL")
 		oldToken := os.Getenv("LINKDING_TOKEN")
-		os.Unsetenv("LINKDING_URL")
-		os.Unsetenv("LINKDING_TOKEN")
+		_ = os.Unsetenv("LINKDING_URL")
+		_ = os.Unsetenv("LINKDING_TOKEN")
 		t.Cleanup(func() {
 			if oldURL != "" {
-				os.Setenv("LINKDING_URL", oldURL)
+				_ = os.Setenv("LINKDING_URL", oldURL)
 			}
 			if oldToken != "" {
-				os.Setenv("LINKDING_TOKEN", oldToken)
+				_ = os.Setenv("LINKDING_TOKEN", oldToken)
 			}
 		})
 
@@ -3483,7 +3483,7 @@ func TestConfigOverrides(t *testing.T) {
 				response := models.BookmarkList{
 					Results: []models.Bookmark{},
 				}
-				json.NewEncoder(w).Encode(response)
+				_ = json.NewEncoder(w).Encode(response)
 			}
 		})
 

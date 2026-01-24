@@ -45,11 +45,11 @@ func TestLoad_EnvVarOverride(t *testing.T) {
 	}
 
 	// Set environment variables
-	os.Setenv("LINKDING_URL", "https://env.example.com")
-	os.Setenv("LINKDING_TOKEN", "env-token")
+	_ = os.Setenv("LINKDING_URL", "https://env.example.com")
+	_ = os.Setenv("LINKDING_TOKEN", "env-token")
 	defer func() {
-		os.Unsetenv("LINKDING_URL")
-		os.Unsetenv("LINKDING_TOKEN")
+		_ = os.Unsetenv("LINKDING_URL")
+		_ = os.Unsetenv("LINKDING_TOKEN")
 	}()
 
 	// Load config
@@ -260,11 +260,11 @@ func TestLoad_EnvVarsOnly(t *testing.T) {
 	configPath := filepath.Join(tmpDir, "nonexistent.yaml")
 
 	// Set environment variables
-	os.Setenv("LINKDING_URL", "https://envonly.example.com")
-	os.Setenv("LINKDING_TOKEN", "envonly-token")
+	_ = os.Setenv("LINKDING_URL", "https://envonly.example.com")
+	_ = os.Setenv("LINKDING_TOKEN", "envonly-token")
 	defer func() {
-		os.Unsetenv("LINKDING_URL")
-		os.Unsetenv("LINKDING_TOKEN")
+		_ = os.Unsetenv("LINKDING_URL")
+		_ = os.Unsetenv("LINKDING_TOKEN")
 	}()
 
 	// Load config (should succeed with env vars only)
@@ -302,8 +302,8 @@ func TestMigration_FromOldPath(t *testing.T) {
 
 	// Temporarily override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Load config - should trigger migration
 	cfg, err := Load("")
@@ -358,8 +358,8 @@ func TestMigration_SkipIfNewConfigExists(t *testing.T) {
 
 	// Temporarily override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Load config - should NOT trigger migration
 	cfg, err := Load("")
@@ -393,15 +393,15 @@ func TestMigration_SkipIfNoOldConfig(t *testing.T) {
 
 	// Temporarily override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Set env vars so Load() doesn't fail due to missing config
-	os.Setenv("LINKDING_URL", "https://env.example.com")
-	os.Setenv("LINKDING_TOKEN", "env-token")
+	_ = os.Setenv("LINKDING_URL", "https://env.example.com")
+	_ = os.Setenv("LINKDING_TOKEN", "env-token")
 	defer func() {
-		os.Unsetenv("LINKDING_URL")
-		os.Unsetenv("LINKDING_TOKEN")
+		_ = os.Unsetenv("LINKDING_URL")
+		_ = os.Unsetenv("LINKDING_TOKEN")
 	}()
 
 	// Load config - should not trigger migration

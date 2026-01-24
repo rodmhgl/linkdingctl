@@ -51,35 +51,35 @@
 
 ### Test Code — Export Tests (Encode)
 
-- [ ] **P1** | Fix unchecked `json.NewEncoder().Encode()` in HTML test handlers | ~medium
+- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in HTML test handlers | ~medium
   - Acceptance: All `json.NewEncoder(w).Encode(...)` calls in mock handlers check error and call `t.Errorf` on failure
   - Files: `internal/export/html_test.go` (lines 38, 106, 191, 259, 329, 389, 427)
 
-- [ ] **P1** | Fix unchecked `json.NewEncoder().Encode()` in CSV test handlers | ~small
+- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in CSV test handlers | ~small
   - Acceptance: Both `json.NewEncoder(w).Encode(...)` calls in mock handlers check error and call `t.Errorf` on failure
   - Files: `internal/export/csv_test.go` (lines 236, 316)
 
-- [ ] **P1** | Fix unchecked `json.NewEncoder().Encode()` in JSON test handlers | ~small
+- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in JSON test handlers | ~small
   - Acceptance: Both `json.NewEncoder(w).Encode(...)` calls in mock handlers check error and call `t.Errorf` on failure
   - Files: `internal/export/json_test.go` (lines 170, 255)
 
-- [ ] **P1** | Fix unchecked `json.NewEncoder().Encode()` in import test non-handler code | ~medium
+- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in import test non-handler code | ~medium
   - Acceptance: All `json.NewEncoder(...).Encode(...)` calls outside of the decode handlers (buffer writes, mock responses) check error and call `t.Fatalf`/`t.Errorf` on failure
   - Files: `internal/export/import_test.go` (numerous lines — buffer encodes + handler encodes)
 
 ### Test Code — CSV Writer
 
-- [ ] **P1** | Fix unchecked `csvWriter.Write` in CSV test helper | ~small
+- [x] **P1** | Fix unchecked `csvWriter.Write` in CSV test helper | ~small
   - Acceptance: `csvWriter.Write(header)` and `csvWriter.Write(row)` (lines 165, 179) check error; test calls `t.Fatalf` on failure
   - Files: `internal/export/csv_test.go`
 
 ### Validation
 
-- [ ] **P2** | Run `golangci-lint` and verify zero errcheck violations | ~small
+- [x] **P2** | Run `golangci-lint` and verify zero errcheck violations | ~small
   - Acceptance: `golangci-lint run ./...` passes with no `errcheck` findings
   - Files: (validation only)
 
-- [ ] **P2** | Verify all tests pass and coverage holds | ~small
+- [x] **P2** | Verify all tests pass and coverage holds | ~small
   - Acceptance: `go test ./...` passes; `make cover` meets 70% per-package threshold
   - Files: (validation only)
 
