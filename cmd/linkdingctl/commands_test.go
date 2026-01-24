@@ -2561,7 +2561,7 @@ func TestAddWithNotes(t *testing.T) {
 				t.Fatalf("Failed to decode request: %v", err)
 			}
 			lastReceivedNotes = create.Notes
-			
+
 			bookmark := mockBookmark(1, create.URL, create.Title, create.TagNames)
 			bookmark.Notes = create.Notes
 			w.Header().Set("Content-Type", "application/json")
@@ -2608,7 +2608,7 @@ func TestAddWithNotes(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Command failed: %v", err)
 		}
-		
+
 		var bookmark models.Bookmark
 		if err := json.Unmarshal([]byte(output), &bookmark); err != nil {
 			t.Errorf("Expected valid JSON output, got error: %v", err)
@@ -2637,9 +2637,9 @@ func TestUpdateWithNotes(t *testing.T) {
 		receivedNotes *string
 		notesWasSet   bool
 	}
-	
+
 	var lastUpdate updateRequest
-	
+
 	server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/bookmarks/") {
 			if r.Method == "GET" {
@@ -2659,7 +2659,7 @@ func TestUpdateWithNotes(t *testing.T) {
 					receivedNotes: update.Notes,
 					notesWasSet:   update.Notes != nil,
 				}
-				
+
 				// Return updated bookmark
 				bookmark := mockBookmark(1, "https://example.com", "Example", []string{"test"})
 				if update.Notes != nil {
@@ -2729,7 +2729,7 @@ func TestUpdateWithNotes(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Command failed: %v", err)
 		}
-		
+
 		var bookmark models.Bookmark
 		if err := json.Unmarshal([]byte(output), &bookmark); err != nil {
 			t.Errorf("Expected valid JSON output, got error: %v", err)
@@ -2778,7 +2778,7 @@ func TestTagsCreateCommand(t *testing.T) {
 			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
 				var req map[string]string
 				json.NewDecoder(r.Body).Decode(&req)
-				
+
 				tag := models.Tag{
 					ID:        42,
 					Name:      req["name"],
@@ -2814,7 +2814,7 @@ func TestTagsCreateCommand(t *testing.T) {
 			if r.URL.Path == "/api/tags/" && r.Method == "POST" {
 				var req map[string]string
 				json.NewDecoder(r.Body).Decode(&req)
-				
+
 				tag := models.Tag{
 					ID:        99,
 					Name:      req["name"],
@@ -3028,10 +3028,21 @@ func TestUserProfileCommand(t *testing.T) {
 		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
 				profile := models.UserProfile{
-					Username:      "testuser",
-					DisplayName:   "Test User",
-					Theme:         "dark",
-					BookmarkCount: 42,
+					Theme:                 "auto",
+					BookmarkDateDisplay:   "relative",
+					BookmarkLinkTarget:    "_blank",
+					WebArchiveIntegration: "enabled",
+					TagSearch:             "lax",
+					EnableSharing:         true,
+					EnablePublicSharing:   true,
+					EnableFavicons:        false,
+					DisplayURL:            false,
+					PermanentNotes:        false,
+					SearchPreferences: models.SearchPreferences{
+						Sort:   "title_asc",
+						Shared: "off",
+						Unread: "off",
+					},
 				}
 				w.WriteHeader(http.StatusOK)
 				json.NewEncoder(w).Encode(profile)
@@ -3047,17 +3058,50 @@ func TestUserProfileCommand(t *testing.T) {
 			t.Fatalf("Command failed: %v", err)
 		}
 
-		if !strings.Contains(output, "Username: testuser") {
-			t.Errorf("Expected username in output, got: %s", output)
-		}
-		if !strings.Contains(output, "Display Name: Test User") {
-			t.Errorf("Expected display name in output, got: %s", output)
-		}
-		if !strings.Contains(output, "Theme: dark") {
+		if !strings.Contains(output, "Theme:") {
 			t.Errorf("Expected theme in output, got: %s", output)
 		}
-		if !strings.Contains(output, "Bookmark Count: 42") {
-			t.Errorf("Expected bookmark count in output, got: %s", output)
+		if !strings.Contains(output, "Bookmark Date Display:") {
+			t.Errorf("Expected bookmark date display in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Bookmark Link Target:") {
+			t.Errorf("Expected bookmark link target in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Web Archive:") {
+			t.Errorf("Expected web archive in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Tag Search:") {
+			t.Errorf("Expected tag search in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Sharing:") {
+			t.Errorf("Expected sharing in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Public Sharing:") {
+			t.Errorf("Expected public sharing in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Favicons:") {
+			t.Errorf("Expected favicons in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Display URL:") {
+			t.Errorf("Expected display URL in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Permanent Notes:") {
+			t.Errorf("Expected permanent notes in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Search Sort:") {
+			t.Errorf("Expected search sort in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Search Shared:") {
+			t.Errorf("Expected search shared in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Search Unread:") {
+			t.Errorf("Expected search unread in output, got: %s", output)
+		}
+		if !strings.Contains(output, "enabled") {
+			t.Errorf("Expected 'enabled' status in output, got: %s", output)
+		}
+		if !strings.Contains(output, "disabled") {
+			t.Errorf("Expected 'disabled' status in output, got: %s", output)
 		}
 	})
 
@@ -3065,10 +3109,21 @@ func TestUserProfileCommand(t *testing.T) {
 		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/api/user/profile/" && r.Method == "GET" {
 				profile := models.UserProfile{
-					Username:      "jsonuser",
-					DisplayName:   "JSON User",
-					Theme:         "light",
-					BookmarkCount: 100,
+					Theme:                 "light",
+					BookmarkDateDisplay:   "absolute",
+					BookmarkLinkTarget:    "_self",
+					WebArchiveIntegration: "disabled",
+					TagSearch:             "strict",
+					EnableSharing:         false,
+					EnablePublicSharing:   false,
+					EnableFavicons:        true,
+					DisplayURL:            true,
+					PermanentNotes:        true,
+					SearchPreferences: models.SearchPreferences{
+						Sort:   "date_desc",
+						Shared: "yes",
+						Unread: "yes",
+					},
 				}
 				w.WriteHeader(http.StatusOK)
 				json.NewEncoder(w).Encode(profile)
@@ -3088,17 +3143,44 @@ func TestUserProfileCommand(t *testing.T) {
 		if err := json.Unmarshal([]byte(output), &profile); err != nil {
 			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
 		}
-		if profile.Username != "jsonuser" {
-			t.Errorf("Expected username 'jsonuser', got: %s", profile.Username)
-		}
-		if profile.DisplayName != "JSON User" {
-			t.Errorf("Expected display name 'JSON User', got: %s", profile.DisplayName)
-		}
 		if profile.Theme != "light" {
 			t.Errorf("Expected theme 'light', got: %s", profile.Theme)
 		}
-		if profile.BookmarkCount != 100 {
-			t.Errorf("Expected bookmark count 100, got: %d", profile.BookmarkCount)
+		if profile.BookmarkDateDisplay != "absolute" {
+			t.Errorf("Expected bookmark_date_display 'absolute', got: %s", profile.BookmarkDateDisplay)
+		}
+		if profile.BookmarkLinkTarget != "_self" {
+			t.Errorf("Expected bookmark_link_target '_self', got: %s", profile.BookmarkLinkTarget)
+		}
+		if profile.WebArchiveIntegration != "disabled" {
+			t.Errorf("Expected web_archive_integration 'disabled', got: %s", profile.WebArchiveIntegration)
+		}
+		if profile.TagSearch != "strict" {
+			t.Errorf("Expected tag_search 'strict', got: %s", profile.TagSearch)
+		}
+		if profile.EnableSharing {
+			t.Error("Expected enable_sharing to be false")
+		}
+		if profile.EnablePublicSharing {
+			t.Error("Expected enable_public_sharing to be false")
+		}
+		if !profile.EnableFavicons {
+			t.Error("Expected enable_favicons to be true")
+		}
+		if !profile.DisplayURL {
+			t.Error("Expected display_url to be true")
+		}
+		if !profile.PermanentNotes {
+			t.Error("Expected permanent_notes to be true")
+		}
+		if profile.SearchPreferences.Sort != "date_desc" {
+			t.Errorf("Expected search_preferences.sort 'date_desc', got: %s", profile.SearchPreferences.Sort)
+		}
+		if profile.SearchPreferences.Shared != "yes" {
+			t.Errorf("Expected search_preferences.shared 'yes', got: %s", profile.SearchPreferences.Shared)
+		}
+		if profile.SearchPreferences.Unread != "yes" {
+			t.Errorf("Expected search_preferences.unread 'yes', got: %s", profile.SearchPreferences.Unread)
 		}
 	})
 
@@ -3137,8 +3219,8 @@ func TestUserProfileCommand(t *testing.T) {
 		if err == nil {
 			t.Fatal("Expected error for 403 response, got nil")
 		}
-		if !strings.Contains(err.Error(), "access forbidden") || !strings.Contains(err.Error(), "don't have permission") {
-			t.Errorf("Expected forbidden error message, got: %v", err)
+		if !strings.Contains(err.Error(), "Insufficient permissions for this operation") {
+			t.Errorf("Expected 'Insufficient permissions' error message, got: %v", err)
 		}
 	})
 

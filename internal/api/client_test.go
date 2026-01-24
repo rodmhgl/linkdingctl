@@ -420,10 +420,21 @@ func TestGetUserProfile_Success(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"username":       "testuser",
-			"display_name":   "Test User",
-			"theme":          "dark",
-			"bookmark_count": 42,
+			"theme":                   "auto",
+			"bookmark_date_display":   "relative",
+			"bookmark_link_target":    "_blank",
+			"web_archive_integration": "enabled",
+			"tag_search":              "lax",
+			"enable_sharing":          true,
+			"enable_public_sharing":   true,
+			"enable_favicons":         false,
+			"display_url":             false,
+			"permanent_notes":         false,
+			"search_preferences": map[string]interface{}{
+				"sort":   "title_asc",
+				"shared": "off",
+				"unread": "off",
+			},
 		})
 	}))
 	defer server.Close()
@@ -437,17 +448,44 @@ func TestGetUserProfile_Success(t *testing.T) {
 	if profile == nil {
 		t.Fatal("expected profile, got nil")
 	}
-	if profile.Username != "testuser" {
-		t.Errorf("expected username 'testuser', got '%s'", profile.Username)
+	if profile.Theme != "auto" {
+		t.Errorf("expected theme 'auto', got '%s'", profile.Theme)
 	}
-	if profile.DisplayName != "Test User" {
-		t.Errorf("expected display name 'Test User', got '%s'", profile.DisplayName)
+	if profile.BookmarkDateDisplay != "relative" {
+		t.Errorf("expected bookmark_date_display 'relative', got '%s'", profile.BookmarkDateDisplay)
 	}
-	if profile.Theme != "dark" {
-		t.Errorf("expected theme 'dark', got '%s'", profile.Theme)
+	if profile.BookmarkLinkTarget != "_blank" {
+		t.Errorf("expected bookmark_link_target '_blank', got '%s'", profile.BookmarkLinkTarget)
 	}
-	if profile.BookmarkCount != 42 {
-		t.Errorf("expected bookmark count 42, got %d", profile.BookmarkCount)
+	if profile.WebArchiveIntegration != "enabled" {
+		t.Errorf("expected web_archive_integration 'enabled', got '%s'", profile.WebArchiveIntegration)
+	}
+	if profile.TagSearch != "lax" {
+		t.Errorf("expected tag_search 'lax', got '%s'", profile.TagSearch)
+	}
+	if !profile.EnableSharing {
+		t.Error("expected enable_sharing to be true")
+	}
+	if !profile.EnablePublicSharing {
+		t.Error("expected enable_public_sharing to be true")
+	}
+	if profile.EnableFavicons {
+		t.Error("expected enable_favicons to be false")
+	}
+	if profile.DisplayURL {
+		t.Error("expected display_url to be false")
+	}
+	if profile.PermanentNotes {
+		t.Error("expected permanent_notes to be false")
+	}
+	if profile.SearchPreferences.Sort != "title_asc" {
+		t.Errorf("expected search_preferences.sort 'title_asc', got '%s'", profile.SearchPreferences.Sort)
+	}
+	if profile.SearchPreferences.Shared != "off" {
+		t.Errorf("expected search_preferences.shared 'off', got '%s'", profile.SearchPreferences.Shared)
+	}
+	if profile.SearchPreferences.Unread != "off" {
+		t.Errorf("expected search_preferences.unread 'off', got '%s'", profile.SearchPreferences.Unread)
 	}
 }
 
@@ -485,7 +523,7 @@ func TestGetUserProfile_Forbidden(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 
-	expectedMsg := "access forbidden. You don't have permission to view this profile"
+	expectedMsg := "Insufficient permissions for this operation."
 	if err.Error() != expectedMsg {
 		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
 	}
