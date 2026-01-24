@@ -17,8 +17,6 @@ var (
 	updateTags        []string
 	updateAddTags     []string
 	updateRemoveTags  []string
-	updateUnread      *bool
-	updateShared      *bool
 	updateArchive     bool
 	updateUnarchive   bool
 )

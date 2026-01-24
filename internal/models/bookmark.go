@@ -1,3 +1,4 @@
+// Package models defines the data models used in the LinkDing application.
 package models
 
 import "time"
