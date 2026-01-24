@@ -34,7 +34,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: Error message starts lowercase per Go conventions; tests pass
   - Files: `internal/api/client.go`
 
-- [ ] **P2** | Validate and commit package-level doc comments | ~small
+- [x] **P2** | Validate and commit package-level doc comments | ~small
   - Acceptance: `golangci-lint run` reports no missing package comments for `api`, `config`, `export`, `models`
   - Files: `internal/api/client.go`, `internal/config/config.go`, `internal/export/import.go`, `internal/models/bookmark.go`
 
