@@ -3219,8 +3219,8 @@ func TestUserProfileCommand(t *testing.T) {
 		if err == nil {
 			t.Fatal("Expected error for 403 response, got nil")
 		}
-		if !strings.Contains(err.Error(), "Insufficient permissions for this operation") {
-			t.Errorf("Expected 'Insufficient permissions' error message, got: %v", err)
+		if !strings.Contains(err.Error(), "insufficient permissions for this operation") {
+			t.Errorf("Expected 'insufficient permissions' error message, got: %v", err)
 		}
 	})
 

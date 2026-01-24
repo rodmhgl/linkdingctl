@@ -526,7 +526,7 @@ func TestGetUserProfile_Forbidden(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 
-	expectedMsg := "Insufficient permissions for this operation."
+	expectedMsg := "insufficient permissions for this operation"
 	if err.Error() != expectedMsg {
 		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
 	}

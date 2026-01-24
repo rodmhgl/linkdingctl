@@ -30,7 +30,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: No unused variable warnings; `go build ./...` and all tests pass
   - Files: `cmd/linkdingctl/update.go`
 
-- [ ] **P2** | Validate and commit error message lowercase fix in `GetUserProfile` | ~small
+- [x] **P2** | Validate and commit error message lowercase fix in `GetUserProfile` | ~small
   - Acceptance: Error message starts lowercase per Go conventions; tests pass
   - Files: `internal/api/client.go`
 
