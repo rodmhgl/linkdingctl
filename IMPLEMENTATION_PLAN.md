@@ -88,7 +88,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: With `--debug`, token is redacted; URL is shown normally
   - Files: `cmd/linkdingctl/root.go`
 
-- [ ] **P3** | `config show` indicates active CLI flag overrides | ~small
+- [x] **P3** | `config show` indicates active CLI flag overrides | ~small
   - Acceptance: When `--url` or `--token` is provided, `config show` output marks them as overrides
   - Files: `cmd/linkdingctl/config.go`
 
