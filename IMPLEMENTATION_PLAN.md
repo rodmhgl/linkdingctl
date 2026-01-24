@@ -60,7 +60,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: `w.Write` error is checked with `t.Errorf`
   - Files: `internal/api/client_test.go`
 
-- [ ] **P2** | Fix unchecked `json.Decode` in import test mock handlers | ~small
+- [x] **P2** | Fix unchecked `json.Decode` in import test mock handlers | ~small
   - Acceptance: All three `json.NewDecoder().Decode()` calls in mock handlers check errors
   - Files: `internal/export/import_test.go`
 
