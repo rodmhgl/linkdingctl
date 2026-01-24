@@ -88,7 +88,11 @@ func TestImportJSON_RoundTrip(t *testing.T) {
 		case r.Method == "POST" && r.URL.Path == "/api/bookmarks/":
 			// Capture created bookmark
 			var bookmark models.BookmarkCreate
-			json.NewDecoder(r.Body).Decode(&bookmark)
+			if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
+				t.Errorf("Failed to decode request body: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			created = append(created, bookmark)
 
 			// Return created bookmark
@@ -256,7 +260,11 @@ func TestImportJSON_AddTags(t *testing.T) {
 		if r.Method == "GET" {
 			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
 		} else if r.Method == "POST" {
-			json.NewDecoder(r.Body).Decode(&createdBookmark)
+			if err := json.NewDecoder(r.Body).Decode(&createdBookmark); err != nil {
+				t.Errorf("Failed to decode request body: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(models.Bookmark{ID: 1})
 		}
@@ -305,7 +313,11 @@ func TestImportHTML_ParsesCorrectly(t *testing.T) {
 			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
 		} else if r.Method == "POST" {
 			var bookmark models.BookmarkCreate
-			json.NewDecoder(r.Body).Decode(&bookmark)
+			if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
+				t.Errorf("Failed to decode request body: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			created = append(created, bookmark)
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(models.Bookmark{ID: len(created)})
@@ -378,7 +390,11 @@ https://test.com,Test,,tag3,true,true,false
 			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
 		} else if r.Method == "POST" {
 			var bookmark models.BookmarkCreate
-			json.NewDecoder(r.Body).Decode(&bookmark)
+			if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
+				t.Errorf("Failed to decode request body: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			created = append(created, bookmark)
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(models.Bookmark{ID: len(created)})
@@ -527,7 +543,11 @@ https://test.com
 			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
 		} else if r.Method == "POST" {
 			var bookmark models.BookmarkCreate
-			json.NewDecoder(r.Body).Decode(&bookmark)
+			if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
+				t.Errorf("Failed to decode request body: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			created = append(created, bookmark)
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(models.Bookmark{ID: len(created)})
@@ -619,7 +639,11 @@ func TestImportHTML_WithAddTags(t *testing.T) {
 		if r.Method == "GET" {
 			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
 		} else if r.Method == "POST" {
-			json.NewDecoder(r.Body).Decode(&createdBookmark)
+			if err := json.NewDecoder(r.Body).Decode(&createdBookmark); err != nil {
+				t.Errorf("Failed to decode request body: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(models.Bookmark{ID: 1})
 		}
@@ -721,7 +745,11 @@ https://test.com,Test
 			json.NewEncoder(w).Encode(response)
 		} else if r.Method == "POST" {
 			var bookmark models.BookmarkCreate
-			json.NewDecoder(r.Body).Decode(&bookmark)
+			if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
+				t.Errorf("Failed to decode request body: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			created = append(created, bookmark)
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(models.Bookmark{ID: len(created) + 1})

@@ -45,7 +45,7 @@
 
 ### Test Code — Import Tests
 
-- [ ] **P1** | Fix unchecked `json.NewDecoder().Decode()` in import test handlers | ~medium
+- [x] **P1** | Fix unchecked `json.NewDecoder().Decode()` in import test handlers | ~medium
   - Acceptance: All `json.NewDecoder(r.Body).Decode(...)` calls in mock handlers check error, call `t.Errorf`, respond with HTTP 400, and return on failure
   - Files: `internal/export/import_test.go` (lines 91, 259, 308, 381, 530, 622, 724)
 
