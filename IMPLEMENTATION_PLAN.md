@@ -50,7 +50,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: `TestLoad_NonYAMLFile` uses `strings.Contains` (no panic risk from index out-of-range); test passes
   - Files: `internal/config/config_test.go`
 
-- [ ] **P2** | Add missing flag resets to `executeCommand` test helper | ~small
+- [x] **P2** | Add missing flag resets to `executeCommand` test helper | ~small
   - Acceptance: `executeCommand` resets `backupOutput`, `backupPrefix`, `tagsRenameForce`, `tagsDeleteForce`; no test pollution
   - Files: `cmd/linkdingctl/commands_test.go`
 
