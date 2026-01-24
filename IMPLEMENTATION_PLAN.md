@@ -98,7 +98,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: Mock server returns paginated responses; test verifies all pages are collected
   - Files: `internal/api/client_test.go` or `internal/api/pagination_test.go`
 
-- [ ] **P3** | Add multi-page pagination test for `FetchAllTags` | ~small
+- [x] **P3** | Add multi-page pagination test for `FetchAllTags` | ~small
   - Acceptance: Mock server returns paginated tag responses; test verifies all pages collected
   - Files: `internal/api/client_test.go` or `internal/api/pagination_test.go`
 
