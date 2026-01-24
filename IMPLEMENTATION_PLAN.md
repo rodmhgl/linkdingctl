@@ -74,7 +74,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
 
 ### golangci-lint Config
 
-- [ ] **P2** | Verify `.golangci.yml` passes cleanly after all fixes | ~small
+- [x] **P2** | Verify `.golangci.yml` passes cleanly after all fixes | ~small
   - Acceptance: `golangci-lint run ./...` exits 0 with no violations
   - Files: `.golangci.yml`
 
