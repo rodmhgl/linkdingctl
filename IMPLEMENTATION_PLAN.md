@@ -106,7 +106,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: Test verifies error is returned when server exceeds 30s timeout
   - Files: `internal/api/client_test.go`
 
-- [ ] **P3** | Add JSON export→import round-trip test | ~small
+- [x] **P3** | Add JSON export→import round-trip test | ~small
   - Acceptance: Exported JSON can be re-imported with identical bookmark data
   - Files: `internal/export/json_test.go` or `internal/export/import_test.go`
 
