@@ -55,7 +55,7 @@
   - Acceptance: All `json.NewEncoder(w).Encode(...)` calls in mock handlers check error and call `t.Errorf` on failure
   - Files: `internal/export/html_test.go` (lines 38, 106, 191, 259, 329, 389, 427)
 
-- [ ] **P1** | Fix unchecked `json.NewEncoder().Encode()` in CSV test handlers | ~small
+- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in CSV test handlers | ~small
   - Acceptance: Both `json.NewEncoder(w).Encode(...)` calls in mock handlers check error and call `t.Errorf` on failure
   - Files: `internal/export/csv_test.go` (lines 236, 316)
 
