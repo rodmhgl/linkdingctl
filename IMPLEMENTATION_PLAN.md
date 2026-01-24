@@ -51,7 +51,7 @@
 
 ### Test Code — Export Tests (Encode)
 
-- [ ] **P1** | Fix unchecked `json.NewEncoder().Encode()` in HTML test handlers | ~medium
+- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in HTML test handlers | ~medium
   - Acceptance: All `json.NewEncoder(w).Encode(...)` calls in mock handlers check error and call `t.Errorf` on failure
   - Files: `internal/export/html_test.go` (lines 38, 106, 191, 259, 329, 389, 427)
 
