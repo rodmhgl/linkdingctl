@@ -22,7 +22,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
 
 ### Uncommitted Changes (on `review` branch, need validation + commit)
 
-- [ ] **P2** | Validate and commit `//nolint:unused` on version var | ~small
+- [x] **P2** | Validate and commit `//nolint:unused` on version var | ~small
   - Acceptance: `golangci-lint run` passes with no `unused` violation on `version` var
   - Files: `cmd/linkdingctl/main.go`
 
