@@ -68,7 +68,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: `json.NewEncoder().Encode()` calls check errors with `t.Errorf`
   - Files: `internal/export/html_test.go`, `internal/export/csv_test.go`
 
-- [ ] **P2** | Fix unchecked `csvWriter.Write` in csv_test helper | ~small
+- [x] **P2** | Fix unchecked `csvWriter.Write` in csv_test helper | ~small
   - Acceptance: Both `csvWriter.Write` calls check errors with `t.Fatalf`
   - Files: `internal/export/csv_test.go`
 
