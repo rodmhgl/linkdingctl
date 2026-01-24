@@ -39,7 +39,7 @@
 
 ### Test Code — API Client
 
-- [ ] **P1** | Fix unchecked `w.Write` in `TestCreateTag_Duplicate` | ~small
+- [x] **P1** | Fix unchecked `w.Write` in `TestCreateTag_Duplicate` | ~small
   - Acceptance: Mock handler checks `w.Write` return value; calls `t.Errorf` and returns on failure
   - Files: `internal/api/client_test.go` (line 351)
 
