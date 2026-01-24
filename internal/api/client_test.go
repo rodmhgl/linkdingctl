@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -529,5 +530,126 @@ func TestGetUserProfile_Forbidden(t *testing.T) {
 	expectedMsg := "insufficient permissions for this operation"
 	if err.Error() != expectedMsg {
 		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
+	}
+}
+
+// TestFetchAllBookmarks_MultiPage tests that FetchAllBookmarks correctly handles pagination
+func TestFetchAllBookmarks_MultiPage(t *testing.T) {
+	pageNum := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/bookmarks/" {
+			t.Errorf("expected path '/api/bookmarks/', got '%s'", r.URL.Path)
+		}
+
+		query := r.URL.Query()
+		offset := query.Get("offset")
+		limit := query.Get("limit")
+
+		if limit != "100" {
+			t.Errorf("expected limit '100', got '%s'", limit)
+		}
+
+		var response models.BookmarkList
+
+		// Simulate 3 pages of results
+		switch offset {
+		case "", "0":
+			// First page: 100 bookmarks
+			pageNum = 1
+			bookmarks := make([]models.Bookmark, 100)
+			for i := 0; i < 100; i++ {
+				bookmarks[i] = models.Bookmark{
+					ID:    i + 1,
+					URL:   fmt.Sprintf("https://example.com/page1/%d", i+1),
+					Title: fmt.Sprintf("Bookmark %d", i+1),
+				}
+			}
+			nextURL := "http://example.com/api/bookmarks/?limit=100&offset=100"
+			response = models.BookmarkList{
+				Count:   250,
+				Next:    &nextURL,
+				Results: bookmarks,
+			}
+		case "100":
+			// Second page: 100 bookmarks
+			pageNum = 2
+			bookmarks := make([]models.Bookmark, 100)
+			for i := 0; i < 100; i++ {
+				bookmarks[i] = models.Bookmark{
+					ID:    i + 101,
+					URL:   fmt.Sprintf("https://example.com/page2/%d", i+101),
+					Title: fmt.Sprintf("Bookmark %d", i+101),
+				}
+			}
+			nextURL := "http://example.com/api/bookmarks/?limit=100&offset=200"
+			response = models.BookmarkList{
+				Count:   250,
+				Next:    &nextURL,
+				Results: bookmarks,
+			}
+		case "200":
+			// Third page: 50 bookmarks (last page)
+			pageNum = 3
+			bookmarks := make([]models.Bookmark, 50)
+			for i := 0; i < 50; i++ {
+				bookmarks[i] = models.Bookmark{
+					ID:    i + 201,
+					URL:   fmt.Sprintf("https://example.com/page3/%d", i+201),
+					Title: fmt.Sprintf("Bookmark %d", i+201),
+				}
+			}
+			response = models.BookmarkList{
+				Count:   250,
+				Next:    nil, // No more pages
+				Results: bookmarks,
+			}
+		default:
+			t.Errorf("unexpected offset '%s'", offset)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	bookmarks, err := client.FetchAllBookmarks(nil, false)
+
+	if err != nil {
+		t.Fatalf("FetchAllBookmarks() failed: %v", err)
+	}
+
+	// Verify we got all 250 bookmarks from 3 pages
+	if len(bookmarks) != 250 {
+		t.Errorf("expected 250 bookmarks, got %d", len(bookmarks))
+	}
+
+	// Verify the server was called 3 times (for 3 pages)
+	if pageNum != 3 {
+		t.Errorf("expected 3 pages to be fetched, got %d", pageNum)
+	}
+
+	// Verify first bookmark from page 1
+	if bookmarks[0].ID != 1 || bookmarks[0].Title != "Bookmark 1" {
+		t.Errorf("first bookmark mismatch: got ID=%d, Title=%s", bookmarks[0].ID, bookmarks[0].Title)
+	}
+
+	// Verify first bookmark from page 2
+	if bookmarks[100].ID != 101 || bookmarks[100].Title != "Bookmark 101" {
+		t.Errorf("101st bookmark mismatch: got ID=%d, Title=%s", bookmarks[100].ID, bookmarks[100].Title)
+	}
+
+	// Verify first bookmark from page 3
+	if bookmarks[200].ID != 201 || bookmarks[200].Title != "Bookmark 201" {
+		t.Errorf("201st bookmark mismatch: got ID=%d, Title=%s", bookmarks[200].ID, bookmarks[200].Title)
+	}
+
+	// Verify last bookmark
+	if bookmarks[249].ID != 250 || bookmarks[249].Title != "Bookmark 250" {
+		t.Errorf("last bookmark mismatch: got ID=%d, Title=%s", bookmarks[249].ID, bookmarks[249].Title)
 	}
 }

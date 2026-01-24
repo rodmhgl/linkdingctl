@@ -94,7 +94,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
 
 ### Additional Test Coverage (Spec 07 — gaps)
 
-- [ ] **P3** | Add multi-page pagination test for `GetBookmarks` | ~medium
+- [x] **P3** | Add multi-page pagination test for `GetBookmarks` | ~medium
   - Acceptance: Mock server returns paginated responses; test verifies all pages are collected
   - Files: `internal/api/client_test.go` or `internal/api/pagination_test.go`
 
