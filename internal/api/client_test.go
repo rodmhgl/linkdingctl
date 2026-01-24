@@ -658,13 +658,8 @@ func TestFetchAllBookmarks_MultiPage(t *testing.T) {
 // TestDoRequest_Timeout tests that doRequest returns an error when the server times out
 func TestDoRequest_Timeout(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Simulate a slow server that exceeds the client timeout
-		// Sleep for longer than the client's timeout
-		select {
-		case <-r.Context().Done():
-			// Request was cancelled by client timeout
-			return
-		}
+		// Block until client timeout cancels the request
+		<-r.Context().Done()
 	}))
 	defer server.Close()
 
