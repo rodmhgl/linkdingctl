@@ -64,7 +64,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: All three `json.NewDecoder().Decode()` calls in mock handlers check errors
   - Files: `internal/export/import_test.go`
 
-- [ ] **P2** | Fix unchecked `json.Encode` in html_test and csv_test mock handlers | ~small
+- [x] **P2** | Fix unchecked `json.Encode` in html_test and csv_test mock handlers | ~small
   - Acceptance: `json.NewEncoder().Encode()` calls check errors with `t.Errorf`
   - Files: `internal/export/html_test.go`, `internal/export/csv_test.go`
 
