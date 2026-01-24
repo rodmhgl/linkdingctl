@@ -41,12 +41,12 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	errC := make(chan string)
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, rOut)
+		_, _ = io.Copy(&buf, rOut)
 		outC <- buf.String()
 	}()
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, rErr)
+		_, _ = io.Copy(&buf, rErr)
 		errC <- buf.String()
 	}()
 
@@ -57,8 +57,8 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	cmdErr := rootCmd.Execute()
 
 	// Restore stdout/stderr and close the writers
-	wOut.Close()
-	wErr.Close()
+	_ = wOut.Close()
+	_ = wErr.Close()
 	os.Stdout = oldStdout
 	os.Stderr = oldStderr
 
@@ -667,8 +667,8 @@ func TestDeleteWithConfirmation(t *testing.T) {
 
 		// Write confirmation input
 		go func() {
-			w.WriteString("y\n")
-			w.Close()
+			_, _ = w.WriteString("y\n")
+			_ = w.Close()
 		}()
 
 		output, err := executeCommand(t, "delete", "1")

@@ -68,7 +68,7 @@ func runBackup(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create backup file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Export all bookmarks to JSON
 	options := export.ExportOptions{
