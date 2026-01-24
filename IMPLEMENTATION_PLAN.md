@@ -26,7 +26,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: `golangci-lint run` passes with no `unused` violation on `version` var
   - Files: `cmd/linkdingctl/main.go`
 
-- [ ] **P2** | Validate and commit removal of unused `updateUnread`/`updateShared` vars | ~small
+- [x] **P2** | Validate and commit removal of unused `updateUnread`/`updateShared` vars | ~small
   - Acceptance: No unused variable warnings; `go build ./...` and all tests pass
   - Files: `cmd/linkdingctl/update.go`
 
