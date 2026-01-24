@@ -45,7 +45,7 @@
 
 ### Spec 21: Pre-Commit Hook — golangci-lint
 
-- [ ] **P1** | Add golangci-lint command to `lefthook.yml` | ~small
+- [x] **P1** | Add golangci-lint command to `lefthook.yml` | ~small
   - Acceptance: `lefthook.yml` includes `golangci-lint` command in `pre-commit` section; command warns and exits 0 if `golangci-lint` not installed; runs `golangci-lint run` if installed; all three hooks run in parallel
   - Files: `lefthook.yml`
 

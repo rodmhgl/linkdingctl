@@ -13,3 +13,11 @@ pre-commit:
 
     go-vet:
       run: go vet ./...
+
+    golangci-lint:
+      run: |
+        if ! command -v golangci-lint > /dev/null; then
+          echo "⚠️  golangci-lint not installed. Install from https://golangci-lint.run/usage/install/"
+          exit 0
+        fi
+        golangci-lint run
