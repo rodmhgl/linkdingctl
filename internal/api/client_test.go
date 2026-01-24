@@ -40,7 +40,7 @@ func TestTestConnection_Success(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(models.BookmarkList{})
+		_ = json.NewEncoder(w).Encode(models.BookmarkList{})
 	}))
 	defer server.Close()
 
@@ -86,7 +86,7 @@ func TestGetBookmarks_Success(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -124,7 +124,7 @@ func TestGetBookmarks_WithFilters(t *testing.T) {
 
 		response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -150,7 +150,7 @@ func TestGetBookmark_Success(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(bookmark)
+		_ = json.NewEncoder(w).Encode(bookmark)
 	}))
 	defer server.Close()
 
@@ -211,7 +211,7 @@ func TestCreateBookmark_Success(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(created)
+		_ = json.NewEncoder(w).Encode(created)
 	}))
 	defer server.Close()
 
@@ -249,7 +249,7 @@ func TestUpdateBookmark_Success(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(updated)
+		_ = json.NewEncoder(w).Encode(updated)
 	}))
 	defer server.Close()
 
@@ -319,14 +319,14 @@ func TestCreateTag_Success(t *testing.T) {
 		}
 
 		var req map[string]string
-		json.NewDecoder(r.Body).Decode(&req)
+		_ = json.NewDecoder(r.Body).Decode(&req)
 		if req["name"] != "test-tag" {
 			t.Errorf("expected name 'test-tag', got '%s'", req["name"])
 		}
 
 		tag := models.Tag{ID: 1, Name: "test-tag"}
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(tag)
+		_ = json.NewEncoder(w).Encode(tag)
 	}))
 	defer server.Close()
 
@@ -372,7 +372,7 @@ func TestGetTag_Success(t *testing.T) {
 
 		tag := models.Tag{ID: 1, Name: "test-tag"}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(tag)
+		_ = json.NewEncoder(w).Encode(tag)
 	}))
 	defer server.Close()
 
@@ -422,7 +422,7 @@ func TestGetUserProfile_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"theme":                   "auto",
 			"bookmark_date_display":   "relative",
 			"bookmark_link_target":    "_blank",

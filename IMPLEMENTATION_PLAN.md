@@ -75,11 +75,11 @@
 
 ### Validation
 
-- [ ] **P2** | Run `golangci-lint` and verify zero errcheck violations | ~small
+- [x] **P2** | Run `golangci-lint` and verify zero errcheck violations | ~small
   - Acceptance: `golangci-lint run ./...` passes with no `errcheck` findings
   - Files: (validation only)
 
-- [ ] **P2** | Verify all tests pass and coverage holds | ~small
+- [x] **P2** | Verify all tests pass and coverage holds | ~small
   - Acceptance: `go test ./...` passes; `make cover` meets 70% per-package threshold
   - Files: (validation only)
 

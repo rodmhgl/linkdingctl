@@ -69,7 +69,7 @@ func ImportBookmarks(client *api.Client, filename string, options ImportOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Import based on format
 	switch format {

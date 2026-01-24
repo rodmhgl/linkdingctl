@@ -78,7 +78,7 @@ func runBackup(cmd *cobra.Command, args []string) error {
 
 	if err := export.ExportJSON(client, file, options); err != nil {
 		// Remove partial file on error
-		os.Remove(fullPath)
+		_ = os.Remove(fullPath)
 		return fmt.Errorf("failed to export bookmarks: %w", err)
 	}
 

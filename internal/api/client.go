@@ -61,7 +61,7 @@ func (c *Client) doRequest(method, path string, body interface{}) (*http.Respons
 
 // handleErrorResponse converts HTTP error responses into user-friendly messages
 func (c *Client) handleErrorResponse(resp *http.Response) error {
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	switch resp.StatusCode {
 	case http.StatusUnauthorized:
@@ -83,7 +83,7 @@ func (c *Client) TestConnection() error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return c.handleErrorResponse(resp)
@@ -124,7 +124,7 @@ func (c *Client) GetBookmarks(query string, tags []string, unread, archived *boo
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.handleErrorResponse(resp)
@@ -146,7 +146,7 @@ func (c *Client) GetBookmark(id int) (*models.Bookmark, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("bookmark with ID %d not found", id)
@@ -170,7 +170,7 @@ func (c *Client) CreateBookmark(bookmark *models.BookmarkCreate) (*models.Bookma
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		return nil, c.handleErrorResponse(resp)
@@ -192,7 +192,7 @@ func (c *Client) UpdateBookmark(id int, update *models.BookmarkUpdate) (*models.
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("bookmark with ID %d not found", id)
@@ -218,7 +218,7 @@ func (c *Client) DeleteBookmark(id int) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return fmt.Errorf("bookmark with ID %d not found", id)
@@ -286,7 +286,7 @@ func (c *Client) GetTags(limit, offset int) (*models.TagList, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.handleErrorResponse(resp)
@@ -335,7 +335,7 @@ func (c *Client) CreateTag(name string) (*models.Tag, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusBadRequest {
 		// Handle duplicate tag error
@@ -366,7 +366,7 @@ func (c *Client) GetTag(id int) (*models.Tag, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("tag with ID %d not found", id)
@@ -392,7 +392,7 @@ func (c *Client) GetUserProfile() (*models.UserProfile, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		return nil, fmt.Errorf("authentication failed. Check your API token")

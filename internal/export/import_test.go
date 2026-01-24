@@ -919,7 +919,7 @@ func TestImportBookmarks_AutoDetect(t *testing.T) {
 	if err := os.WriteFile(tmpfile, buf.Bytes(), 0600); err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	defer os.Remove(tmpfile)
+	defer func() { _ = os.Remove(tmpfile) }()
 
 	// Create mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -956,7 +956,7 @@ func TestImportBookmarks_UnsupportedFormat(t *testing.T) {
 	if err := os.WriteFile(tmpfile, []byte("test"), 0600); err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	defer os.Remove(tmpfile)
+	defer func() { _ = os.Remove(tmpfile) }()
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	defer server.Close()
@@ -1003,7 +1003,7 @@ func TestImportBookmarks_FormatOverride(t *testing.T) {
 	if err := os.WriteFile(tmpfile, buf.Bytes(), 0600); err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	defer os.Remove(tmpfile)
+	defer func() { _ = os.Remove(tmpfile) }()
 
 	// Create mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
