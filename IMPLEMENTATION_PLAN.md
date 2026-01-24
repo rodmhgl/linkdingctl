@@ -56,7 +56,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
 
 ### Errcheck Violations (Spec 19 — remaining items)
 
-- [ ] **P2** | Fix unchecked `w.Write` in `TestCreateTag_Duplicate` | ~small
+- [x] **P2** | Fix unchecked `w.Write` in `TestCreateTag_Duplicate` | ~small
   - Acceptance: `w.Write` error is checked with `t.Errorf`
   - Files: `internal/api/client_test.go`
 
