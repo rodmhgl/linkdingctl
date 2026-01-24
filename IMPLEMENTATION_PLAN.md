@@ -40,7 +40,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
 
 ### Config Token Trim (Spec 10)
 
-- [ ] **P2** | Remove redundant `strings.TrimSpace(token)` in config init | ~small
+- [x] **P2** | Remove redundant `strings.TrimSpace(token)` in config init | ~small
   - Acceptance: Token is trimmed exactly once per branch (TTY and non-TTY); no redundant trim calls; existing tests pass
   - Files: `cmd/linkdingctl/config.go`
 
