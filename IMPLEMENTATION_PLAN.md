@@ -46,7 +46,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
 
 ### Test Robustness (Spec 11)
 
-- [ ] **P2** | Replace unsafe string slicing with `strings.Contains` in config test | ~small
+- [x] **P2** | Replace unsafe string slicing with `strings.Contains` in config test | ~small
   - Acceptance: `TestLoad_NonYAMLFile` uses `strings.Contains` (no panic risk from index out-of-range); test passes
   - Files: `internal/config/config_test.go`
 
