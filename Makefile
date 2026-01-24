@@ -1,4 +1,4 @@
-.PHONY: help build test install clean lint vet fmt cover
+.PHONY: help build test install clean lint vet fmt cover hooks
 
 # Variables
 BINARY_NAME=linkdingctl
@@ -51,6 +51,10 @@ fmt: ## Format code with gofmt
 	$(GO) fmt ./...
 
 check: fmt vet test ## Run format, vet, and tests
+
+hooks: ## Install git hooks via lefthook
+	@which lefthook > /dev/null || (echo "lefthook not found. Install from https://github.com/evilmartians/lefthook/releases" && exit 1)
+	lefthook install
 
 cover: ## Run tests with coverage validation (min 70% per package)
 	@echo "Running tests with coverage validation..."

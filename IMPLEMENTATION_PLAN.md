@@ -39,7 +39,7 @@
   - Acceptance: `lefthook.yml` exists at repo root; defines `pre-commit` section with `beads-sync` command (skip if `bd` not installed) and `go-vet` command running `go vet ./...`; file is valid YAML
   - Files: `lefthook.yml` (new)
 
-- [ ] **P1** | Add `hooks` Makefile target | ~small
+- [x] **P1** | Add `hooks` Makefile target | ~small
   - Acceptance: `make hooks` checks for lefthook availability, prints install instructions if missing, runs `lefthook install` if found; target is listed in `make help` output
   - Files: `Makefile`
 
