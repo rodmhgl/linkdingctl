@@ -102,7 +102,7 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
   - Acceptance: Mock server returns paginated tag responses; test verifies all pages collected
   - Files: `internal/api/client_test.go` or `internal/api/pagination_test.go`
 
-- [ ] **P3** | Add `doRequest` timeout behavior test | ~small
+- [x] **P3** | Add `doRequest` timeout behavior test | ~small
   - Acceptance: Test verifies error is returned when server exceeds 30s timeout
   - Files: `internal/api/client_test.go`
 

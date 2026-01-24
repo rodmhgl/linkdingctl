@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/rodstewart/linkding-cli/internal/models"
 )
@@ -651,5 +652,36 @@ func TestFetchAllBookmarks_MultiPage(t *testing.T) {
 	// Verify last bookmark
 	if bookmarks[249].ID != 250 || bookmarks[249].Title != "Bookmark 250" {
 		t.Errorf("last bookmark mismatch: got ID=%d, Title=%s", bookmarks[249].ID, bookmarks[249].Title)
+	}
+}
+
+// TestDoRequest_Timeout tests that doRequest returns an error when the server times out
+func TestDoRequest_Timeout(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Simulate a slow server that exceeds the client timeout
+		// Sleep for longer than the client's timeout
+		select {
+		case <-r.Context().Done():
+			// Request was cancelled by client timeout
+			return
+		}
+	}))
+	defer server.Close()
+
+	// Create a client with a very short timeout for testing
+	client := NewClient(server.URL, "test-token")
+	// Replace the default 30-second timeout with a 100ms timeout for testing
+	client.httpClient.Timeout = 100 * time.Millisecond
+
+	// Try to make a request - should timeout
+	err := client.TestConnection()
+
+	if err == nil {
+		t.Fatal("expected timeout error, got nil")
+	}
+
+	expectedMsg := fmt.Sprintf("cannot connect to %s. Is LinkDing running?", server.URL)
+	if err.Error() != expectedMsg {
+		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
 	}
 }
