@@ -63,7 +63,7 @@
   - Acceptance: Both `json.NewEncoder(w).Encode(...)` calls in mock handlers check error and call `t.Errorf` on failure
   - Files: `internal/export/json_test.go` (lines 170, 255)
 
-- [ ] **P1** | Fix unchecked `json.NewEncoder().Encode()` in import test non-handler code | ~medium
+- [x] **P1** | Fix unchecked `json.NewEncoder().Encode()` in import test non-handler code | ~medium
   - Acceptance: All `json.NewEncoder(...).Encode(...)` calls outside of the decode handlers (buffer writes, mock responses) check error and call `t.Fatalf`/`t.Errorf` on failure
   - Files: `internal/export/import_test.go` (numerous lines — buffer encodes + handler encodes)
 

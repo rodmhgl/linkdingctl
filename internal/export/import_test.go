@@ -83,7 +83,9 @@ func TestImportJSON_RoundTrip(t *testing.T) {
 		case r.Method == "GET" && r.URL.Path == "/api/bookmarks/":
 			// Return empty list (no existing bookmarks)
 			response := models.BookmarkList{Count: 0, Results: []models.Bookmark{}}
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 
 		case r.Method == "POST" && r.URL.Path == "/api/bookmarks/":
 			// Capture created bookmark
@@ -107,7 +109,9 @@ func TestImportJSON_RoundTrip(t *testing.T) {
 				Unread:      bookmark.Unread,
 				Shared:      bookmark.Shared,
 			}
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -162,7 +166,9 @@ func TestImportJSON_SkipDuplicates(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(exportData)
+	if err := json.NewEncoder(&buf).Encode(exportData); err != nil {
+		t.Fatalf("Failed to encode JSON: %v", err)
+	}
 
 	// Mock server with one existing bookmark
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -174,11 +180,15 @@ func TestImportJSON_SkipDuplicates(t *testing.T) {
 					{ID: 1, URL: "https://example.com", Title: "Existing"},
 				},
 			}
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			// Create new bookmark
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: 2, URL: "https://test.com"})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: 2, URL: "https://test.com"}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -208,7 +218,9 @@ func TestImportJSON_UpdateDuplicates(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(exportData)
+	if err := json.NewEncoder(&buf).Encode(exportData); err != nil {
+		t.Fatalf("Failed to encode JSON: %v", err)
+	}
 
 	// Mock server with one existing bookmark
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -219,11 +231,15 @@ func TestImportJSON_UpdateDuplicates(t *testing.T) {
 					{ID: 1, URL: "https://example.com", Title: "Old Title"},
 				},
 			}
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "PATCH" {
 			// Update existing bookmark
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: 1, URL: "https://example.com", Title: "Updated Title"})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: 1, URL: "https://example.com", Title: "Updated Title"}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -253,12 +269,16 @@ func TestImportJSON_AddTags(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(exportData)
+	if err := json.NewEncoder(&buf).Encode(exportData); err != nil {
+		t.Fatalf("Failed to encode JSON: %v", err)
+	}
 
 	var createdBookmark models.BookmarkCreate
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
+			if err := json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			if err := json.NewDecoder(r.Body).Decode(&createdBookmark); err != nil {
 				t.Errorf("Failed to decode request body: %v", err)
@@ -266,7 +286,9 @@ func TestImportJSON_AddTags(t *testing.T) {
 				return
 			}
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: 1})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: 1}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -310,7 +332,9 @@ func TestImportHTML_ParsesCorrectly(t *testing.T) {
 	var created []models.BookmarkCreate
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
+			if err := json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			var bookmark models.BookmarkCreate
 			if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
@@ -320,7 +344,9 @@ func TestImportHTML_ParsesCorrectly(t *testing.T) {
 			}
 			created = append(created, bookmark)
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: len(created)})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: len(created)}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -387,7 +413,9 @@ https://test.com,Test,,tag3,true,true,false
 	var created []models.BookmarkCreate
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
+			if err := json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			var bookmark models.BookmarkCreate
 			if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
@@ -397,7 +425,9 @@ https://test.com,Test,,tag3,true,true,false
 			}
 			created = append(created, bookmark)
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: len(created)})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: len(created)}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -454,10 +484,14 @@ func TestImportJSON_ValidationError(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(exportData)
+	if err := json.NewEncoder(&buf).Encode(exportData); err != nil {
+		t.Fatalf("Failed to encode JSON: %v", err)
+	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
+		if err := json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}}); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -491,7 +525,9 @@ func TestImportJSON_DryRun(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(exportData)
+	if err := json.NewEncoder(&buf).Encode(exportData); err != nil {
+		t.Fatalf("Failed to encode JSON: %v", err)
+	}
 
 	apiCalled := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -540,7 +576,9 @@ https://test.com
 	var created []models.BookmarkCreate
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
+			if err := json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			var bookmark models.BookmarkCreate
 			if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
@@ -550,7 +588,9 @@ https://test.com
 			}
 			created = append(created, bookmark)
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: len(created)})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: len(created)}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -596,10 +636,14 @@ https://valid.com,Valid,After error
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
+			if err := json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: 1})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: 1}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -637,7 +681,9 @@ func TestImportHTML_WithAddTags(t *testing.T) {
 	var createdBookmark models.BookmarkCreate
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
+			if err := json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			if err := json.NewDecoder(r.Body).Decode(&createdBookmark); err != nil {
 				t.Errorf("Failed to decode request body: %v", err)
@@ -645,7 +691,9 @@ func TestImportHTML_WithAddTags(t *testing.T) {
 				return
 			}
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: 1})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: 1}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -699,11 +747,15 @@ func TestImportHTML_SkipDuplicates(t *testing.T) {
 					{ID: 1, URL: "https://example.com", Title: "Existing"},
 				},
 			}
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			// Create new bookmark
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: 2, URL: "https://test.com"})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: 2, URL: "https://test.com"}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -742,7 +794,9 @@ https://test.com,Test
 					{ID: 1, URL: "https://example.com", Title: "Existing"},
 				},
 			}
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			var bookmark models.BookmarkCreate
 			if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
@@ -752,7 +806,9 @@ https://test.com,Test
 			}
 			created = append(created, bookmark)
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: len(created) + 1})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: len(created) + 1}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -802,17 +858,21 @@ https://example.com,Updated Title,Updated description
 					{ID: 1, URL: "https://example.com", Title: "Old Title", Description: "Old description"},
 				},
 			}
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "PATCH" {
 			// Update existing bookmark
 			updated = true
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(models.Bookmark{
+			if err := json.NewEncoder(w).Encode(models.Bookmark{
 				ID:          1,
 				URL:         "https://example.com",
 				Title:       "Updated Title",
 				Description: "Updated description",
-			})
+			}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -850,7 +910,9 @@ func TestImportBookmarks_AutoDetect(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(jsonData)
+	if err := json.NewEncoder(&buf).Encode(jsonData); err != nil {
+		t.Fatalf("Failed to encode JSON: %v", err)
+	}
 
 	// Write to temp file
 	tmpfile := "/tmp/test-bookmarks.json"
@@ -862,10 +924,14 @@ func TestImportBookmarks_AutoDetect(t *testing.T) {
 	// Create mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
+			if err := json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: 1})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: 1}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
@@ -928,7 +994,9 @@ func TestImportBookmarks_FormatOverride(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(jsonData)
+	if err := json.NewEncoder(&buf).Encode(jsonData); err != nil {
+		t.Fatalf("Failed to encode JSON: %v", err)
+	}
 
 	// Write to file with .txt extension
 	tmpfile := "/tmp/test-bookmarks.txt"
@@ -940,10 +1008,14 @@ func TestImportBookmarks_FormatOverride(t *testing.T) {
 	// Create mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}})
+			if err := json.NewEncoder(w).Encode(models.BookmarkList{Count: 0, Results: []models.Bookmark{}}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		} else if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(models.Bookmark{ID: 1})
+			if err := json.NewEncoder(w).Encode(models.Bookmark{ID: 1}); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
 		}
 	}))
 	defer server.Close()
