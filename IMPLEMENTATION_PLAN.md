@@ -69,7 +69,7 @@
 
 ### Test Code — CSV Writer
 
-- [ ] **P1** | Fix unchecked `csvWriter.Write` in CSV test helper | ~small
+- [x] **P1** | Fix unchecked `csvWriter.Write` in CSV test helper | ~small
   - Acceptance: `csvWriter.Write(header)` and `csvWriter.Write(row)` (lines 165, 179) check error; test calls `t.Fatalf` on failure
   - Files: `internal/export/csv_test.go`
 

@@ -162,7 +162,9 @@ func TestCSVHandlesSpecialCharacters(t *testing.T) {
 
 	// Write header
 	header := []string{"url", "title", "description", "tags", "date_added", "unread", "shared", "archived"}
-	csvWriter.Write(header)
+	if err := csvWriter.Write(header); err != nil {
+		t.Fatalf("Failed to write CSV header: %v", err)
+	}
 
 	// Write data
 	for _, b := range testBookmarks {
@@ -176,7 +178,9 @@ func TestCSVHandlesSpecialCharacters(t *testing.T) {
 			"false",
 			"false",
 		}
-		csvWriter.Write(row)
+		if err := csvWriter.Write(row); err != nil {
+			t.Fatalf("Failed to write CSV row: %v", err)
+		}
 	}
 	csvWriter.Flush()
 
