@@ -20,7 +20,7 @@ Bundle CRUD is the primary remaining feature. LinkDing supports bundles (saved s
   - Acceptance: All fields match LinkDing API: id, name, search, any_tags, all_tags, excluded_tags, order, date_created, date_modified
   - Files: `internal/models/bundle.go` (new)
 
-- [ ] **P1** | Add Bundle API client methods | ~medium
+- [x] **P1** | Add Bundle API client methods | ~medium
   - Acceptance: `GetBundles(limit, offset int)` returns paginated bundle list
   - Acceptance: `FetchAllBundles()` handles pagination transparently
   - Acceptance: `GetBundle(id int)` retrieves single bundle

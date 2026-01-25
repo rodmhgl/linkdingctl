@@ -367,3 +367,130 @@ func (c *Client) GetUserProfile() (*models.UserProfile, error) {
 	}
 	return &profile, nil
 }
+
+// GetBundles retrieves a list of bundles with optional pagination.
+func (c *Client) GetBundles(limit, offset int) (*models.BundleList, error) {
+	params := url.Values{}
+	if limit > 0 {
+		params.Set("limit", fmt.Sprintf("%d", limit))
+	}
+	if offset > 0 {
+		params.Set("offset", fmt.Sprintf("%d", offset))
+	}
+
+	path := "/api/bundles/"
+	if len(params) > 0 {
+		path += "?" + params.Encode()
+	}
+
+	resp, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var bundleList models.BundleList
+	if err := c.decodeResponse(resp, http.StatusOK, &bundleList); err != nil {
+		return nil, err
+	}
+	return &bundleList, nil
+}
+
+// FetchAllBundles retrieves all bundles, handling pagination automatically.
+func (c *Client) FetchAllBundles() ([]models.Bundle, error) {
+	var allBundles []models.Bundle
+	limit := 100
+	offset := 0
+
+	for {
+		bundleList, err := c.GetBundles(limit, offset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch bundles: %w", err)
+		}
+
+		allBundles = append(allBundles, bundleList.Results...)
+
+		if bundleList.Next == nil || len(bundleList.Results) == 0 {
+			break
+		}
+		offset += limit
+	}
+
+	return allBundles, nil
+}
+
+// GetBundle retrieves a single bundle by ID.
+func (c *Client) GetBundle(id int) (*models.Bundle, error) {
+	path := fmt.Sprintf("/api/bundles/%d/", id)
+
+	resp, err := c.doRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("bundle with ID %d not found", id)
+	}
+
+	var bundle models.Bundle
+	if err := c.decodeResponse(resp, http.StatusOK, &bundle); err != nil {
+		return nil, err
+	}
+	return &bundle, nil
+}
+
+// CreateBundle creates a new bundle.
+func (c *Client) CreateBundle(bundle *models.BundleCreate) (*models.Bundle, error) {
+	resp, err := c.doRequest("POST", "/api/bundles/", bundle)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var created models.Bundle
+	if err := c.decodeResponse(resp, http.StatusCreated, &created); err != nil {
+		return nil, err
+	}
+	return &created, nil
+}
+
+// UpdateBundle updates an existing bundle.
+func (c *Client) UpdateBundle(id int, update *models.BundleUpdate) (*models.Bundle, error) {
+	path := fmt.Sprintf("/api/bundles/%d/", id)
+
+	resp, err := c.doRequest("PATCH", path, update)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("bundle with ID %d not found", id)
+	}
+
+	var updated models.Bundle
+	if err := c.decodeResponse(resp, http.StatusOK, &updated); err != nil {
+		return nil, err
+	}
+	return &updated, nil
+}
+
+// DeleteBundle deletes a bundle by ID.
+func (c *Client) DeleteBundle(id int) error {
+	path := fmt.Sprintf("/api/bundles/%d/", id)
+
+	resp, err := c.doRequest("DELETE", path, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return fmt.Errorf("bundle with ID %d not found", id)
+	}
+	if resp.StatusCode != http.StatusNoContent {
+		return c.handleErrorResponse(resp)
+	}
+	return nil
+}
