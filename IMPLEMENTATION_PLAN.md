@@ -132,10 +132,10 @@ The codebase is nearly feature-complete. The primary remaining work is implement
 ## Validation Checklist
 
 Before marking bundles implementation complete:
-- [ ] `make check` passes (fmt, vet, test)
-- [ ] `make cover` passes (70% per package)
-- [ ] `golangci-lint run` passes
-- [ ] All bundle CRUD operations work against mock server
-- [ ] JSON output is valid and matches API response format
-- [ ] Table output is readable and consistent with other commands
-- [ ] Error messages are user-friendly (404 → "Bundle not found", etc.)
+- [x] `make check` passes (fmt, vet, test)
+- [x] `make cover` passes (70% per package)
+- [x] `golangci-lint run` passes
+- [x] All bundle CRUD operations work against mock server
+- [x] JSON output is valid and matches API response format
+- [x] Table output is readable and consistent with other commands
+- [x] Error messages are user-friendly (404 → "Bundle not found", etc.)
