@@ -35,7 +35,7 @@ Bundle CRUD is the primary remaining feature. LinkDing supports bundles (saved s
   - Acceptance: Pagination test with multi-page mock response
   - Files: `internal/api/client_test.go`
 
-- [ ] **P1** | Create `bundles` command with subcommands | ~medium
+- [x] **P1** | Create `bundles` command with subcommands | ~medium
   - Acceptance: `linkdingctl bundles --help` shows available subcommands
   - Acceptance: `linkdingctl bundles list` displays all bundles in table (ID, Name, Search, Order)
   - Acceptance: `linkdingctl bundles list --json` outputs valid JSON array
