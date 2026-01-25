@@ -29,7 +29,7 @@ Bundle CRUD is the primary remaining feature. LinkDing supports bundles (saved s
   - Acceptance: `DeleteBundle(id int)` deletes bundle via DELETE
   - Files: `internal/api/client.go`
 
-- [ ] **P1** | Add unit tests for Bundle API client | ~medium
+- [x] **P1** | Add unit tests for Bundle API client | ~medium
   - Acceptance: All 6 bundle API methods have tests using `httptest.NewServer`
   - Acceptance: Tests cover success cases and error cases (404, 400, 401)
   - Acceptance: Pagination test with multi-page mock response

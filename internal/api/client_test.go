@@ -680,3 +680,465 @@ func TestDoRequest_Timeout(t *testing.T) {
 		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
 	}
 }
+
+// TestGetBundles_Success tests successful retrieval of bundles with pagination
+func TestGetBundles_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/bundles/" {
+			t.Errorf("expected path '/api/bundles/', got '%s'", r.URL.Path)
+		}
+
+		response := models.BundleList{
+			Count: 2,
+			Results: []models.Bundle{
+				{ID: 1, Name: "Bundle 1", Search: "test", Order: 0},
+				{ID: 2, Name: "Bundle 2", Search: "example", Order: 1},
+			},
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	bundles, err := client.GetBundles(0, 0)
+
+	if err != nil {
+		t.Fatalf("GetBundles() failed: %v", err)
+	}
+
+	if bundles.Count != 2 {
+		t.Errorf("expected count 2, got %d", bundles.Count)
+	}
+
+	if len(bundles.Results) != 2 {
+		t.Errorf("expected 2 results, got %d", len(bundles.Results))
+	}
+}
+
+// TestGetBundles_WithPagination tests bundle retrieval with limit and offset
+func TestGetBundles_WithPagination(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+
+		if query.Get("limit") != "50" {
+			t.Errorf("expected limit '50', got '%s'", query.Get("limit"))
+		}
+
+		if query.Get("offset") != "10" {
+			t.Errorf("expected offset '10', got '%s'", query.Get("offset"))
+		}
+
+		response := models.BundleList{Count: 0, Results: []models.Bundle{}}
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	_, err := client.GetBundles(50, 10)
+
+	if err != nil {
+		t.Fatalf("GetBundles() with pagination failed: %v", err)
+	}
+}
+
+// TestGetBundles_Unauthorized tests 401 response
+func TestGetBundles_Unauthorized(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "bad-token")
+	_, err := client.GetBundles(0, 0)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	expectedMsg := "authentication failed. Check your API token"
+	if err.Error() != expectedMsg {
+		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
+	}
+}
+
+// TestFetchAllBundles_MultiPage tests that FetchAllBundles correctly handles pagination
+func TestFetchAllBundles_MultiPage(t *testing.T) {
+	pageNum := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/bundles/" {
+			t.Errorf("expected path '/api/bundles/', got '%s'", r.URL.Path)
+		}
+
+		query := r.URL.Query()
+		offset := query.Get("offset")
+		limit := query.Get("limit")
+
+		if limit != "100" {
+			t.Errorf("expected limit '100', got '%s'", limit)
+		}
+
+		var response models.BundleList
+
+		// Simulate 3 pages of results
+		switch offset {
+		case "", "0":
+			// First page: 100 bundles
+			pageNum = 1
+			bundles := make([]models.Bundle, 100)
+			for i := 0; i < 100; i++ {
+				bundles[i] = models.Bundle{
+					ID:     i + 1,
+					Name:   fmt.Sprintf("Bundle %d", i+1),
+					Search: "test",
+					Order:  i,
+				}
+			}
+			nextURL := "http://example.com/api/bundles/?limit=100&offset=100"
+			response = models.BundleList{
+				Count:   250,
+				Next:    &nextURL,
+				Results: bundles,
+			}
+		case "100":
+			// Second page: 100 bundles
+			pageNum = 2
+			bundles := make([]models.Bundle, 100)
+			for i := 0; i < 100; i++ {
+				bundles[i] = models.Bundle{
+					ID:     i + 101,
+					Name:   fmt.Sprintf("Bundle %d", i+101),
+					Search: "test",
+					Order:  i + 100,
+				}
+			}
+			nextURL := "http://example.com/api/bundles/?limit=100&offset=200"
+			response = models.BundleList{
+				Count:   250,
+				Next:    &nextURL,
+				Results: bundles,
+			}
+		case "200":
+			// Third page: 50 bundles (last page)
+			pageNum = 3
+			bundles := make([]models.Bundle, 50)
+			for i := 0; i < 50; i++ {
+				bundles[i] = models.Bundle{
+					ID:     i + 201,
+					Name:   fmt.Sprintf("Bundle %d", i+201),
+					Search: "test",
+					Order:  i + 200,
+				}
+			}
+			response = models.BundleList{
+				Count:   250,
+				Next:    nil, // No more pages
+				Results: bundles,
+			}
+		default:
+			t.Errorf("unexpected offset '%s'", offset)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	bundles, err := client.FetchAllBundles()
+
+	if err != nil {
+		t.Fatalf("FetchAllBundles() failed: %v", err)
+	}
+
+	// Verify we got all 250 bundles from 3 pages
+	if len(bundles) != 250 {
+		t.Errorf("expected 250 bundles, got %d", len(bundles))
+	}
+
+	// Verify the server was called 3 times (for 3 pages)
+	if pageNum != 3 {
+		t.Errorf("expected 3 pages to be fetched, got %d", pageNum)
+	}
+
+	// Verify first bundle from page 1
+	if bundles[0].ID != 1 || bundles[0].Name != "Bundle 1" {
+		t.Errorf("first bundle mismatch: got ID=%d, Name=%s", bundles[0].ID, bundles[0].Name)
+	}
+
+	// Verify first bundle from page 2
+	if bundles[100].ID != 101 || bundles[100].Name != "Bundle 101" {
+		t.Errorf("101st bundle mismatch: got ID=%d, Name=%s", bundles[100].ID, bundles[100].Name)
+	}
+
+	// Verify first bundle from page 3
+	if bundles[200].ID != 201 || bundles[200].Name != "Bundle 201" {
+		t.Errorf("201st bundle mismatch: got ID=%d, Name=%s", bundles[200].ID, bundles[200].Name)
+	}
+
+	// Verify last bundle
+	if bundles[249].ID != 250 || bundles[249].Name != "Bundle 250" {
+		t.Errorf("last bundle mismatch: got ID=%d, Name=%s", bundles[249].ID, bundles[249].Name)
+	}
+}
+
+// TestGetBundle_Success tests successful retrieval of a single bundle
+func TestGetBundle_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/bundles/123/" {
+			t.Errorf("expected path '/api/bundles/123/', got '%s'", r.URL.Path)
+		}
+
+		bundle := models.Bundle{
+			ID:     123,
+			Name:   "Test Bundle",
+			Search: "example",
+			Order:  1,
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(bundle)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	bundle, err := client.GetBundle(123)
+
+	if err != nil {
+		t.Fatalf("GetBundle() failed: %v", err)
+	}
+
+	if bundle.ID != 123 {
+		t.Errorf("expected ID 123, got %d", bundle.ID)
+	}
+
+	if bundle.Name != "Test Bundle" {
+		t.Errorf("expected Name 'Test Bundle', got '%s'", bundle.Name)
+	}
+}
+
+// TestGetBundle_NotFound tests 404 response
+func TestGetBundle_NotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	_, err := client.GetBundle(999)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	expectedMsg := "bundle with ID 999 not found"
+	if err.Error() != expectedMsg {
+		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
+	}
+}
+
+// TestCreateBundle_Success tests successful bundle creation
+func TestCreateBundle_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			t.Errorf("expected POST method, got '%s'", r.Method)
+		}
+
+		if r.URL.Path != "/api/bundles/" {
+			t.Errorf("expected path '/api/bundles/', got '%s'", r.URL.Path)
+		}
+
+		var create models.BundleCreate
+		if err := json.NewDecoder(r.Body).Decode(&create); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
+
+		if create.Name != "Test Bundle" {
+			t.Errorf("expected Name 'Test Bundle', got '%s'", create.Name)
+		}
+
+		if create.Search != "example" {
+			t.Errorf("expected Search 'example', got '%s'", create.Search)
+		}
+
+		created := models.Bundle{
+			ID:     123,
+			Name:   create.Name,
+			Search: create.Search,
+			Order:  create.Order,
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(created)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	create := &models.BundleCreate{
+		Name:   "Test Bundle",
+		Search: "example",
+		Order:  1,
+	}
+
+	bundle, err := client.CreateBundle(create)
+
+	if err != nil {
+		t.Fatalf("CreateBundle() failed: %v", err)
+	}
+
+	if bundle.ID != 123 {
+		t.Errorf("expected ID 123, got %d", bundle.ID)
+	}
+
+	if bundle.Name != "Test Bundle" {
+		t.Errorf("expected Name 'Test Bundle', got '%s'", bundle.Name)
+	}
+}
+
+// TestCreateBundle_BadRequest tests 400 response
+func TestCreateBundle_BadRequest(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		if _, err := w.Write([]byte(`{"name":["This field is required"]}`)); err != nil {
+			t.Errorf("failed to write response: %v", err)
+			return
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	create := &models.BundleCreate{
+		Search: "example", // Missing required Name field
+	}
+	_, err := client.CreateBundle(create)
+
+	if err == nil {
+		t.Fatal("expected error for bad request, got nil")
+	}
+}
+
+// TestUpdateBundle_Success tests successful bundle update
+func TestUpdateBundle_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "PATCH" {
+			t.Errorf("expected PATCH method, got '%s'", r.Method)
+		}
+
+		if r.URL.Path != "/api/bundles/123/" {
+			t.Errorf("expected path '/api/bundles/123/', got '%s'", r.URL.Path)
+		}
+
+		var update models.BundleUpdate
+		if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
+
+		// Verify PATCH semantics - only Name was provided
+		if update.Name == nil {
+			t.Error("expected Name to be set")
+		} else if *update.Name != "Updated Bundle" {
+			t.Errorf("expected Name 'Updated Bundle', got '%s'", *update.Name)
+		}
+
+		updated := models.Bundle{
+			ID:     123,
+			Name:   "Updated Bundle",
+			Search: "original-search",
+			Order:  1,
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(updated)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	name := "Updated Bundle"
+	update := &models.BundleUpdate{
+		Name: &name,
+	}
+
+	bundle, err := client.UpdateBundle(123, update)
+
+	if err != nil {
+		t.Fatalf("UpdateBundle() failed: %v", err)
+	}
+
+	if bundle.Name != "Updated Bundle" {
+		t.Errorf("expected Name 'Updated Bundle', got '%s'", bundle.Name)
+	}
+}
+
+// TestUpdateBundle_NotFound tests 404 response
+func TestUpdateBundle_NotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	name := "Updated Bundle"
+	update := &models.BundleUpdate{
+		Name: &name,
+	}
+	_, err := client.UpdateBundle(999, update)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	expectedMsg := "bundle with ID 999 not found"
+	if err.Error() != expectedMsg {
+		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
+	}
+}
+
+// TestDeleteBundle_Success tests successful bundle deletion
+func TestDeleteBundle_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "DELETE" {
+			t.Errorf("expected DELETE method, got '%s'", r.Method)
+		}
+
+		if r.URL.Path != "/api/bundles/123/" {
+			t.Errorf("expected path '/api/bundles/123/', got '%s'", r.URL.Path)
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	err := client.DeleteBundle(123)
+
+	if err != nil {
+		t.Fatalf("DeleteBundle() failed: %v", err)
+	}
+}
+
+// TestDeleteBundle_NotFound tests 404 response
+func TestDeleteBundle_NotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-token")
+	err := client.DeleteBundle(999)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	expectedMsg := "bundle with ID 999 not found"
+	if err.Error() != expectedMsg {
+		t.Errorf("expected error '%s', got '%v'", expectedMsg, err)
+	}
+}
+
