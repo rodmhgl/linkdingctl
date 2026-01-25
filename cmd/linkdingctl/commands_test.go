@@ -91,16 +91,28 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	backupPrefix = "linkding-backup"
 	tagsRenameForce = false
 	tagsDeleteForce = false
+	bundleSearch = ""
+	bundleAnyTags = ""
+	bundleAllTags = ""
+	bundleExcludedTags = ""
+	bundleOrder = 0
 
 	// Reset all command flags' "Changed" state
 	rootCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		f.Changed = false
 	})
-	// Reset subcommand flags as well
-	for _, cmd := range rootCmd.Commands() {
+	// Reset subcommand flags as well (including nested subcommands)
+	var resetFlags func(*cobra.Command)
+	resetFlags = func(cmd *cobra.Command) {
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			f.Changed = false
 		})
+		for _, subCmd := range cmd.Commands() {
+			resetFlags(subCmd)
+		}
+	}
+	for _, cmd := range rootCmd.Commands() {
+		resetFlags(cmd)
 	}
 
 	return output, cmdErr
@@ -3498,6 +3510,684 @@ func TestConfigOverrides(t *testing.T) {
 
 		if !strings.Contains(output, "Successfully connected") {
 			t.Errorf("Expected success message, got: %s", output)
+		}
+	})
+}
+
+// TestBundlesListCommand tests the 'linkdingctl bundles list' command
+func TestBundlesListCommand(t *testing.T) {
+	t.Run("list bundles success", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/" && r.Method == "GET" {
+				bundles := []models.Bundle{
+					{
+						ID:           1,
+						Name:         "Work",
+						Search:       "project",
+						AnyTags:      "dev,prod",
+						AllTags:      "",
+						ExcludedTags: "",
+						Order:        1,
+						DateCreated:  time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+						DateModified: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+					},
+					{
+						ID:           2,
+						Name:         "Personal",
+						Search:       "",
+						AnyTags:      "",
+						AllTags:      "personal",
+						ExcludedTags: "work",
+						Order:        2,
+						DateCreated:  time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC),
+						DateModified: time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC),
+					},
+				}
+
+				response := models.BundleList{
+					Count:    2,
+					Next:     nil,
+					Previous: nil,
+					Results:  bundles,
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(response)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "list")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "Work") {
+			t.Errorf("Expected 'Work' bundle in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Personal") {
+			t.Errorf("Expected 'Personal' bundle in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Total: 2 bundles") {
+			t.Errorf("Expected total count in output, got: %s", output)
+		}
+	})
+
+	t.Run("list bundles with json output", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/" && r.Method == "GET" {
+				bundles := []models.Bundle{
+					{
+						ID:           1,
+						Name:         "Test",
+						Search:       "test",
+						AnyTags:      "",
+						AllTags:      "",
+						ExcludedTags: "",
+						Order:        0,
+						DateCreated:  time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+						DateModified: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+					},
+				}
+
+				response := models.BundleList{
+					Count:    1,
+					Next:     nil,
+					Previous: nil,
+					Results:  bundles,
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(response)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "list", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		var bundles []models.Bundle
+		if err := json.Unmarshal([]byte(output), &bundles); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
+		}
+		if len(bundles) != 1 {
+			t.Errorf("Expected 1 bundle, got: %d", len(bundles))
+		}
+		if bundles[0].Name != "Test" {
+			t.Errorf("Expected bundle name 'Test', got: %s", bundles[0].Name)
+		}
+	})
+
+	t.Run("list bundles empty", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/" && r.Method == "GET" {
+				response := models.BundleList{
+					Count:    0,
+					Next:     nil,
+					Previous: nil,
+					Results:  []models.Bundle{},
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(response)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "list")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "No bundles found") {
+			t.Errorf("Expected 'No bundles found' message, got: %s", output)
+		}
+	})
+}
+
+// TestBundlesGetCommand tests the 'linkdingctl bundles get' command
+func TestBundlesGetCommand(t *testing.T) {
+	t.Run("get bundle success", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/1/" && r.Method == "GET" {
+				bundle := models.Bundle{
+					ID:           1,
+					Name:         "Work Projects",
+					Search:       "kubernetes",
+					AnyTags:      "k8s,docker",
+					AllTags:      "",
+					ExcludedTags: "personal",
+					Order:        5,
+					DateCreated:  time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+					DateModified: time.Date(2024, 1, 20, 14, 15, 0, 0, time.UTC),
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(bundle)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "get", "1")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "Work Projects") {
+			t.Errorf("Expected bundle name in output, got: %s", output)
+		}
+		if !strings.Contains(output, "ID: 1") {
+			t.Errorf("Expected bundle ID in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Search: kubernetes") {
+			t.Errorf("Expected search field in output, got: %s", output)
+		}
+		if !strings.Contains(output, "Any Tags: k8s,docker") {
+			t.Errorf("Expected any_tags field in output, got: %s", output)
+		}
+	})
+
+	t.Run("get bundle with json output", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/42/" && r.Method == "GET" {
+				bundle := models.Bundle{
+					ID:           42,
+					Name:         "Test Bundle",
+					Search:       "test",
+					AnyTags:      "",
+					AllTags:      "",
+					ExcludedTags: "",
+					Order:        0,
+					DateCreated:  time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+					DateModified: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(bundle)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "get", "42", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		var bundle models.Bundle
+		if err := json.Unmarshal([]byte(output), &bundle); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
+		}
+		if bundle.ID != 42 {
+			t.Errorf("Expected bundle ID 42, got: %d", bundle.ID)
+		}
+		if bundle.Name != "Test Bundle" {
+			t.Errorf("Expected bundle name 'Test Bundle', got: %s", bundle.Name)
+		}
+	})
+
+	t.Run("get bundle not found", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/999/" && r.Method == "GET" {
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte(`{"detail":"Bundle not found"}`))
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "bundles", "get", "999")
+		if err == nil {
+			t.Fatal("Expected error for non-existent bundle, got nil")
+		}
+		if !strings.Contains(err.Error(), "not found") {
+			t.Errorf("Expected 'not found' in error, got: %v", err)
+		}
+	})
+
+	t.Run("get bundle invalid id", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "bundles", "get", "invalid")
+		if err == nil {
+			t.Fatal("Expected error for invalid bundle ID, got nil")
+		}
+		if !strings.Contains(err.Error(), "invalid bundle ID") {
+			t.Errorf("Expected 'invalid bundle ID' in error, got: %v", err)
+		}
+	})
+}
+
+// TestBundlesCreateCommand tests the 'linkdingctl bundles create' command
+func TestBundlesCreateCommand(t *testing.T) {
+	t.Run("create bundle minimal", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/" && r.Method == "POST" {
+				var req models.BundleCreate
+				_ = json.NewDecoder(r.Body).Decode(&req)
+
+				bundle := models.Bundle{
+					ID:           1,
+					Name:         req.Name,
+					Search:       req.Search,
+					AnyTags:      req.AnyTags,
+					AllTags:      req.AllTags,
+					ExcludedTags: req.ExcludedTags,
+					Order:        req.Order,
+					DateCreated:  time.Now(),
+					DateModified: time.Now(),
+				}
+				w.WriteHeader(http.StatusCreated)
+				_ = json.NewEncoder(w).Encode(bundle)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "create", "MyBundle")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "✓ Bundle created:") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !strings.Contains(output, "MyBundle") {
+			t.Errorf("Expected bundle name in output, got: %s", output)
+		}
+		if !strings.Contains(output, "ID: 1") {
+			t.Errorf("Expected bundle ID in output, got: %s", output)
+		}
+	})
+
+	t.Run("create bundle with all flags", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/" && r.Method == "POST" {
+				var req models.BundleCreate
+				_ = json.NewDecoder(r.Body).Decode(&req)
+
+				// Verify all fields were sent
+				if req.Search != "kubernetes" {
+					t.Errorf("Expected search 'kubernetes', got: %s", req.Search)
+				}
+				if req.AnyTags != "k8s,docker" {
+					t.Errorf("Expected any_tags 'k8s,docker', got: %s", req.AnyTags)
+				}
+				if req.AllTags != "tech" {
+					t.Errorf("Expected all_tags 'tech', got: %s", req.AllTags)
+				}
+				if req.ExcludedTags != "personal" {
+					t.Errorf("Expected excluded_tags 'personal', got: %s", req.ExcludedTags)
+				}
+				if req.Order != 5 {
+					t.Errorf("Expected order 5, got: %d", req.Order)
+				}
+
+				bundle := models.Bundle{
+					ID:           2,
+					Name:         req.Name,
+					Search:       req.Search,
+					AnyTags:      req.AnyTags,
+					AllTags:      req.AllTags,
+					ExcludedTags: req.ExcludedTags,
+					Order:        req.Order,
+					DateCreated:  time.Now(),
+					DateModified: time.Now(),
+				}
+				w.WriteHeader(http.StatusCreated)
+				_ = json.NewEncoder(w).Encode(bundle)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "create", "CompleteBundle",
+			"--search", "kubernetes",
+			"--any-tags", "k8s,docker",
+			"--all-tags", "tech",
+			"--excluded-tags", "personal",
+			"--order", "5")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "✓ Bundle created:") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+	})
+
+	t.Run("create bundle with json output", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/" && r.Method == "POST" {
+				var req models.BundleCreate
+				_ = json.NewDecoder(r.Body).Decode(&req)
+
+				bundle := models.Bundle{
+					ID:           99,
+					Name:         req.Name,
+					Search:       req.Search,
+					AnyTags:      req.AnyTags,
+					AllTags:      req.AllTags,
+					ExcludedTags: req.ExcludedTags,
+					Order:        req.Order,
+					DateCreated:  time.Now(),
+					DateModified: time.Now(),
+				}
+				w.WriteHeader(http.StatusCreated)
+				_ = json.NewEncoder(w).Encode(bundle)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "create", "JSONBundle", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		var bundle models.Bundle
+		if err := json.Unmarshal([]byte(output), &bundle); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
+		}
+		if bundle.ID != 99 {
+			t.Errorf("Expected bundle ID 99, got: %d", bundle.ID)
+		}
+		if bundle.Name != "JSONBundle" {
+			t.Errorf("Expected bundle name 'JSONBundle', got: %s", bundle.Name)
+		}
+	})
+
+	t.Run("create bundle bad request", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/" && r.Method == "POST" {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(`{"name":["Bundle with this name already exists"]}`))
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "bundles", "create", "Duplicate")
+		if err == nil {
+			t.Fatal("Expected error for duplicate bundle, got nil")
+		}
+		if !strings.Contains(err.Error(), "already exists") {
+			t.Errorf("Expected 'already exists' in error, got: %v", err)
+		}
+	})
+}
+
+// TestBundlesUpdateCommand tests the 'linkdingctl bundles update' command
+func TestBundlesUpdateCommand(t *testing.T) {
+	t.Run("update bundle single field", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/1/" && r.Method == "PATCH" {
+				var req models.BundleUpdate
+				_ = json.NewDecoder(r.Body).Decode(&req)
+
+				// Verify only search was updated
+				if req.Search == nil || *req.Search != "new search" {
+					t.Errorf("Expected search 'new search', got: %v", req.Search)
+				}
+				if req.AnyTags != nil {
+					t.Errorf("Expected any_tags to be nil, got: %v", req.AnyTags)
+				}
+
+				bundle := models.Bundle{
+					ID:           1,
+					Name:         "Updated Bundle",
+					Search:       *req.Search,
+					AnyTags:      "",
+					AllTags:      "",
+					ExcludedTags: "",
+					Order:        0,
+					DateCreated:  time.Now(),
+					DateModified: time.Now(),
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(bundle)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "update", "1", "--search", "new search")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "✓ Bundle updated:") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+	})
+
+	t.Run("update bundle multiple fields", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/2/" && r.Method == "PATCH" {
+				var req models.BundleUpdate
+				_ = json.NewDecoder(r.Body).Decode(&req)
+
+				// Verify multiple fields were updated
+				if req.AnyTags == nil || *req.AnyTags != "tag1,tag2" {
+					t.Errorf("Expected any_tags 'tag1,tag2', got: %v", req.AnyTags)
+				}
+				if req.Order == nil || *req.Order != 10 {
+					t.Errorf("Expected order 10, got: %v", req.Order)
+				}
+
+				bundle := models.Bundle{
+					ID:           2,
+					Name:         "Multi Update",
+					Search:       "",
+					AnyTags:      *req.AnyTags,
+					AllTags:      "",
+					ExcludedTags: "",
+					Order:        *req.Order,
+					DateCreated:  time.Now(),
+					DateModified: time.Now(),
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(bundle)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "update", "2",
+			"--any-tags", "tag1,tag2",
+			"--order", "10")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "✓ Bundle updated:") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+	})
+
+	t.Run("update bundle with json output", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/3/" && r.Method == "PATCH" {
+				var req models.BundleUpdate
+				_ = json.NewDecoder(r.Body).Decode(&req)
+
+				bundle := models.Bundle{
+					ID:           3,
+					Name:         "JSON Update",
+					Search:       *req.Search,
+					AnyTags:      "",
+					AllTags:      "",
+					ExcludedTags: "",
+					Order:        0,
+					DateCreated:  time.Now(),
+					DateModified: time.Now(),
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(bundle)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "update", "3", "--search", "json test", "--json")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		var bundle models.Bundle
+		if err := json.Unmarshal([]byte(output), &bundle); err != nil {
+			t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
+		}
+		if bundle.ID != 3 {
+			t.Errorf("Expected bundle ID 3, got: %d", bundle.ID)
+		}
+	})
+
+	t.Run("update bundle no fields", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "bundles", "update", "1")
+		if err == nil {
+			t.Fatal("Expected error when no fields specified, got nil")
+		}
+		if !strings.Contains(err.Error(), "no fields to update") {
+			t.Errorf("Expected 'no fields to update' in error, got: %v", err)
+		}
+	})
+
+	t.Run("update bundle not found", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/999/" && r.Method == "PATCH" {
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte(`{"detail":"Bundle not found"}`))
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "bundles", "update", "999", "--search", "test")
+		if err == nil {
+			t.Fatal("Expected error for non-existent bundle, got nil")
+		}
+		if !strings.Contains(err.Error(), "not found") {
+			t.Errorf("Expected 'not found' in error, got: %v", err)
+		}
+	})
+
+	t.Run("update bundle invalid id", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "bundles", "update", "invalid", "--search", "test")
+		if err == nil {
+			t.Fatal("Expected error for invalid bundle ID, got nil")
+		}
+		if !strings.Contains(err.Error(), "invalid bundle ID") {
+			t.Errorf("Expected 'invalid bundle ID' in error, got: %v", err)
+		}
+	})
+}
+
+// TestBundlesDeleteCommand tests the 'linkdingctl bundles delete' command
+func TestBundlesDeleteCommand(t *testing.T) {
+	t.Run("delete bundle success", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/1/" && r.Method == "DELETE" {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "delete", "1")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "✓ Bundle") && !strings.Contains(output, "deleted") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+	})
+
+	t.Run("delete bundle not found", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/999/" && r.Method == "DELETE" {
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte(`{"detail":"Bundle not found"}`))
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "bundles", "delete", "999")
+		if err == nil {
+			t.Fatal("Expected error for non-existent bundle, got nil")
+		}
+		if !strings.Contains(err.Error(), "not found") {
+			t.Errorf("Expected 'not found' in error, got: %v", err)
+		}
+	})
+
+	t.Run("delete bundle invalid id", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		_, err := executeCommand(t, "bundles", "delete", "invalid")
+		if err == nil {
+			t.Fatal("Expected error for invalid bundle ID, got nil")
+		}
+		if !strings.Contains(err.Error(), "invalid bundle ID") {
+			t.Errorf("Expected 'invalid bundle ID' in error, got: %v", err)
 		}
 	})
 }

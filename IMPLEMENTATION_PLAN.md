@@ -46,7 +46,7 @@ Bundle CRUD is the primary remaining feature. LinkDing supports bundles (saved s
   - Acceptance: All commands respect `--json` flag
   - Files: `cmd/linkdingctl/bundles.go` (new)
 
-- [ ] **P1** | Add CLI command tests for bundles | ~medium
+- [x] **P1** | Add CLI command tests for bundles | ~medium
   - Acceptance: All bundle subcommands have tests using mock HTTP server
   - Acceptance: Tests cover JSON and table output modes
   - Acceptance: Tests verify error handling for invalid inputs
