@@ -359,8 +359,9 @@ func runBundlesDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Output success message (no JSON mode for delete)
-	if !jsonOutput {
+	if jsonOutput {
+		fmt.Printf("{\"deleted\": true, \"id\": %d}\n", bundleID)
+	} else {
 		fmt.Printf("✓ Bundle %d deleted\n", bundleID)
 	}
 

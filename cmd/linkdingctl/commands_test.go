@@ -91,6 +91,7 @@ func executeCommand(t *testing.T, args ...string) (string, error) {
 	backupPrefix = "linkding-backup"
 	tagsRenameForce = false
 	tagsDeleteForce = false
+	bundleName = ""
 	bundleSearch = ""
 	bundleAnyTags = ""
 	bundleAllTags = ""
