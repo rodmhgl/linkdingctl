@@ -44,4 +44,4 @@ pre-push:
       run: go test -short -v ./...
 
     gitleaks:
-      run: gitleaks protect --unstaged --redact --pipe
+      run: gitleaks protect --redact
