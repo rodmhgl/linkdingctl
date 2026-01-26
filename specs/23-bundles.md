@@ -290,18 +290,18 @@ cmd/linkdingctl/commands_test.go  # Add: Bundle command tests
 ### Phase 2: CLI Commands
 
 4. Create `cmd/linkdingctl/bundles.go` with parent command
-2. Implement list subcommand
-3. Implement get subcommand
-4. Implement create subcommand
-5. Implement update subcommand
-6. Implement delete subcommand
-7. Add CLI command tests
+5. Implement list subcommand
+6. Implement get subcommand
+7. Implement create subcommand
+8. Implement update subcommand
+9. Implement delete subcommand
+10. Add CLI command tests
 
 ### Phase 3: Integration & Polish
 
 11. Verify all commands work with real LinkDing instance
-2. Ensure coverage meets 70% threshold
-3. Update any documentation if needed
+12. Ensure coverage meets 70% threshold
+13. Update any documentation if needed
 
 ## Out of Scope
 

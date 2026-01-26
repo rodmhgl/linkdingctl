@@ -25,6 +25,7 @@ Examples:
 }
 
 var (
+	bundleName         string
 	bundleSearch       string
 	bundleAnyTags      string
 	bundleAllTags      string
@@ -48,6 +49,7 @@ func init() {
 	bundlesCreateCmd.Flags().IntVar(&bundleOrder, "order", 0, "Display order")
 
 	// Update command flags
+	bundlesUpdateCmd.Flags().StringVar(&bundleName, "name", "", "New name for the bundle")
 	bundlesUpdateCmd.Flags().StringVar(&bundleSearch, "search", "", "Search query for the bundle")
 	bundlesUpdateCmd.Flags().StringVar(&bundleAnyTags, "any-tags", "", "Comma-separated list of tags (any match)")
 	bundlesUpdateCmd.Flags().StringVar(&bundleAllTags, "all-tags", "", "Comma-separated list of tags (all required)")
@@ -246,6 +248,7 @@ var bundlesUpdateCmd = &cobra.Command{
 	Long: `Update an existing bundle. Only specified fields will be updated (PATCH semantics).
 
 Examples:
+  linkdingctl bundles update 1 --name "Renamed Bundle"
   linkdingctl bundles update 1 --search "new search"
   linkdingctl bundles update 1 --any-tags "tag1,tag2" --order 5
   linkdingctl bundles update 1 --excluded-tags "spam"`,
@@ -274,6 +277,10 @@ func runBundlesUpdate(cmd *cobra.Command, args []string) error {
 	hasUpdates := false
 
 	// Check which flags were set
+	if cmd.Flags().Changed("name") {
+		update.Name = &bundleName
+		hasUpdates = true
+	}
 	if cmd.Flags().Changed("search") {
 		update.Search = &bundleSearch
 		hasUpdates = true
@@ -296,7 +303,7 @@ func runBundlesUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	if !hasUpdates {
-		return fmt.Errorf("no fields to update (use --search, --any-tags, --all-tags, --excluded-tags, or --order)")
+		return fmt.Errorf("no fields to update (use --name, --search, --any-tags, --all-tags, --excluded-tags, or --order)")
 	}
 
 	// Update the bundle

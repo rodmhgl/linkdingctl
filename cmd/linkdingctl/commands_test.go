@@ -4077,6 +4077,54 @@ func TestBundlesUpdateCommand(t *testing.T) {
 		}
 	})
 
+	t.Run("update bundle name", func(t *testing.T) {
+		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/bundles/1/" && r.Method == "PATCH" {
+				var req models.BundleUpdate
+				_ = json.NewDecoder(r.Body).Decode(&req)
+
+				// Verify name was updated
+				if req.Name == nil || *req.Name != "Renamed Bundle" {
+					t.Errorf("Expected name 'Renamed Bundle', got: %v", req.Name)
+				}
+				// Verify other fields were not sent
+				if req.Search != nil {
+					t.Errorf("Expected search to be nil, got: %v", req.Search)
+				}
+
+				bundle := models.Bundle{
+					ID:           1,
+					Name:         *req.Name,
+					Search:       "",
+					AnyTags:      "",
+					AllTags:      "",
+					ExcludedTags: "",
+					Order:        0,
+					DateCreated:  time.Now(),
+					DateModified: time.Now(),
+				}
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(bundle)
+				return
+			}
+			http.NotFound(w, r)
+		})
+
+		setTestEnv(t, server.URL, "test-token")
+
+		output, err := executeCommand(t, "bundles", "update", "1", "--name", "Renamed Bundle")
+		if err != nil {
+			t.Fatalf("Command failed: %v", err)
+		}
+
+		if !strings.Contains(output, "✓ Bundle updated:") {
+			t.Errorf("Expected success message, got: %s", output)
+		}
+		if !strings.Contains(output, "Renamed Bundle") {
+			t.Errorf("Expected 'Renamed Bundle' in output, got: %s", output)
+		}
+	})
+
 	t.Run("update bundle no fields", func(t *testing.T) {
 		server := setupMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
