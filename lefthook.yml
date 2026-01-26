@@ -32,6 +32,9 @@ pre-commit:
       run: go test -short -v ./...
       # Consider moving comprehensive tests to a pre-push hook or CI/CD pipeline if slow
 
+    gitleaks:
+      run: gitleaks protect --staged
+
 pre-push:
   parallel: true
   commands:
@@ -39,3 +42,6 @@ pre-push:
     go-unit-tests:
       glob: "*.go"
       run: go test -short -v ./...
+
+    gitleaks:
+      run: gitleaks protect --unstaged --redact --pipe
