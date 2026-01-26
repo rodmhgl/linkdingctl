@@ -19,10 +19,10 @@ var tagsCmd = &cobra.Command{
 	Long: `List all tags from LinkDing with their bookmark counts.
 
 Examples:
-  ld tags
-  ld tags --sort count
-  ld tags --unused
-  ld tags --json`,
+  linkdingctl tags
+  linkdingctl tags --sort count
+  linkdingctl tags --unused
+  linkdingctl tags --json`,
 	RunE: runTags,
 }
 
@@ -265,8 +265,8 @@ This command will:
 3. Show progress as bookmarks are updated
 
 Examples:
-  ld tags rename oldtag newtag
-  ld tags rename "old tag" "new tag" --force`,
+  linkdingctl tags rename oldtag newtag
+  linkdingctl tags rename "old tag" "new tag" --force`,
 	Args: cobra.ExactArgs(2),
 	RunE: runTagsRename,
 }
@@ -359,8 +359,8 @@ By default, this command only works if the tag has 0 bookmarks.
 Use --force to remove the tag from all bookmarks first.
 
 Examples:
-  ld tags delete unused-tag
-  ld tags delete "old tag" --force`,
+  linkdingctl tags delete unused-tag
+  linkdingctl tags delete "old tag" --force`,
 	Args: cobra.ExactArgs(1),
 	RunE: runTagsDelete,
 }
@@ -455,11 +455,11 @@ var tagsShowCmd = &cobra.Command{
 	Short: "Show all bookmarks with a specific tag",
 	Long: `List all bookmarks that have the specified tag.
 
-This is equivalent to: ld list --tags <tag-name>
+This is equivalent to: linkdingctl list --tags <tag-name>
 
 Examples:
-  ld tags show kubernetes
-  ld tags show "web dev" --json`,
+  linkdingctl tags show kubernetes
+  linkdingctl tags show "web dev" --json`,
 	Args: cobra.ExactArgs(1),
 	RunE: runTagsShow,
 }

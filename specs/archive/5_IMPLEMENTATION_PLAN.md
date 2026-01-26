@@ -13,7 +13,7 @@
 | 04 - Import/Export | Complete | JSON/HTML/CSV export+import, backup, restore with --wipe |
 | 05 - Security | Complete | 0700/0600 perms, token masking, safe JSON backup output |
 | 06 - Tags Performance | Complete | FetchAllBookmarks on Client, client-side counting, paginated rename/delete |
-| 07 - Test Coverage | Complete | cmd/ld=78.1%, all packages meet 70% threshold |
+| 07 - Test Coverage | Complete | cmd/linkdingctl=78.1%, all packages meet 70% threshold |
 | 08 - Tags Show Pagination | Complete | Uses FetchAllBookmarks for all bookmarks |
 | 09 - Makefile Portability | Complete | `bc` replaced with `awk` in cover target |
 | 10 - Config Token Trim | Complete | Redundant TrimSpace removed |
@@ -52,7 +52,7 @@ internal/export            78.4%     70%      PASS
 
 - [x] **P2** | Add tests for `--notes` flag | ~small
   - Acceptance: Tests verify notes set on add, notes set on update, notes cleared on update; coverage maintained ≥70%
-  - Files: `cmd/ld/commands_test.go`
+  - Files: `cmd/linkdingctl/commands_test.go`
 
 ### Phase 6: Tags CRUD Enhancements (spec 13)
 
@@ -76,7 +76,7 @@ internal/export            78.4%     70%      PASS
 
 - [x] **P2** | Add tests for tags create and get | ~medium
   - Acceptance: Tests for create success, create duplicate, create empty name, get success, get not found; all with human and JSON output; coverage maintained ≥70%
-  - Files: `cmd/ld/commands_test.go`, `internal/api/client_test.go`
+  - Files: `cmd/linkdingctl/commands_test.go`, `internal/api/client_test.go`
 
 ### Phase 7: User Profile Command (spec 12)
 
@@ -89,38 +89,38 @@ internal/export            78.4%     70%      PASS
   - Files: `internal/api/client.go`
 
 - [x] **P1** | Add `user profile` command | ~medium
-  - Acceptance: `ld user profile` displays Username, DisplayName, Theme, BookmarkCount; `--json` outputs full JSON; HTTP 401 shows auth error; HTTP 403 shows permission error; `ld user --help` lists subcommands
-  - Files: `cmd/ld/user.go` (new)
+  - Acceptance: `linkdingctl user profile` displays Username, DisplayName, Theme, BookmarkCount; `--json` outputs full JSON; HTTP 401 shows auth error; HTTP 403 shows permission error; `linkdingctl user --help` lists subcommands
+  - Files: `cmd/linkdingctl/user.go` (new)
   - Details: Create `userCmd` (parent, help-only), `userProfileCmd` (subcommand); register on rootCmd; load config, create client, call `GetUserProfile()`; format human/JSON output
 
 - [x] **P2** | Add tests for user profile command | ~small
   - Acceptance: Tests for successful profile display (human + JSON), 401 error, 403 error; coverage maintained ≥70%
-  - Files: `cmd/ld/commands_test.go`, `internal/api/client_test.go`
+  - Files: `cmd/linkdingctl/commands_test.go`, `internal/api/client_test.go`
 
 ### Phase 8: Per-Command Connection Overrides (spec 14)
 
 - [x] **P1** | Add `--url` and `--token` global flags | ~medium
   - Acceptance: `--url` and `--token` persistent flags on rootCmd; override config and env vars (highest precedence); partial override works (only `--url` or only `--token`); commands work with only CLI flags and no config file; `--token` never printed in debug output
-  - Files: `cmd/ld/root.go`, `internal/config/config.go`
+  - Files: `cmd/linkdingctl/root.go`, `internal/config/config.go`
   - Details: Add `flagURL string` and `flagToken string` vars; register as PersistentFlags on rootCmd; modify `loadConfig()` to accept and apply overrides after `config.Load()`; if `config.Load()` fails but CLI flags provide both URL+token, succeed without config file
 
 - [x] **P1** | Update `config show` to reflect overrides | ~small
-  - Acceptance: `ld config show --url X` shows "URL: X (--url flag)"; `ld config show --token Y` shows override indicator; JSON output includes override source
-  - Files: `cmd/ld/config.go`
+  - Acceptance: `linkdingctl config show --url X` shows "URL: X (--url flag)"; `linkdingctl config show --token Y` shows override indicator; JSON output includes override source
+  - Files: `cmd/linkdingctl/config.go`
 
 - [x] **P1** | Update `config test` to use effective config | ~small
-  - Acceptance: `ld config test --url X --token Y` tests the overridden connection, not the config file
-  - Files: `cmd/ld/config.go`
+  - Acceptance: `linkdingctl config test --url X --token Y` tests the overridden connection, not the config file
+  - Files: `cmd/linkdingctl/config.go`
 
 - [x] **P2** | Add tests for per-command overrides | ~medium
   - Acceptance: Tests for URL override, token override, both overrides, partial override, no-config-file-with-flags, token not in debug output; coverage maintained ≥70%
-  - Files: `cmd/ld/commands_test.go`
+  - Files: `cmd/linkdingctl/commands_test.go`
 
 ### Phase 9: Rename to linkdingctl (spec 16)
 
-- [x] **P0** | Rename `cmd/ld/` directory to `cmd/linkdingctl/` | ~small
+- [x] **P0** | Rename `cmd/linkdingctl/` directory to `cmd/linkdingctl/` | ~small
   - Acceptance: All Go source files moved to `cmd/linkdingctl/`; package still compiles; `go build ./cmd/linkdingctl` succeeds
-  - Files: `cmd/ld/*.go` → `cmd/linkdingctl/*.go`
+  - Files: `cmd/linkdingctl/*.go` → `cmd/linkdingctl/*.go`
 
 - [x] **P0** | Update Makefile for new binary name | ~small
   - Acceptance: `BINARY_NAME=linkdingctl`; build path `./cmd/linkdingctl`; `make build` produces `./linkdingctl`; all targets work
@@ -135,11 +135,11 @@ internal/export            78.4%     70%      PASS
   - Files: `internal/config/config.go`
 
 - [x] **P0** | Implement config migration from old path | ~medium
-  - Acceptance: On startup, if `~/.config/linkdingctl/config.yaml` missing but `~/.config/ld/config.yaml` exists: copy with 0600 perms, create dir with 0700 perms, print notice to stderr; does NOT delete old config; runs only once (subsequent runs skip migration)
+  - Acceptance: On startup, if `~/.config/linkdingctl/config.yaml` missing but `~/.config/linkdingctl/config.yaml` exists: copy with 0600 perms, create dir with 0700 perms, print notice to stderr; does NOT delete old config; runs only once (subsequent runs skip migration)
   - Files: `internal/config/config.go`
 
 - [x] **P0** | Update `.gitignore` | ~small
-  - Acceptance: `/linkdingctl` entry replaces or accompanies `/ld`
+  - Acceptance: `/linkdingctl` entry replaces or accompanies `/linkdingctl`
   - Files: `.gitignore`
 
 - [x] **P1** | Update all test expected strings | ~medium
@@ -174,7 +174,7 @@ Phase 9 (Rename to linkdingctl) ────────────── depen
 
 ## Execution Order
 
-Spec 16 states the rename has **HIGHEST** priority and must be done first. However, this creates a practical challenge: doing the rename first means all subsequent feature work targets `cmd/linkdingctl/` paths, but any in-flight branches targeting `cmd/ld/` will conflict.
+Spec 16 states the rename has **HIGHEST** priority and must be done first. However, this creates a practical challenge: doing the rename first means all subsequent feature work targets `cmd/linkdingctl/` paths, but any in-flight branches targeting `cmd/linkdingctl/` will conflict.
 
 **Recommended order (minimize merge conflicts):**
 
@@ -186,7 +186,7 @@ Spec 16 states the rename has **HIGHEST** priority and must be done first. Howev
 
 **Alternative order (if rename is deferred to avoid disruption):**
 
-1. **Phases 5-8** (P1): All features on `cmd/ld/` paths
+1. **Phases 5-8** (P1): All features on `cmd/linkdingctl/` paths
 2. **Phase 9** (P0): Rename everything at once (single large commit)
 
 ---

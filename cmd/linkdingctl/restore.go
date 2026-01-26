@@ -18,7 +18,7 @@ var restoreCmd = &cobra.Command{
 	Short: "Restore bookmarks from a backup file",
 	Long: `Restore bookmarks from a backup file.
 
-Without --wipe: Equivalent to 'ld import <file>'
+Without --wipe: Equivalent to 'linkdingctl import <file>'
   - Existing bookmarks are updated
   - New bookmarks are added
 
@@ -27,9 +27,9 @@ With --wipe: Deletes ALL existing bookmarks before importing (DANGEROUS)
   - Cannot be undone
 
 Examples:
-  ld restore backup.json
-  ld restore backup.json --dry-run
-  ld restore backup.json --wipe`,
+  linkdingctl restore backup.json
+  linkdingctl restore backup.json --dry-run
+  linkdingctl restore backup.json --wipe`,
 	Args: cobra.ExactArgs(1),
 	RunE: runRestore,
 }

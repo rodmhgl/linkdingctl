@@ -19,8 +19,8 @@ var getCmd = &cobra.Command{
 	Long: `Get a bookmark by ID and display its full details.
 
 Examples:
-  ld get 123
-  ld get 123 --json`,
+  linkdingctl get 123
+  linkdingctl get 123 --json`,
 	Args: cobra.ExactArgs(1),
 	RunE: runGet,
 }

@@ -22,12 +22,12 @@ The backup file is saved with a timestamp in the filename:
   linkding-backup-2026-01-22T103000.json
 
 This is equivalent to running:
-  ld export -f json -o <timestamped-file>
+  linkdingctl export -f json -o <timestamped-file>
 
 Examples:
-  ld backup
-  ld backup -o ~/backups/
-  ld backup --prefix my-backup`,
+  linkdingctl backup
+  linkdingctl backup -o ~/backups/
+  linkdingctl backup --prefix my-backup`,
 	RunE: runBackup,
 }
 

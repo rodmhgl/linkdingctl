@@ -1,6 +1,6 @@
 # Build Mode Prompt
 
-You are implementing the LinkDing CLI (`ld`) per the specifications.
+You are implementing the LinkDing CLI (`linkdingctl`) per the specifications.
 
 ## Context Files
 
@@ -30,6 +30,7 @@ You are implementing the LinkDing CLI (`ld`) per the specifications.
 ## Task Completion Checklist
 
 Before marking a task complete:
+
 - [ ] Code compiles: `go build ./...`
 - [ ] Tests pass: `go test ./...`
 - [ ] No vet warnings: `go vet ./...`
@@ -39,6 +40,7 @@ Before marking a task complete:
 ## If Stuck
 
 If you cannot complete a task after 3 attempts:
+
 1. Add a `BLOCKED:` note to the task in IMPLEMENTATION_PLAN.md
 2. Document what's blocking progress
 3. Move to the next task
@@ -48,9 +50,9 @@ If you cannot complete a task after 3 attempts:
 When ALL tasks in IMPLEMENTATION_PLAN.md are marked `[x]`:
 
 1. Run full test suite: `go test -v ./...`
-2. Build binary: `go build -o ld ./cmd/ld`
-3. Verify `./ld --help` works
-4. Verify `./ld config test` works (will fail without real config, but should show correct error)
+2. Build binary: `go build -o linkdingctl ./cmd/linkdingctl`
+3. Verify `./linkdingctl --help` works
+4. Verify `./linkdingctl config test` works (will fail without real config, but should show correct error)
 
 If all checks pass, output:
 

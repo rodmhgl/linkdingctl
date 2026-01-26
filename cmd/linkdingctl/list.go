@@ -19,10 +19,10 @@ var listCmd = &cobra.Command{
 	Long: `List bookmarks with optional filtering.
 
 Examples:
-  ld list
-  ld list --tags k8s,platform
-  ld list -q "kubernetes" --unread
-  ld list --limit 10`,
+  linkdingctl list
+  linkdingctl list --tags k8s,platform
+  linkdingctl list -q "kubernetes" --unread
+  linkdingctl list --limit 10`,
 	RunE: runList,
 }
 

@@ -28,10 +28,10 @@ var updateCmd = &cobra.Command{
 	Long: `Update a bookmark's metadata. Only specified fields are modified.
 
 Examples:
-  ld update 123 --title "New Title"
-  ld update 123 --add-tags "reviewed"
-  ld update 123 --title "New Title" --archive
-  ld update 123 --remove-tags "outdated" --add-tags "current"`,
+  linkdingctl update 123 --title "New Title"
+  linkdingctl update 123 --add-tags "reviewed"
+  linkdingctl update 123 --title "New Title" --archive
+  linkdingctl update 123 --remove-tags "outdated" --add-tags "current"`,
 	Args: cobra.ExactArgs(1),
 	RunE: runUpdate,
 }

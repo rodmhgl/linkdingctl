@@ -22,9 +22,9 @@ Format is auto-detected from file extension:
   .csv → CSV format
 
 Examples:
-  ld import bookmarks.json
-  ld import bookmarks.html --add-tags "imported"
-  ld import export.csv --dry-run`,
+  linkdingctl import bookmarks.json
+  linkdingctl import bookmarks.html --add-tags "imported"
+  linkdingctl import export.csv --dry-run`,
 	Args: cobra.ExactArgs(1),
 	RunE: runImport,
 }

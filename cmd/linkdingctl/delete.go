@@ -20,9 +20,9 @@ var deleteCmd = &cobra.Command{
 	Long: `Delete a bookmark by ID. Requires confirmation unless --force or --json flag is set.
 
 Examples:
-  ld delete 123
-  ld delete 123 --force
-  ld delete 123 --json`,
+  linkdingctl delete 123
+  linkdingctl delete 123 --force
+  linkdingctl delete 123 --json`,
 	Args: cobra.ExactArgs(1),
 	RunE: runDelete,
 }

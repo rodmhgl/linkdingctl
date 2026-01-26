@@ -15,7 +15,7 @@ type Config struct {
 	Token string
 }
 
-// migrateFromOldPath attempts to migrate config from old path (~/.config/ld/)
+// migrateFromOldPath attempts to migrate config from old path (~/.config/linkdingctl/)
 // to new path (~/.config/linkdingctl/). Returns true if migration was performed.
 func migrateFromOldPath(newConfigPath string) (bool, error) {
 	homeDir, err := os.UserHomeDir()
@@ -23,7 +23,7 @@ func migrateFromOldPath(newConfigPath string) (bool, error) {
 		return false, fmt.Errorf("failed to get user home directory: %w", err)
 	}
 
-	oldConfigPath := filepath.Join(homeDir, ".config", "ld", "config.yaml")
+	oldConfigPath := filepath.Join(homeDir, ".config", "linkdingctl", "config.yaml")
 
 	// Check if new config already exists - if so, skip migration
 	if _, err := os.Stat(newConfigPath); err == nil {

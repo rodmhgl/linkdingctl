@@ -285,7 +285,7 @@ func TestLoad_EnvVarsOnly(t *testing.T) {
 func TestMigration_FromOldPath(t *testing.T) {
 	// Create temporary directories for old and new configs
 	tmpDir := t.TempDir()
-	oldConfigDir := filepath.Join(tmpDir, ".config", "ld")
+	oldConfigDir := filepath.Join(tmpDir, ".config", "linkdingctl")
 	oldConfigPath := filepath.Join(oldConfigDir, "config.yaml")
 	newConfigDir := filepath.Join(tmpDir, ".config", "linkdingctl")
 	newConfigPath := filepath.Join(newConfigDir, "config.yaml")
@@ -333,7 +333,7 @@ func TestMigration_FromOldPath(t *testing.T) {
 func TestMigration_SkipIfNewConfigExists(t *testing.T) {
 	// Create temporary directories
 	tmpDir := t.TempDir()
-	oldConfigDir := filepath.Join(tmpDir, ".config", "ld")
+	oldConfigDir := filepath.Join(tmpDir, ".config", "linkdingctl")
 	oldConfigPath := filepath.Join(oldConfigDir, "config.yaml")
 	newConfigDir := filepath.Join(tmpDir, ".config", "linkdingctl")
 	newConfigPath := filepath.Join(newConfigDir, "config.yaml")

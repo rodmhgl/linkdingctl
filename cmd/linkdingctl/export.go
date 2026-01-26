@@ -16,9 +16,9 @@ var exportCmd = &cobra.Command{
 	Long: `Export bookmarks to various formats (JSON, HTML, CSV).
 
 Examples:
-  ld export > bookmarks.json
-  ld export -f html -o bookmarks.html
-  ld export --tags homelab -f csv -o homelab.csv`,
+  linkdingctl export > bookmarks.json
+  linkdingctl export -f html -o bookmarks.html
+  linkdingctl export --tags homelab -f csv -o homelab.csv`,
 	RunE: runExport,
 }
 
