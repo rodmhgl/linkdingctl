@@ -23,6 +23,10 @@ Thumbs.db
 # Backup files
 *.bak
 
+
+# Env Files
+.env
+
 # Logs
 logs
 *.log
