@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Gap analysis between specifications (`specs/01`–`specs/22`) and the current codebase.
+Gap analysis between specifications (`specs/01`–`specs/23`) and the current codebase.
 
 ---
 
@@ -10,109 +10,70 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
 
 ---
 
-## P1 — Staticcheck SA9003 (Spec 22)
+## P1 — Bundles Support (Spec 23) — NEW FEATURE
 
-- [x] **P1** | Fix SA9003: Remove error return from `processHTMLBookmark` | ~small
+Bundle CRUD is the primary remaining feature. LinkDing supports bundles (saved search configurations), but `linkdingctl` currently has no bundle commands.
+
+- [x] **P1** | Create Bundle model structs | ~small
+  - Acceptance: `internal/models/bundle.go` exists with `Bundle`, `BundleCreate`, `BundleUpdate`, `BundleList` structs
+  - Acceptance: `BundleUpdate` uses pointer fields for PATCH semantics (matching `BookmarkUpdate` pattern)
+  - Acceptance: All fields match LinkDing API: id, name, search, any_tags, all_tags, excluded_tags, order, date_created, date_modified
+  - Files: `internal/models/bundle.go` (new)
+
+- [x] **P1** | Add Bundle API client methods | ~medium
+  - Acceptance: `GetBundles(limit, offset int)` returns paginated bundle list
+  - Acceptance: `FetchAllBundles()` handles pagination transparently
+  - Acceptance: `GetBundle(id int)` retrieves single bundle
+  - Acceptance: `CreateBundle(*BundleCreate)` creates bundle via POST
+  - Acceptance: `UpdateBundle(id int, *BundleUpdate)` updates bundle via PATCH
+  - Acceptance: `DeleteBundle(id int)` deletes bundle via DELETE
+  - Files: `internal/api/client.go`
+
+- [x] **P1** | Add unit tests for Bundle API client | ~medium
+  - Acceptance: All 6 bundle API methods have tests using `httptest.NewServer`
+  - Acceptance: Tests cover success cases and error cases (404, 400, 401)
+  - Acceptance: Pagination test with multi-page mock response
+  - Files: `internal/api/client_test.go`
+
+- [x] **P1** | Create `bundles` command with subcommands | ~medium
+  - Acceptance: `linkdingctl bundles --help` shows available subcommands
+  - Acceptance: `linkdingctl bundles list` displays all bundles in table (ID, Name, Search, Order)
+  - Acceptance: `linkdingctl bundles list --json` outputs valid JSON array
+  - Acceptance: `linkdingctl bundles get <id>` displays full bundle details (all fields)
+  - Acceptance: `linkdingctl bundles create <name>` creates bundle (supports `--search`, `--any-tags`, `--all-tags`, `--excluded-tags`, `--order`)
+  - Acceptance: `linkdingctl bundles update <id>` with flags updates only specified fields (PATCH semantics)
+  - Acceptance: `linkdingctl bundles delete <id>` removes the bundle
+  - Acceptance: All commands respect `--json` flag
+  - Files: `cmd/linkdingctl/bundles.go` (new)
+
+- [x] **P1** | Add CLI command tests for bundles | ~medium
+  - Acceptance: All bundle subcommands have tests using mock HTTP server
+  - Acceptance: Tests cover JSON and table output modes
+  - Acceptance: Tests verify error handling for invalid inputs
+  - Acceptance: Coverage meets 70% threshold for new code
+  - Files: `cmd/linkdingctl/commands_test.go`
+
+---
+
+## P2 — Staticcheck SA9003 (Spec 22)
+
+- [x] **P2** | Fix SA9003: Remove error return from `processHTMLBookmark` | ~small
   - Acceptance: `processHTMLBookmark` has no `error` return type; all three call sites in `importHTML` invoke it as a bare statement (no `if err != nil {}` wrapper); `golangci-lint run ./...` reports no SA9003 in `internal/export/import.go`; all tests pass (`go test ./...`); coverage gate passes (`make cover`)
   - Files: `internal/export/import.go`
 
 ---
 
-## P2 — Lint & Code Quality
+## P3 — Lint & Code Quality
 
-### Uncommitted Changes (on `review` branch, need validation + commit)
+### Previously Completed Items (Specs 10, 11, 14, 19)
 
-- [x] **P2** | Validate and commit `//nolint:unused` on version var | ~small
-  - Acceptance: `golangci-lint run` passes with no `unused` violation on `version` var
-  - Files: `cmd/linkdingctl/main.go`
-
-- [x] **P2** | Validate and commit removal of unused `updateUnread`/`updateShared` vars | ~small
-  - Acceptance: No unused variable warnings; `go build ./...` and all tests pass
-  - Files: `cmd/linkdingctl/update.go`
-
-- [x] **P2** | Validate and commit error message lowercase fix in `GetUserProfile` | ~small
-  - Acceptance: Error message starts lowercase per Go conventions; tests pass
-  - Files: `internal/api/client.go`
-
-- [x] **P2** | Validate and commit package-level doc comments | ~small
-  - Acceptance: `golangci-lint run` reports no missing package comments for `api`, `config`, `export`, `models`
-  - Files: `internal/api/client.go`, `internal/config/config.go`, `internal/export/import.go`, `internal/models/bookmark.go`
-
-### Config Token Trim (Spec 10)
-
-- [x] **P2** | Remove redundant `strings.TrimSpace(token)` in config init | ~small
-  - Acceptance: Token is trimmed exactly once per branch (TTY and non-TTY); no redundant trim calls; existing tests pass
-  - Files: `cmd/linkdingctl/config.go`
-
-### Test Robustness (Spec 11)
-
-- [x] **P2** | Replace unsafe string slicing with `strings.Contains` in config test | ~small
-  - Acceptance: `TestLoad_NonYAMLFile` uses `strings.Contains` (no panic risk from index out-of-range); test passes
-  - Files: `internal/config/config_test.go`
-
-- [x] **P2** | Add missing flag resets to `executeCommand` test helper | ~small
-  - Acceptance: `executeCommand` resets `backupOutput`, `backupPrefix`, `tagsRenameForce`, `tagsDeleteForce`; no test pollution
-  - Files: `cmd/linkdingctl/commands_test.go`
-
-### Errcheck Violations (Spec 19 — remaining items)
-
-- [x] **P2** | Fix unchecked `w.Write` in `TestCreateTag_Duplicate` | ~small
-  - Acceptance: `w.Write` error is checked with `t.Errorf`
-  - Files: `internal/api/client_test.go`
-
-- [x] **P2** | Fix unchecked `json.Decode` in import test mock handlers | ~small
-  - Acceptance: All three `json.NewDecoder().Decode()` calls in mock handlers check errors
-  - Files: `internal/export/import_test.go`
-
-- [x] **P2** | Fix unchecked `json.Encode` in html_test and csv_test mock handlers | ~small
-  - Acceptance: `json.NewEncoder().Encode()` calls check errors with `t.Errorf`
-  - Files: `internal/export/html_test.go`, `internal/export/csv_test.go`
-
-- [x] **P2** | Fix unchecked `csvWriter.Write` in csv_test helper | ~small
-  - Acceptance: Both `csvWriter.Write` calls check errors with `t.Fatalf`
-  - Files: `internal/export/csv_test.go`
-
-### golangci-lint Config
-
-- [x] **P2** | Verify `.golangci.yml` passes cleanly after all fixes | ~small
-  - Acceptance: `golangci-lint run ./...` exits 0 with no violations
-  - Files: `.golangci.yml`
-
----
-
-## P3 — Polish / Optional
-
-### Debug & Config UX (Spec 14 — partial gaps)
-
-- [x] **P3** | Ensure `--token` value is never printed in debug output | ~small
-  - Acceptance: With `--debug`, token is redacted; URL is shown normally
-  - Files: `cmd/linkdingctl/root.go`
-
-- [x] **P3** | `config show` indicates active CLI flag overrides | ~small
-  - Acceptance: When `--url` or `--token` is provided, `config show` output marks them as overrides
-  - Files: `cmd/linkdingctl/config.go`
-
-### Additional Test Coverage (Spec 07 — gaps)
-
-- [x] **P3** | Add multi-page pagination test for `GetBookmarks` | ~medium
-  - Acceptance: Mock server returns paginated responses; test verifies all pages are collected
-  - Files: `internal/api/client_test.go` or `internal/api/pagination_test.go`
-
-- [x] **P3** | Add multi-page pagination test for `FetchAllTags` | ~small
-  - Acceptance: Mock server returns paginated tag responses; test verifies all pages collected
-  - Files: `internal/api/client_test.go` or `internal/api/pagination_test.go`
-
-- [x] **P3** | Add `doRequest` timeout behavior test | ~small
-  - Acceptance: Test verifies error is returned when server exceeds 30s timeout
-  - Files: `internal/api/client_test.go`
-
-- [x] **P3** | Add JSON export→import round-trip test | ~small
-  - Acceptance: Exported JSON can be re-imported with identical bookmark data
-  - Files: `internal/export/json_test.go` or `internal/export/import_test.go`
-
-- [x] **P3** | Add CSV export→import round-trip test | ~small
-  - Acceptance: Exported CSV can be re-imported with identical bookmark data
-  - Files: `internal/export/csv_test.go` or `internal/export/import_test.go`
+All lint/code quality items from previous specs have been implemented:
+- Config token trim (spec 10) ✓
+- Test robustness (spec 11) ✓
+- Per-command connection override debug redaction (spec 14) ✓
+- Errcheck violations (spec 19) ✓
+- Package doc comments ✓
+- golangci-lint passing ✓
 
 ---
 
@@ -126,21 +87,32 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
 | 04 | Import/Export (JSON, HTML, CSV, backup, restore) | Done |
 | 05 | Security hardening (0700/0600, token masking, safe JSON) | Done |
 | 06 | Tags performance (client-side counting, full pagination) | Done |
-| 07 | Test coverage (>70% threshold per package) | Done (partial gaps in P3) |
+| 07 | Test coverage (>70% threshold per package) | Done |
 | 08 | Tags show pagination | Done |
 | 09 | Makefile portability (awk, no cmd/ skip) | Done |
-| 10 | Config token trim | Done (see P2 for verification) |
-| 11 | Test robustness | Done (see P2 for remaining items) |
+| 10 | Config token trim | Done |
+| 11 | Test robustness | Done |
 | 12 | User profile command | Done (superseded by spec 17) |
 | 13 | Tags CRUD (create, get) | Done |
-| 14 | Per-command `--url`/`--token` overrides | Done (partial gaps in P3) |
+| 14 | Per-command `--url`/`--token` overrides | Done |
 | 15 | Notes field (`--notes`/`-n` on add and update) | Done |
 | 16 | Rename to `linkdingctl` | Done |
 | 17 | Fix user profile to match real API | Done |
 | 18 | CI/Release workflow | Done |
-| 19 | Errcheck lint fixes | Done (remaining items in P2) |
+| 19 | Errcheck lint fixes | Done |
 | 20 | Pre-commit: go vet via lefthook | Done |
 | 21 | Pre-commit: golangci-lint via lefthook | Done |
+| 22 | Staticcheck SA9003 fix | Done |
+
+---
+
+## Implementation Order for Bundles
+
+1. **Bundle Models** (`internal/models/bundle.go`) — Create structs first (dependency for API methods)
+2. **Bundle API Methods** (`internal/api/client.go`) — Implement CRUD (dependency for commands)
+3. **Bundle API Tests** (`internal/api/client_test.go`) — Verify API layer works
+4. **Bundle Commands** (`cmd/linkdingctl/bundles.go`) — Implement all subcommands
+5. **Bundle CLI Tests** (`cmd/linkdingctl/commands_test.go`) — Verify full integration
 
 ---
 
@@ -148,9 +120,22 @@ All P0 (foundational/blocking) items are complete. No new features need to be bu
 
 | Priority | Count | Focus |
 |----------|-------|-------|
-| P1 | 1 | SA9003 staticcheck fix |
-| P2 | 12 | Lint fixes, test robustness, errcheck |
-| P3 | 7 | Debug redaction, config UX, test coverage |
-| **Total** | **20** | |
+| P1 | 5 | Bundles feature (spec 23) |
+| P2 | 1 | SA9003 staticcheck fix (spec 22) |
+| P3 | 0 | All lint/polish items complete |
+| **Total** | **6** | |
 
-The codebase is feature-complete. Remaining work is lint compliance, test robustness, and minor UX polish.
+The codebase is nearly feature-complete. The primary remaining work is implementing bundle CRUD support (spec 23).
+
+---
+
+## Validation Checklist
+
+Before marking bundles implementation complete:
+- [x] `make check` passes (fmt, vet, test)
+- [x] `make cover` passes (70% per package)
+- [x] `golangci-lint run` passes
+- [x] All bundle CRUD operations work against mock server
+- [x] JSON output is valid and matches API response format
+- [x] Table output is readable and consistent with other commands
+- [x] Error messages are user-friendly (404 → "Bundle not found", etc.)
