@@ -2,6 +2,8 @@
 
 A scriptable CLI for managing bookmarks in a [LinkDing](https://github.com/sissbruecker/linkding) instance.
 
+![linkdingctl screenshot](./docs/assets/ss.png)
+
 ## Features
 
 - Full CRUD for bookmarks and tags
