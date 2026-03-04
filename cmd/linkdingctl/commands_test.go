@@ -4240,3 +4240,53 @@ func TestBundlesDeleteCommand(t *testing.T) {
 		}
 	})
 }
+
+// =============================================================================
+// Version Command Tests
+// =============================================================================
+
+func TestVersionCommand(t *testing.T) {
+	output, err := executeCommand(t, "version")
+	if err != nil {
+		t.Fatalf("version command failed: %v", err)
+	}
+
+	if !strings.Contains(output, "linkdingctl") {
+		t.Errorf("Expected output to contain 'linkdingctl', got: %s", output)
+	}
+	if !strings.Contains(output, "dev") {
+		t.Errorf("Expected output to contain 'dev' (default version), got: %s", output)
+	}
+	if !strings.Contains(output, "commit:") {
+		t.Errorf("Expected output to contain 'commit:', got: %s", output)
+	}
+	if !strings.Contains(output, "go:") {
+		t.Errorf("Expected output to contain 'go:', got: %s", output)
+	}
+	if !strings.Contains(output, "os:") {
+		t.Errorf("Expected output to contain 'os:', got: %s", output)
+	}
+}
+
+func TestVersionCommandJSON(t *testing.T) {
+	output, err := executeCommand(t, "version", "--json")
+	if err != nil {
+		t.Fatalf("version --json command failed: %v", err)
+	}
+
+	var result map[string]string
+	if err := json.Unmarshal([]byte(output), &result); err != nil {
+		t.Fatalf("Failed to parse JSON output: %v\nOutput was: %s", err, output)
+	}
+
+	expectedKeys := []string{"version", "commit", "date", "go", "os", "arch"}
+	for _, key := range expectedKeys {
+		if _, ok := result[key]; !ok {
+			t.Errorf("Expected JSON to contain key %q, got: %v", key, result)
+		}
+	}
+
+	if result["version"] != "dev" {
+		t.Errorf("Expected version to be 'dev', got: %s", result["version"])
+	}
+}

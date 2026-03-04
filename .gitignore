@@ -1,6 +1,12 @@
 # Binary (at root only)
 /linkdingctl
 
+# GoReleaser
+dist/
+
+# Generated shell completions
+completions/
+
 # Env
 .env
 

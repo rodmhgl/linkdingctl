@@ -1,7 +1,10 @@
 package main
 
-//nolint:unused
-var version = "dev"
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
 func main() {
 	Execute()

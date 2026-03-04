@@ -14,18 +14,25 @@ A scriptable CLI for managing bookmarks in a [LinkDing](https://github.com/sissb
 
 ## Installation
 
-### From source
+### Homebrew (macOS / Linux)
 
 ```bash
-git clone https://github.com/rodmhgl/linkdingctl
-cd linkding-cli
-go build -o linkdingctl ./cmd/linkdingctl
-sudo mv linkdingctl /usr/local/bin/
+brew tap rodmhgl/tap
+brew install linkdingctl
 ```
 
 ### From Binary Releases
 
-Download the latest binary from the [Releases page](https://github.com/yourusername/linkding-cli/releases).
+Download the latest archive from the [Releases page](https://github.com/rodmhgl/linkdingctl/releases), extract, and place the binary on your `PATH`.
+
+### From Source
+
+```bash
+git clone https://github.com/rodmhgl/linkdingctl
+cd linkdingctl
+go build -o linkdingctl ./cmd/linkdingctl
+sudo mv linkdingctl /usr/local/bin/
+```
 
 ## Quick Start
 
@@ -198,9 +205,31 @@ linkdingctl list --json | jq '.results[] | select(.tag_names | length == 0) | {i
 | 1 | Error (API, network, etc.) |
 | 2 | Configuration error |
 
+## Version
+
+```bash
+linkdingctl version
+linkdingctl version --json
+```
+
+## Shell Completions
+
+Homebrew installs completions automatically. For manual setup:
+
+```bash
+# Bash
+linkdingctl completion bash > /etc/bash_completion.d/linkdingctl
+
+# Zsh
+linkdingctl completion zsh > "${fpath[1]}/_linkdingctl"
+
+# Fish
+linkdingctl completion fish > ~/.config/fish/completions/linkdingctl.fish
+```
+
 ## Development
 
-Requires Go 1.21+.
+Requires Go 1.24+.
 
 ```bash
 go build -o linkdingctl ./cmd/linkdingctl

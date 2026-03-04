@@ -1,4 +1,4 @@
-.PHONY: help build test install clean lint vet fmt cover hooks
+.PHONY: help build test install clean lint vet fmt cover hooks snapshot
 
 # Variables
 BINARY_NAME=linkdingctl
@@ -86,5 +86,9 @@ cover: ## Run tests with coverage validation (min 70% per package)
 		echo "" && \
 		echo "All tested packages meet the 70% coverage threshold!"; \
 	fi
+
+snapshot: ## Build snapshot release locally (no publish)
+	@which goreleaser > /dev/null || (echo "goreleaser not found. Install from https://goreleaser.com/install/" && exit 1)
+	goreleaser release --snapshot --clean --skip=publish
 
 .DEFAULT_GOAL := help
