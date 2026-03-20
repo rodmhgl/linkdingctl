@@ -227,6 +227,40 @@ linkdingctl completion zsh > "${fpath[1]}/_linkdingctl"
 linkdingctl completion fish > ~/.config/fish/completions/linkdingctl.fish
 ```
 
+## Claude Code Integration
+
+`linkdingctl` ships [Claude Code skills](https://docs.anthropic.com/en/docs/claude-code/skills) that give Claude accurate CLI syntax and bookmark enrichment workflows. If you use Claude Code, install these skills so Claude can help you manage bookmarks without guessing flags or commands.
+
+### Skills
+
+| Skill | What it does |
+| ----- | ------------ |
+| `linkdingctl` | CLI reference — Claude knows exact flags, commands, and common mistakes |
+| `bookmark-describer` | AI-driven enrichment of untagged bookmarks (adds titles, descriptions, and tags automatically) |
+
+### Install from a cloned repo
+
+```bash
+cp -r .claude/skills/linkdingctl ~/.claude/skills/
+cp -r .claude/skills/bookmark-describer ~/.claude/skills/
+```
+
+### Install directly from GitHub (no clone needed)
+
+```bash
+# linkdingctl skill
+mkdir -p ~/.claude/skills/linkdingctl/references
+curl -fsSL https://raw.githubusercontent.com/rodmhgl/linkdingctl/main/.claude/skills/linkdingctl/SKILL.md \
+  -o ~/.claude/skills/linkdingctl/SKILL.md
+curl -fsSL https://raw.githubusercontent.com/rodmhgl/linkdingctl/main/.claude/skills/linkdingctl/references/jq-recipes.md \
+  -o ~/.claude/skills/linkdingctl/references/jq-recipes.md
+
+# bookmark-describer skill
+mkdir -p ~/.claude/skills/bookmark-describer
+curl -fsSL https://raw.githubusercontent.com/rodmhgl/linkdingctl/main/.claude/skills/bookmark-describer/SKILL.md \
+  -o ~/.claude/skills/bookmark-describer/SKILL.md
+```
+
 ## Development
 
 Requires Go 1.24+.
