@@ -1,5 +1,7 @@
 # LinkDing CLI (`linkdingctl`)
 
+[![gitcgr](https://gitcgr.com/badge/rodmhgl/linkdingctl.svg)](https://gitcgr.com/rodmhgl/linkdingctl)
+
 A scriptable CLI for managing bookmarks in a [LinkDing](https://github.com/sissbruecker/linkding) instance.
 
 ![linkdingctl screenshot](./docs/assets/ss.png)
